@@ -1,0 +1,143 @@
+{
+  "nav": {
+    "home": "Home",
+    "catalog": "Catalog",
+    "about": "About",
+    "howItWorks": "How It Works",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "cart": "Cart"
+  },
+  "home": {
+    "badge": "Korean Car Parts Store",
+    "heroTitle": "Genuine Korean",
+    "heroTitleAccent": "Car Parts",
+    "heroSubtitle": "48,000+ Hyundai, Kia, Genesis OEM parts shipped directly from Korea worldwide",
+    "shopNow": "Browse Catalog",
+    "checkVin": "Check VIN",
+    "checkVinDesc": "Verify any Korean car history before you buy",
+    "stat1Value": "48,000+",
+    "stat1Label": "Parts",
+    "stat2Value": "3",
+    "stat2Label": "Brands",
+    "stat3Value": "7–14",
+    "stat3Label": "Days Delivery",
+    "stepsTitle": "How It Works",
+    "stepsSubtitle": "Four simple steps from search to receiving your parts",
+    "featuresTitle": "What We Offer",
+    "featuresSubtitle": "Genuine parts shipped directly from Korea",
+    "feature1Title": "Genuine OEM Parts",
+    "feature1Desc": "Only original Hyundai, Kia, and Genesis parts from the manufacturer. No aftermarket or counterfeit.",
+    "feature2Title": "Worldwide Shipping",
+    "feature2Desc": "We ship parts to any country via EMS and international courier services.",
+    "feature3Title": "Competitive Prices",
+    "feature3Desc": "Direct supply from Korea without middlemen. Lower prices than local dealers.",
+    "feature4Title": "Free VIN Check",
+    "feature4Desc": "Our Telegram bot verifies the history of any Korean car in 10 seconds.",
+    "featuredTitle": "Popular Parts",
+    "ctaTitle": "Need help finding parts?",
+    "ctaSubtitle": "Contact us — we'll help you find the right part",
+    "ctaContact": "Contact Us"
+  },
+  "howItWorks": {
+    "title": "How It Works",
+    "step1Title": "Browse Parts",
+    "step1Desc": "Find what you need in our catalog of 48,000+ parts",
+    "step2Title": "Submit Request",
+    "step2Desc": "Add items to cart and submit your order request",
+    "step3Title": "Manager Contacts You",
+    "step3Desc": "Our manager will confirm details and calculate shipping",
+    "step4Title": "Payment & Delivery",
+    "step4Desc": "Pay for your order and receive parts from Korea"
+  },
+  "catalog": {
+    "title": "Parts Catalog",
+    "metaDescription": "Browse 48,000+ genuine Hyundai, Kia & Genesis OEM parts — shipped worldwide from Korea",
+    "search": "Search by name or part number",
+    "allBrands": "All Brands",
+    "allCategories": "All Categories",
+    "sortDefault": "Default",
+    "sortPriceAsc": "Price: Low to High",
+    "sortPriceDesc": "Price: High to Low",
+    "results": "{count} products",
+    "noResults": "No results found",
+    "filters": "Filters",
+    "clearFilters": "Clear",
+    "priceRange": "Price",
+    "from": "from",
+    "to": "to"
+  },
+  "product": {
+    "addToCart": "Add to Cart",
+    "added": "Added",
+    "partNumber": "Part Number",
+    "manufacturer": "Manufacturer",
+    "compatibleModels": "Compatible Models",
+    "category": "Category",
+    "new": "New",
+    "priceKrw": "Price in Korea"
+  },
+  "cart": {
+    "title": "Cart",
+    "empty": "Your cart is empty",
+    "emptyDesc": "Browse our catalog to find parts",
+    "goToCatalog": "Go to Catalog",
+    "total": "Total",
+    "checkout": "Submit Request",
+    "remove": "Remove",
+    "quantity": "Qty"
+  },
+  "checkout": {
+    "title": "Submit Order Request",
+    "orderSummary": "Your Order",
+    "contactMethod": "How should we contact you?",
+    "phone": "Phone",
+    "telegram": "Telegram ID",
+    "noContact": "I don't have either",
+    "noContactDesc": "We'll show you our contact details",
+    "phonePlaceholder": "+1 234 567 8900",
+    "telegramPlaceholder": "@username",
+    "submit": "Submit Request",
+    "submitting": "Submitting...",
+    "successTitle": "Request Submitted!",
+    "successDesc": "Our manager will contact you shortly",
+    "ourContacts": "Our contacts"
+  },
+  "about": {
+    "title": "About Us",
+    "description": "Caranalizer — your reliable partner for Korean cars and genuine parts"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "q1": "Are the parts genuine?",
+    "a1": "Yes, we only supply original OEM parts manufactured by Hyundai, Kia, and Genesis directly from Korea.",
+    "q2": "How long does delivery take?",
+    "a2": "Delivery takes 7 to 14 business days depending on your country and chosen shipping method.",
+    "q3": "How do I pay?",
+    "a3": "After submitting your request, our manager will contact you and offer convenient payment options. We accept bank transfers and popular payment systems.",
+    "q4": "Can I return a part?",
+    "a4": "Yes, if the part doesn't fit or has a factory defect, we'll arrange a return or replacement. Contact our manager within 14 days of receiving it.",
+    "q5": "How do I check a car's VIN?",
+    "a5": "Use our Telegram bot @caranalizer_bot — it will verify the history of any Korean car by VIN code for free.",
+    "q6": "Do you ship worldwide?",
+    "a6": "We ship parts to most countries via EMS and other international delivery services."
+  },
+  "contact": {
+    "title": "Contact Us",
+    "name": "Your Name",
+    "phone": "Phone",
+    "message": "Message",
+    "send": "Send",
+    "sending": "Sending...",
+    "success": "Message sent!"
+  },
+  "footer": {
+    "description": "Korean car verification and genuine OEM parts. Hyundai, Kia, Genesis.",
+    "navigation": "Navigation",
+    "contacts": "Contacts",
+    "rights": "All rights reserved"
+  },
+  "currency": {
+    "label": "Currency"
+  }
+}
