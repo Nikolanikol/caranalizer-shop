@@ -35,9 +35,8 @@ export default function PrivacyPage() {
           <p>يستخدم موقع Caranalizer (caranalizer.com) ملفات تعريف الارتباط وأدوات التحليل لتحسين تجربة المستخدم.</p>
           <h2 className="text-text text-xl font-semibold mt-6">ما الذي نجمعه</h2>
           <ul className="list-disc list-inside space-y-2">
-            <li>Google Analytics — سلوك المستخدم وإحصاءات الزيارات</li>
-            <li>Yandex Metrica — تحليل الجلسات والخرائط الحرارية</li>
-            <li>Microsoft Clarity — تسجيلات الجلسات والخرائط الحرارية</li>
+            <li>إحصاءات الزيارات — سلوك المستخدم وبيانات الزيارات</li>
+            <li>تحليل الجلسات — تحليل تفاعلات المستخدم مع الموقع</li>
             <li>ملفات تعريف الارتباط المحلية — تفضيلات اللغة والعملة وسلة التسوق</li>
           </ul>
           <h2 className="text-text text-xl font-semibold mt-6">كيف نستخدم البيانات</h2>
@@ -60,9 +59,8 @@ export default function PrivacyPage() {
 
           <h2 className="text-text text-xl font-semibold">Какие данные мы собираем</h2>
           <ul className="list-disc list-inside space-y-2">
-            <li><strong className="text-text">Google Analytics</strong> — статистика посещений, поведение пользователей на сайте</li>
-            <li><strong className="text-text">Яндекс.Метрика</strong> — анализ сессий, тепловые карты, вебвизор</li>
-            <li><strong className="text-text">Microsoft Clarity</strong> — записи сессий, тепловые карты кликов</li>
+            <li><strong className="text-text">Аналитика посещений</strong> — статистика посещений, поведение пользователей на сайте</li>
+            <li><strong className="text-text">Аналитика сессий</strong> — анализ пользовательских сессий и взаимодействий</li>
             <li><strong className="text-text">Локальные cookies</strong> — предпочтения языка, валюты и содержимое корзины</li>
           </ul>
 
@@ -93,9 +91,8 @@ export default function PrivacyPage() {
 
           <h2 className="text-text text-xl font-semibold">What we collect</h2>
           <ul className="list-disc list-inside space-y-2">
-            <li><strong className="text-text">Google Analytics</strong> — visit statistics, user behavior</li>
-            <li><strong className="text-text">Yandex Metrica</strong> — session analysis, heatmaps, session recording</li>
-            <li><strong className="text-text">Microsoft Clarity</strong> — session recordings, click heatmaps</li>
+            <li><strong className="text-text">Visit analytics</strong> — visit statistics and user behavior on the site</li>
+            <li><strong className="text-text">Session analytics</strong> — analysis of user sessions and interactions</li>
             <li><strong className="text-text">Local cookies</strong> — language, currency preferences and shopping cart</li>
           </ul>
 
