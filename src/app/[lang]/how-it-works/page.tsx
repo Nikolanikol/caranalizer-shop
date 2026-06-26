@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/container";
 import { Search, ShoppingCart, MessageCircle, Truck } from "lucide-react";
 import { DeliveryMap } from "@/components/DeliveryMap";
+import { ShippingCalculator } from "@/components/ShippingCalculator";
 import type { Locale } from "@/i18n/routing";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
@@ -88,6 +89,16 @@ export default function HowItWorksPage() {
           <div className="w-10 h-0.5 bg-primary mb-4" />
           <p className="text-text-muted mb-8">{deliveryDesc}</p>
           <DeliveryMap locale={locale} />
+        </Container>
+      </section>
+
+      <section className="py-12 border-t border-border-subtle">
+        <Container className="max-w-5xl">
+          <h2 className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase mb-2">
+            {locale === "ru" ? "Калькулятор доставки" : locale === "ar" ? "حاسبة الشحن" : "Shipping Calculator"}
+          </h2>
+          <div className="w-10 h-0.5 bg-primary mb-8" />
+          <ShippingCalculator />
         </Container>
       </section>
     </>
