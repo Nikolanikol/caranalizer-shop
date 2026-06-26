@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
 
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     const chatId = process.env.TELEGRAM_CHAT_ID;
+    const workChatId = process.env.TELEGRAM_WORK_CHAT_ID;
     if (!botToken || !chatId) {
       return NextResponse.json({ error: "Server config error" }, { status: 500 });
     }
@@ -57,15 +58,19 @@ ${itemLines}
 
 💰 Итого: ${formatKrw(totalKrw)}`;
 
-    const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text }),
-    });
-    const tgData = await tgRes.json();
+    const chatIds = [chatId, workChatId].filter(Boolean) as string[];
+    const tgResults = await Promise.all(
+      chatIds.map((id) =>
+        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: id, text }),
+        }).then((r) => r.json())
+      )
+    );
 
-    if (!tgData.ok) {
-      console.error("Telegram error:", tgData);
+    if (!tgResults[0]?.ok) {
+      console.error("Telegram error:", tgResults[0]);
       return NextResponse.json({ error: "Failed to send notification" }, { status: 500 });
     }
 
