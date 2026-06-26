@@ -78,8 +78,12 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-border-subtle text-center text-xs text-text-dim">
-          © {year} Caranalizer. {t("rights")}
+        <div className="mt-10 pt-6 border-t border-border-subtle flex flex-col sm:flex-row items-center justify-center gap-3 text-xs text-text-dim">
+          <span>© {year} Caranalizer. {t("rights")}</span>
+          <span className="hidden sm:block">·</span>
+          <Link href="/privacy" className="hover:text-text transition-colors">
+            {t("privacy")}
+          </Link>
         </div>
       </Container>
     </footer>

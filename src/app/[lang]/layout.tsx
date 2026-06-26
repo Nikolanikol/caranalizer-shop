@@ -8,6 +8,7 @@ import { Footer } from "@/components/layout/Footer";
 import { CartProvider } from "@/providers/CartProvider";
 import { CurrencyProvider } from "@/providers/CurrencyProvider";
 import { HtmlLang } from "@/components/HtmlLang";
+import { CookieBanner } from "@/components/CookieBanner";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
 
@@ -59,6 +60,7 @@ export default async function LangLayout({
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />
+            <CookieBanner />
           </CurrencyProvider>
         </CartProvider>
       </NextIntlClientProvider>

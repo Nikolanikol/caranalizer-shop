@@ -161,7 +161,8 @@
     "description": "Korean car verification and genuine OEM parts. Hyundai, Kia, Genesis.",
     "navigation": "Navigation",
     "contacts": "Contacts",
-    "rights": "All rights reserved"
+    "rights": "All rights reserved",
+    "privacy": "Privacy Policy"
   },
   "currency": {
     "label": "Currency"
