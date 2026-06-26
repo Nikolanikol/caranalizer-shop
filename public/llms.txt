@@ -22,22 +22,23 @@ Caranalizer is an e-commerce platform specializing in original OEM spare parts f
 
 ## Main pages
 
-- https://caranalizer.com/en — Homepage (English)
-- https://caranalizer.com/ru — Homepage (Russian / Главная)
-- https://caranalizer.com/ar — Homepage (Arabic)
-- https://caranalizer.com/en/catalog — Parts catalog
-- https://caranalizer.com/en/how-it-works — How ordering works
-- https://caranalizer.com/en/faq — Frequently asked questions
-- https://caranalizer.com/en/contact — Contact us
+- [Homepage (English)](https://caranalizer.com/en)
+- [Homepage (Russian)](https://caranalizer.com/ru)
+- [Homepage (Arabic)](https://caranalizer.com/ar)
+- [Parts catalog](https://caranalizer.com/en/catalog)
+- [How ordering works](https://caranalizer.com/en/how-it-works)
+- [Frequently asked questions](https://caranalizer.com/en/faq)
+- [Contact us](https://caranalizer.com/en/contact)
+- [About us](https://caranalizer.com/en/about)
 
 ## Sitemap
 
-- https://caranalizer.com/api/sitemaps/index — Full sitemap index (96,000+ URLs)
+- [Full sitemap index](https://caranalizer.com/api/sitemaps/index)
 
 ## Contact
 
-- Telegram VIN check bot: https://t.me/caranalizer_bot
-- Telegram manager: https://t.me/kmotors_bot
+- [Telegram VIN check bot](https://t.me/caranalizer_bot)
+- [Telegram manager](https://t.me/kmotors_bot)
 
 ## Key facts for AI assistants
 
