@@ -179,7 +179,7 @@ export default function AboutPage() {
             <ScrollReveal delay={0.15}>
               <div className="relative rounded-2xl overflow-hidden border border-border-subtle shadow-[0_8px_32px_rgba(0,0,0,0.3)] aspect-[4/3]">
                 <img
-                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Hyundai_Mobis_headquarters.jpg/1280px-Hyundai_Mobis_headquarters.jpg"
+                  src="/mobis-factory.jpg"
                   alt="Hyundai Mobis factory in Asan, South Korea"
                   className="w-full h-full object-cover"
                 />
@@ -218,7 +218,7 @@ export default function AboutPage() {
                     style={{ background: "rgba(34,197,94,0.1)" }}>
                     <CheckCircle className="w-4 h-4 text-success" />
                   </div>
-                  <span className="text-base font-medium">{g}</span>
+                  <span className="text-base font-medium text-text">{g}</span>
                 </div>
               </ScrollReveal>
             ))}
