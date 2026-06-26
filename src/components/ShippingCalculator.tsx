@@ -38,17 +38,20 @@ export function ShippingCalculator() {
 
   const countryLabel = (c: ShippingCountry) => isRu ? c.ru : c.en;
 
+  const isAr = locale === "ar";
   const labels = {
-    title: isRu ? "Калькулятор доставки" : "Shipping Calculator",
-    country: isRu ? "Страна назначения" : "Destination country",
-    search: isRu ? "Поиск страны..." : "Search country...",
-    weight: isRu ? "Вес отправления" : "Package weight",
-    result: isRu ? "Стоимость доставки" : "Shipping cost",
-    table: isRu ? "Тарифы для" : "Rates for",
-    kg: "кг",
-    noCountry: isRu ? "Выберите страну для расчёта" : "Select a country to calculate",
+    title: isRu ? "Калькулятор доставки" : isAr ? "حاسبة الشحن" : "Shipping Calculator",
+    country: isRu ? "Страна назначения" : isAr ? "بلد الوجهة" : "Destination country",
+    search: isRu ? "Поиск страны..." : isAr ? "...ابحث عن دولة" : "Search country...",
+    weight: isRu ? "Вес отправления" : isAr ? "وزن الطرد" : "Package weight",
+    result: isRu ? "Стоимость доставки" : isAr ? "تكلفة الشحن" : "Shipping cost",
+    table: isRu ? "Тарифы для" : isAr ? "أسعار لـ" : "Rates for",
+    kg: isAr ? "كغ" : isRu ? "кг" : "kg",
+    noCountry: isRu ? "Выберите страну для расчёта" : isAr ? "اختر دولة للحساب" : "Select a country to calculate",
     note: isRu
       ? "* Тарифы EMS Korea Post. Итоговая стоимость может отличаться — в неё входят топливный сбор и стоимость упаковки товара."
+      : isAr
+      ? "* أسعار EMS Korea Post. قد تختلف التكلفة النهائية وتشمل رسوم الوقود وتكاليف التغليف."
       : "* EMS Korea Post rates. Final cost may vary — it includes fuel surcharge and packaging costs.",
   };
 
@@ -124,12 +127,14 @@ export function ShippingCalculator() {
             onChange={(e) => setWeight(Number(e.target.value))}
             className="shipping-slider w-full cursor-pointer mb-3"
             style={{
-              ["--progress" as string]: `${((weight - 0.5) / 29.5) * 100}%`,
+              ["--progress" as string]: isAr
+                ? `${100 - ((weight - 0.5) / 29.5) * 100}%`
+                : `${((weight - 0.5) / 29.5) * 100}%`,
             }}
           />
           <div className="flex justify-between text-xs text-text-dim">
-            <span>0.5 {labels.kg}</span>
-            <span>30 {labels.kg}</span>
+            <span>{isAr ? `30 ${labels.kg}` : `0.5 ${labels.kg}`}</span>
+            <span>{isAr ? `0.5 ${labels.kg}` : `30 ${labels.kg}`}</span>
           </div>
         </div>
 
