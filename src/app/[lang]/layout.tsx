@@ -7,6 +7,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CartProvider } from "@/providers/CartProvider";
 import { CurrencyProvider } from "@/providers/CurrencyProvider";
+import { HtmlLang } from "@/components/HtmlLang";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
 
@@ -51,6 +52,7 @@ export default async function LangLayout({
 
   return (
     <div dir={dir} lang={lang} className="flex flex-col min-h-screen">
+      <HtmlLang lang={lang} />
       <NextIntlClientProvider messages={messages}>
         <CartProvider>
           <CurrencyProvider>
