@@ -93,7 +93,7 @@ export function DeliveryMap({ locale = "ru" }: { locale?: string }) {
     <div className="relative w-full rounded-2xl overflow-hidden border border-border-subtle bg-base-darker">
       <ComposableMap
         projection="geoNaturalEarth1"
-        projectionConfig={{ scale: 153, center: [15, 5] }}
+        projectionConfig={{ scale: 140, center: [15, 10] }}
         style={{ width: "100%", height: "auto" }}
       >
         <Geographies geography={GEO_URL}>
