@@ -162,7 +162,8 @@
     "navigation": "Navigation",
     "contacts": "Contacts",
     "rights": "All rights reserved",
-    "privacy": "Privacy Policy"
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
   },
   "currency": {
     "label": "Currency"

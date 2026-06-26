@@ -84,6 +84,10 @@ export function Footer() {
           <Link href="/privacy" className="hover:text-text transition-colors">
             {t("privacy")}
           </Link>
+          <span className="hidden sm:block">·</span>
+          <Link href="/terms" className="hover:text-text transition-colors">
+            {t("terms")}
+          </Link>
         </div>
       </Container>
     </footer>
