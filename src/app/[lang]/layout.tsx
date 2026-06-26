@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
@@ -7,8 +8,29 @@ import { Footer } from "@/components/layout/Footer";
 import { CartProvider } from "@/providers/CartProvider";
 import { CurrencyProvider } from "@/providers/CurrencyProvider";
 
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
+
 export function generateStaticParams() {
   return routing.locales.map((lang) => ({ lang }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  return {
+    alternates: {
+      languages: {
+        ru: `${BASE}/ru`,
+        en: `${BASE}/en`,
+        ar: `${BASE}/ar`,
+        "x-default": `${BASE}/en`,
+      },
+      canonical: `${BASE}/${lang}`,
+    },
+  };
 }
 
 export default async function LangLayout({
