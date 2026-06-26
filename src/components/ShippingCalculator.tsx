@@ -48,8 +48,8 @@ export function ShippingCalculator() {
     kg: "кг",
     noCountry: isRu ? "Выберите страну для расчёта" : "Select a country to calculate",
     note: isRu
-      ? "* Тарифы EMS Korea Post. Итоговая стоимость может включать топливный сбор."
-      : "* EMS Korea Post rates. Final cost may include fuel surcharge.",
+      ? "* Тарифы EMS Korea Post. Итоговая стоимость может отличаться — в неё входят топливный сбор и стоимость упаковки товара."
+      : "* EMS Korea Post rates. Final cost may vary — it includes fuel surcharge and packaging costs.",
   };
 
   return (
