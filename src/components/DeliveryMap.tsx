@@ -84,6 +84,7 @@ interface TooltipState {
   name: string;
   x: number;
   y: number;
+  delivery: boolean;
 }
 
 export function DeliveryMap({ locale = "ru" }: { locale?: string }) {
@@ -109,7 +110,6 @@ export function DeliveryMap({ locale = "ru" }: { locale?: string }) {
                   key={geo.rsmKey}
                   geography={geo}
                   onMouseEnter={(e) => {
-                    if (!isDelivery) return;
                     const names = COUNTRY_NAMES[numericId];
                     const name = names
                       ? locale === "ru" ? names.ru : names.en
@@ -121,6 +121,7 @@ export function DeliveryMap({ locale = "ru" }: { locale?: string }) {
                       name,
                       x: e.clientX - (rect?.left ?? 0),
                       y: e.clientY - (rect?.top ?? 0),
+                      delivery: isDelivery,
                     });
                   }}
                   onMouseLeave={() => setTooltip(null)}
@@ -149,10 +150,11 @@ export function DeliveryMap({ locale = "ru" }: { locale?: string }) {
 
       {tooltip && (
         <div
-          className="absolute z-10 px-3 py-1.5 rounded-lg bg-elevated border border-border text-sm font-medium text-text pointer-events-none shadow-lg"
-          style={{ left: tooltip.x + 12, top: tooltip.y - 32 }}
+          className="absolute z-10 px-3 py-2 rounded-lg bg-elevated border border-border text-sm pointer-events-none shadow-lg flex items-center gap-2"
+          style={{ left: tooltip.x + 12, top: tooltip.y - 40 }}
         >
-          {tooltip.name}
+          <span className={`w-2 h-2 rounded-full shrink-0 ${tooltip.delivery ? "bg-primary" : "bg-text-dim"}`} />
+          <span className="font-medium text-text">{tooltip.name}</span>
         </div>
       )}
 
