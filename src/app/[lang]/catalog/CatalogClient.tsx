@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { usePathname } from "@/i18n/navigation";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,7 @@ interface InitialData {
 
 export function CatalogClient({ initialData }: { initialData?: InitialData }) {
   const t = useTranslations("catalog");
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -83,6 +84,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
     if (max) params.set("max", max);
     if (sort !== "default") params.set("sort", sort);
     if (page > 1) params.set("page", String(page));
+    params.set("lang", locale);
 
     fetch(`/api/parts/products?${params}`, { signal: controller.signal })
       .then((r) => r.json())

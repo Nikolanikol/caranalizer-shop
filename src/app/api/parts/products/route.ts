@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
   try {
     const sp = new URL(req.url).searchParams;
 
+    const lang = sp.get("lang") ?? "ru";
     const brandSlug = sp.get("brand") ?? "";
     const catSlug = sp.get("cat") ?? "";
     const subSlug = sp.get("sub") ?? "";
@@ -140,7 +141,8 @@ export async function GET(req: NextRequest) {
             const { count } = await applyBase(
               supabase.from("parts_products").select("*", { count: "exact", head: true })
             ).eq("category_id", c.id);
-            return { slug: c.slug, name: c.name_ru, count: count ?? 0 };
+            const name = lang === "en" ? (c.name_en ?? c.name_ru) : lang === "ar" ? (c.name_en ?? c.name_ru) : c.name_ru;
+            return { slug: c.slug, name, count: count ?? 0 };
           })
       ),
     ]);
