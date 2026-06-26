@@ -93,13 +93,15 @@ export function DeliveryMap({ locale = "ru" }: { locale?: string }) {
     <div className="relative w-full rounded-2xl overflow-hidden border border-border-subtle bg-base-darker">
       <ComposableMap
         projection="geoNaturalEarth1"
-        projectionConfig={{ scale: 140, center: [15, 10] }}
+        projectionConfig={{ scale: 140, center: [15, 20] }}
         style={{ width: "100%", height: "auto" }}
       >
         <Geographies geography={GEO_URL}>
           {({ geographies }) =>
             geographies.map((geo) => {
               const numericId = String(geo.id);
+              // Skip Antarctica (010)
+              if (numericId === "10") return null;
               const isDelivery = DELIVERY_COUNTRIES.has(numericId);
               return (
                 <Geography
