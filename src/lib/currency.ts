@@ -69,6 +69,15 @@ export async function getCurrencyRates(): Promise<CurrencyRates> {
       if (krw?.uzs) rates.UZS = krw.uzs;
     }
 
+    // Apply 6% markup to cover payment processing fees
+    const MARKUP = 1.06;
+    rates.USD = rates.USD * MARKUP;
+    rates.EUR = rates.EUR * MARKUP;
+    rates.RUB = rates.RUB * MARKUP;
+    rates.AED = rates.AED * MARKUP;
+    rates.KZT = rates.KZT * MARKUP;
+    rates.UZS = rates.UZS * MARKUP;
+
     rates.updatedAt = new Date().toISOString().slice(0, 10);
     return rates;
   } catch {
