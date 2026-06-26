@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { PriceDisplay } from "@/components/PriceDisplay";
 import { useCurrency } from "@/providers/CurrencyProvider";
 import { useCart } from "@/providers/CartProvider";
+import { getProductName, normalizeManufacturer } from "@/lib/utils";
 import type { Product } from "@/types/product";
 import type { Locale } from "@/i18n/routing";
 
@@ -30,7 +31,8 @@ export function ProductDetail({
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
 
-  const name = locale === "ru" ? product.name_ru : product.name_en;
+  const name = getProductName(product.name_ru, product.name_en, product.name_ko, product.part_number, locale);
+  const manufacturer = normalizeManufacturer(product.manufacturer);
 
   function handleAdd() {
     addItem({
@@ -106,10 +108,10 @@ export function ProductDetail({
         </Button>
 
         <div className="space-y-4 border-t border-border-subtle pt-6">
-          {product.manufacturer && (
+          {manufacturer && (
             <div className="flex justify-between text-sm">
               <span className="text-text-muted">{labels.manufacturer}</span>
-              <span className="text-text">{product.manufacturer}</span>
+              <span className="text-text">{manufacturer}</span>
             </div>
           )}
           {categoryName && (

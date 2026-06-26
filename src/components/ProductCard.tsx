@@ -7,6 +7,7 @@ import { ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PriceDisplay } from "@/components/PriceDisplay";
 import { generatePartSlug } from "@/lib/slug";
+import { getProductName } from "@/lib/utils";
 import type { Product } from "@/types/product";
 import type { Locale } from "@/i18n/routing";
 
@@ -25,7 +26,7 @@ export function ProductCard({
 }: ProductCardProps) {
   const locale = useLocale() as Locale;
   const t = useTranslations("product");
-  const name = locale === "ru" ? product.name_ru : product.name_en;
+  const name = getProductName(product.name_ru, product.name_en, product.name_ko, product.part_number, locale);
   const slug = generatePartSlug(product.part_number, product.name_ru, product.id);
 
   return (

@@ -3,11 +3,11 @@ import { notFound } from "next/navigation";
 import { Container } from "@/components/ui/container";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { createServerClient } from "@/lib/supabase";
-import { parsePartSlug } from "@/lib/slug";
+import { parsePartSlug, generatePartSlug } from "@/lib/slug";
 import { getTranslations } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { ProductDetail } from "./ProductDetail";
-import { generatePartSlug } from "@/lib/slug";
+import { getProductName, normalizeManufacturer } from "@/lib/utils";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
 const LOCALES = ["ru", "en", "ar"] as const;
@@ -46,15 +46,13 @@ export async function generateMetadata({
 
   if (!product) return {};
 
-  const name = locale === "ru" ? product.name_ru : product.name_en;
-  const brand = product.manufacturer || "";
-  const title = name
-    ? `${name} ${product.part_number}${brand ? ` ${brand}` : ""} — купить | Caranalizer`
-    : `${product.part_number}${brand ? ` ${brand}` : ""} — купить | Caranalizer`;
+  const name = getProductName(product.name_ru, product.name_en, product.name_ko, product.part_number, locale);
+  const brand = normalizeManufacturer(product.manufacturer) || "";
+  const title = `${name} ${product.part_number}${brand ? ` ${brand}` : ""} — купить | Caranalizer`;
 
   const description = locale === "ru"
-    ? `Купить ${name || "запчасть"} ${product.part_number}${brand ? ` ${brand}` : ""} — оригинальная корейская запчасть с доставкой по всему миру за 7–14 дней.`
-    : `Buy ${name || "part"} ${product.part_number}${brand ? ` ${brand}` : ""} — genuine Korean OEM part shipped worldwide in 7–14 days.`;
+    ? `Купить ${name} ${product.part_number}${brand ? ` ${brand}` : ""} — оригинальная корейская запчасть с доставкой по всему миру за 7–14 дней.`
+    : `Buy ${name} ${product.part_number}${brand ? ` ${brand}` : ""} — genuine Korean OEM part shipped worldwide in 7–14 days.`;
 
   const canonicalSlug = generatePartSlug(product.part_number, product.name_ru, product.id);
 
