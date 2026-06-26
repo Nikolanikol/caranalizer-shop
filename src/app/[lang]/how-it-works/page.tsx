@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/container";
 import { Search, ShoppingCart, MessageCircle, Truck } from "lucide-react";
+import { DeliveryMap } from "@/components/DeliveryMap";
 import type { Locale } from "@/i18n/routing";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
@@ -40,6 +41,7 @@ const STEP_ICONS = [Search, ShoppingCart, MessageCircle, Truck];
 
 export default function HowItWorksPage() {
   const t = useTranslations("howItWorks");
+  const locale = useLocale();
 
   const steps = [1, 2, 3, 4].map((n) => ({
     title: t(`step${n}Title`),
@@ -47,29 +49,47 @@ export default function HowItWorksPage() {
     Icon: STEP_ICONS[n - 1],
   }));
 
+  const deliveryTitle = locale === "ru" ? "Куда мы доставляем" : locale === "ar" ? "أين نوصل" : "Where We Deliver";
+  const deliveryDesc = locale === "ru"
+    ? "Более 100 стран через EMS и международные курьерские службы"
+    : "100+ countries via EMS and international courier services";
+
   return (
-    <section className="py-8">
-      <Container className="max-w-4xl">
-        <h1 className="text-3xl font-bold font-[family-name:var(--font-heading)] mb-12">
-          {t("title")}
-        </h1>
-        <div className="grid gap-8 sm:grid-cols-2">
-          {steps.map(({ title, desc, Icon }, i) => (
-            <div
-              key={i}
-              className="flex gap-4 rounded-xl border border-border-subtle bg-elevated p-6"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Icon className="h-5 w-5" />
+    <>
+      <section className="py-8">
+        <Container className="max-w-4xl">
+          <h1 className="text-3xl font-bold font-[family-name:var(--font-heading)] mb-12">
+            {t("title")}
+          </h1>
+          <div className="grid gap-8 sm:grid-cols-2">
+            {steps.map(({ title, desc, Icon }, i) => (
+              <div
+                key={i}
+                className="flex gap-4 rounded-xl border border-border-subtle bg-elevated p-6"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-text mb-1">{title}</h3>
+                  <p className="text-sm text-text-muted">{desc}</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-text mb-1">{title}</h3>
-                <p className="text-sm text-text-muted">{desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Container>
-    </section>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      <section className="py-12 border-t border-border-subtle">
+        <Container className="max-w-5xl">
+          <h2 className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase mb-2">
+            {deliveryTitle}
+          </h2>
+          <div className="w-10 h-0.5 bg-primary mb-4" />
+          <p className="text-text-muted mb-8">{deliveryDesc}</p>
+          <DeliveryMap locale={locale} />
+        </Container>
+      </section>
+    </>
   );
 }
