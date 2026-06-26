@@ -122,9 +122,9 @@ export function ShippingCalculator() {
             step={0.5}
             value={weight}
             onChange={(e) => setWeight(Number(e.target.value))}
-            className="w-full h-2 rounded-full appearance-none cursor-pointer mb-3"
+            className="shipping-slider w-full cursor-pointer mb-3"
             style={{
-              background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${((weight - 0.5) / 29.5) * 100}%, var(--color-elevated) ${((weight - 0.5) / 29.5) * 100}%, var(--color-elevated) 100%)`,
+              ["--progress" as string]: `${((weight - 0.5) / 29.5) * 100}%`,
             }}
           />
           <div className="flex justify-between text-xs text-text-dim">
