@@ -1,6 +1,40 @@
+import type { Metadata } from "next";
 import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/container";
 import { Search, ShoppingCart, MessageCircle, Truck } from "lucide-react";
+import type { Locale } from "@/i18n/routing";
+
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
+const LOCALES = ["ru", "en", "ar"] as const;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+
+  const titles: Record<string, string> = {
+    ru: "Как это работает — заказ запчастей из Кореи | Caranalizer",
+    en: "How It Works — Order Korean Car Parts | Caranalizer",
+    ar: "كيف يعمل — طلب قطع غيار السيارات الكورية | Caranalizer",
+  };
+  const descriptions: Record<string, string> = {
+    ru: "4 простых шага: найдите запчасть, оформите заказ, получите подтверждение и дождитесь доставки из Кореи.",
+    en: "4 simple steps: find the part, place your order, get confirmation, and receive delivery from Korea.",
+    ar: "4 خطوات بسيطة: ابحث عن القطعة، أرسل الطلب، احصل على التأكيد، واستلم التوصيل من كوريا.",
+  };
+
+  return {
+    title: titles[lang],
+    description: descriptions[lang],
+    alternates: {
+      languages: Object.fromEntries(LOCALES.map((l) => [l, `${BASE}/${l}/how-it-works`])),
+      canonical: `${BASE}/${lang}/how-it-works`,
+    },
+  };
+}
 
 const STEP_ICONS = [Search, ShoppingCart, MessageCircle, Truck];
 

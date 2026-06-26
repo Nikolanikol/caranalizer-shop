@@ -1,8 +1,42 @@
+import type { Metadata } from "next";
 import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/container";
 import { Link } from "@/i18n/navigation";
 import { VinCheckCTA } from "@/components/VinCheckCTA";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import type { Locale } from "@/i18n/routing";
+
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
+const LOCALES = ["ru", "en", "ar"] as const;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+
+  const titles: Record<string, string> = {
+    ru: "Запчасти Hyundai, Kia, Genesis из Кореи — 48 000+ деталей | Caranalizer",
+    en: "Genuine Korean Car Parts — 48,000+ Hyundai, Kia, Genesis Parts | Caranalizer",
+    ar: "قطع غيار هيونداي وكيا وجينيسيس من كوريا — 48,000+ قطعة | Caranalizer",
+  };
+  const descriptions: Record<string, string> = {
+    ru: "Оригинальные запчасти Hyundai, Kia, Genesis с прямой поставкой из Кореи. 48 000+ деталей в каталоге. Доставка по всему миру за 7–14 дней.",
+    en: "Genuine OEM parts for Hyundai, Kia, Genesis shipped directly from Korea. 48,000+ parts in catalog. Worldwide delivery in 7–14 days.",
+    ar: "قطع غيار OEM أصلية لهيونداي وكيا وجينيسيس مشحونة مباشرة من كوريا. أكثر من 48,000 قطعة. توصيل عالمي خلال 7-14 يوم.",
+  };
+
+  return {
+    title: titles[lang],
+    description: descriptions[lang],
+    alternates: {
+      languages: Object.fromEntries(LOCALES.map((l) => [l, `${BASE}/${l}`])),
+      canonical: `${BASE}/${lang}`,
+    },
+  };
+}
 import {
   Search,
   ShoppingCart,
