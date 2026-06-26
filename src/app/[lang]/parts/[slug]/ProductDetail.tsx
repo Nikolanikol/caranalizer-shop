@@ -120,12 +120,6 @@ export function ProductDetail({
               <span className="text-text">{categoryName}</span>
             </div>
           )}
-          {product.weight_kg && (
-            <div className="flex justify-between text-sm">
-              <span className="text-text-muted">Weight</span>
-              <span className="text-text">{product.weight_kg} kg</span>
-            </div>
-          )}
         </div>
 
         {compatibleModels.length > 0 && (
