@@ -130,16 +130,14 @@ export function DeliveryMap({ locale = "ru" }: { locale?: string }) {
                       fill: isDelivery ? "rgba(59,130,246,0.7)" : "#1e293b",
                       stroke: "#0f172a",
                       strokeWidth: 0.5,
-                      outline: "none",
-                    },
+                                          },
                     hover: {
                       fill: isDelivery ? "#3b82f6" : "#1e293b",
                       stroke: "#0f172a",
                       strokeWidth: 0.5,
-                      outline: "none",
-                      cursor: isDelivery ? "pointer" : "default",
+                                            cursor: isDelivery ? "pointer" : "default",
                     },
-                    pressed: { outline: "none" },
+                    pressed: {},
                   }}
                 />
               );
