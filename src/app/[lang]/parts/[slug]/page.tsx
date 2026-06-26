@@ -47,13 +47,14 @@ export async function generateMetadata({
   if (!product) return {};
 
   const name = locale === "ru" ? product.name_ru : product.name_en;
+  const brand = product.manufacturer || "";
   const title = name
-    ? `${name} (${product.part_number})`
-    : product.part_number;
+    ? `${name} ${product.part_number}${brand ? ` ${brand}` : ""} — купить | Caranalizer`
+    : `${product.part_number}${brand ? ` ${brand}` : ""} — купить | Caranalizer`;
 
   const description = locale === "ru"
-    ? `Купить ${name || "запчасть"} ${product.part_number} — оригинальные корейские автозапчасти с доставкой`
-    : `Buy ${name || "part"} ${product.part_number} — genuine Korean auto parts shipped worldwide`;
+    ? `Купить ${name || "запчасть"} ${product.part_number}${brand ? ` ${brand}` : ""} — оригинальная корейская запчасть с доставкой по всему миру за 7–14 дней.`
+    : `Buy ${name || "part"} ${product.part_number}${brand ? ` ${brand}` : ""} — genuine Korean OEM part shipped worldwide in 7–14 days.`;
 
   const canonicalSlug = generatePartSlug(product.part_number, product.name_ru, product.id);
 
@@ -132,6 +133,7 @@ export default async function ProductPage({
     "@type": "Product",
     name: name || product.part_number,
     sku: product.part_number,
+    mpn: product.part_number,
     ...(product.image_url && { image: product.image_url }),
     ...(product.manufacturer && {
       brand: { "@type": "Brand", name: product.manufacturer },
@@ -142,6 +144,7 @@ export default async function ProductPage({
       price: product.price_krw,
       availability: "https://schema.org/InStock",
       url: `${BASE}/${lang}/parts/${canonicalSlug}`,
+      seller: { "@type": "Organization", name: "Caranalizer" },
     },
   };
 
