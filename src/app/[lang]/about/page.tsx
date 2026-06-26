@@ -3,6 +3,8 @@ import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/container";
 import { Camera, Shield, MapPin, TrendingDown, CheckCircle } from "lucide-react";
+import { StatCounter } from "@/components/StatCounter";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import type { Locale } from "@/i18n/routing";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
@@ -59,99 +61,166 @@ export default function AboutPage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative py-20 border-b border-border overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(59,130,246,0.05)_0%,transparent_60%)]" />
-        <Container className="max-w-4xl relative">
-          <h1 className="font-[family-name:var(--font-heading)] text-[clamp(28px,4vw,52px)] font-bold tracking-tight uppercase mb-6">
-            {t("hero")}
-          </h1>
-          <p className="text-lg text-text-muted max-w-2xl leading-relaxed">
-            {t("heroSub")}
-          </p>
+      <section className="relative py-24 overflow-hidden">
+        {/* Glow */}
+        <div
+          className="absolute top-0 left-0 right-0 h-[500px] pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(59,130,246,0.12) 0%, transparent 60%)",
+          }}
+        />
+        <Container className="max-w-4xl relative z-10">
+          <ScrollReveal>
+            <h1 className="font-[family-name:var(--font-heading)] text-[clamp(32px,4vw,52px)] font-extrabold tracking-tight uppercase mb-6 leading-[1.05]">
+              {t("hero")}
+            </h1>
+            <p className="text-lg text-text-muted max-w-2xl leading-relaxed">
+              {t("heroSub")}
+            </p>
+          </ScrollReveal>
         </Container>
       </section>
 
       {/* Stats */}
-      <section className="py-12 border-b border-border bg-elevated/30">
-        <Container className="max-w-4xl">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((s) => (
-              <div key={s.label} className="text-center">
-                <span className="font-[family-name:var(--font-heading)] text-3xl font-bold text-primary block">
-                  {s.value}
-                </span>
-                <span className="text-xs text-text-dim uppercase tracking-wide mt-1 block">
-                  {s.label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </Container>
+      <section className="border-y border-border-subtle">
+        <div
+          style={{
+            background: "linear-gradient(180deg, rgba(59,130,246,0.03) 0%, transparent 100%)",
+          }}
+        >
+          <Container className="max-w-4xl py-10">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-border-subtle">
+              {stats.map((s, i) => (
+                <div key={s.label} className="text-center px-6 py-4">
+                  <span
+                    className="font-[family-name:var(--font-heading)] text-[32px] font-bold block"
+                    style={{
+                      background: "linear-gradient(90deg, #3b82f6, #2563eb)",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                    }}
+                  >
+                    <StatCounter value={s.value} />
+                  </span>
+                  <span className="text-[11px] text-text-dim uppercase tracking-[0.08em] mt-2 block">
+                    {s.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Container>
+        </div>
       </section>
 
       {/* Why us */}
-      <section className="py-16 border-b border-border">
+      <section className="py-24">
         <Container className="max-w-4xl">
-          <h2 className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase mb-10">
-            {t("whyTitle")}
-          </h2>
+          <ScrollReveal>
+            <h2 className="font-[family-name:var(--font-heading)] text-[clamp(22px,3vw,36px)] font-bold uppercase mb-2">
+              {t("whyTitle")}
+            </h2>
+            <div className="w-10 h-0.5 bg-primary mb-12" />
+          </ScrollReveal>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {whyUs.map((item) => {
+            {whyUs.map((item, i) => {
               const Icon = item.icon;
               return (
-                <div
-                  key={item.title}
-                  className="flex gap-4 p-6 rounded-xl border border-border bg-elevated"
-                >
-                  <div className="w-10 h-10 min-w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Icon className="w-5 h-5 text-primary" />
+                <ScrollReveal key={item.title} delay={i * 0.1}>
+                  <div
+                    className="group relative flex gap-4 p-8 rounded-2xl border border-border-subtle bg-elevated overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:shadow-[0_12px_40px_rgba(59,130,246,0.08)] h-full"
+                  >
+                    {/* Edge gradient */}
+                    <div
+                      className="absolute inset-0 rounded-2xl pointer-events-none opacity-100 group-hover:opacity-0 transition-opacity duration-300"
+                      style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.05) 0%, transparent 50%)" }}
+                    />
+                    <div
+                      className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.12) 0%, transparent 50%)" }}
+                    />
+                    <div className="w-12 h-12 min-w-12 rounded-xl bg-primary/10 flex items-center justify-center relative z-10">
+                      <Icon className="w-[22px] h-[22px] text-primary" />
+                    </div>
+                    <div className="relative z-10">
+                      <h3 className="font-[family-name:var(--font-heading)] font-semibold mb-2">
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-text-muted leading-relaxed">{item.desc}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold font-[family-name:var(--font-heading)] mb-1">
-                      {item.title}
-                    </h3>
-                    <p className="text-sm text-text-muted leading-relaxed">{item.desc}</p>
-                  </div>
-                </div>
+                </ScrollReveal>
               );
             })}
           </div>
         </Container>
       </section>
 
-      {/* Location + Mobis factory image */}
-      <section className="py-16 border-b border-border">
+      {/* Location */}
+      <section
+        className="py-24 border-t border-border-subtle"
+        style={{
+          background: "linear-gradient(135deg, rgba(59,130,246,0.02) 0%, transparent 50%)",
+          backgroundColor: "var(--color-base-darker)",
+        }}
+      >
         <Container className="max-w-4xl">
-          <div className="grid md:grid-cols-2 gap-10 items-center">
-            <div>
-              <h2 className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase mb-4">
+          <div className="grid md:grid-cols-[55%_45%] gap-12 items-center">
+            <ScrollReveal>
+              <h2 className="font-[family-name:var(--font-heading)] text-[clamp(22px,3vw,36px)] font-bold uppercase mb-2">
                 {t("locationTitle")}
               </h2>
-              <p className="text-text-muted leading-relaxed">{t("locationDesc")}</p>
-            </div>
-            <div className="rounded-xl overflow-hidden border border-border aspect-video bg-elevated flex items-center justify-center">
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Hyundai_Mobis_headquarters.jpg/1280px-Hyundai_Mobis_headquarters.jpg"
-                alt="Hyundai Mobis factory in Asan, South Korea"
-                className="w-full h-full object-cover"
-              />
-            </div>
+              <div className="w-16 h-0.5 bg-primary mb-6" />
+              <p className="text-text-muted leading-relaxed max-w-[480px]">
+                {t("locationDesc")}
+              </p>
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.15}>
+              <div className="relative rounded-2xl overflow-hidden border border-border-subtle shadow-[0_8px_32px_rgba(0,0,0,0.3)] aspect-[4/3]">
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Hyundai_Mobis_headquarters.jpg/1280px-Hyundai_Mobis_headquarters.jpg"
+                  alt="Hyundai Mobis factory in Asan, South Korea"
+                  className="w-full h-full object-cover"
+                />
+                <div
+                  className="absolute inset-0"
+                  style={{ background: "linear-gradient(to top, rgba(11,15,26,0.5) 0%, transparent 40%)" }}
+                />
+              </div>
+            </ScrollReveal>
           </div>
         </Container>
       </section>
 
       {/* Guarantees */}
-      <section className="py-16">
-        <Container className="max-w-4xl">
-          <h2 className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase mb-8">
-            {t("guaranteeTitle")}
-          </h2>
-          <div className="space-y-4">
-            {guarantees.map((g) => (
-              <div key={g} className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-primary shrink-0" />
-                <span className="text-text-muted">{g}</span>
-              </div>
+      <section className="py-24 border-t border-border-subtle relative overflow-hidden">
+        {/* Decorative blur */}
+        <div
+          className="absolute right-0 top-1/2 -translate-y-1/2 w-[300px] h-[300px] pointer-events-none"
+          style={{
+            background: "radial-gradient(circle, rgba(59,130,246,0.06), transparent)",
+          }}
+        />
+        <Container className="max-w-4xl relative z-10">
+          <ScrollReveal>
+            <h2 className="font-[family-name:var(--font-heading)] text-[clamp(22px,3vw,36px)] font-bold uppercase mb-2">
+              {t("guaranteeTitle")}
+            </h2>
+            <div className="w-10 h-0.5 bg-primary mb-12" />
+          </ScrollReveal>
+
+          <div className="space-y-4 max-w-xl">
+            {guarantees.map((g, i) => (
+              <ScrollReveal key={g} delay={i * 0.1}>
+                <div className="group flex items-center gap-4 px-4 py-3 rounded-xl transition-colors duration-200 hover:bg-success/[0.03] cursor-default">
+                  <div className="w-8 h-8 min-w-8 rounded-full flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+                    style={{ background: "rgba(34,197,94,0.1)" }}>
+                    <CheckCircle className="w-4 h-4 text-success" />
+                  </div>
+                  <span className="text-base font-medium">{g}</span>
+                </div>
+              </ScrollReveal>
             ))}
           </div>
         </Container>
