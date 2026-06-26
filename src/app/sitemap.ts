@@ -6,6 +6,7 @@ const LOCALES = ["ru", "en", "ar"] as const;
 const STATIC_PAGES: { path: string; freq: "daily" | "weekly" | "monthly"; priority: number }[] = [
   { path: "", freq: "daily", priority: 1.0 },
   { path: "/catalog", freq: "daily", priority: 0.9 },
+  { path: "/about", freq: "monthly", priority: 0.7 },
   { path: "/how-it-works", freq: "monthly", priority: 0.7 },
   { path: "/faq", freq: "monthly", priority: 0.7 },
   { path: "/contact", freq: "monthly", priority: 0.6 },
