@@ -113,7 +113,7 @@ export function DeliveryMap({ locale = "ru" }: { locale?: string }) {
                     const names = COUNTRY_NAMES[numericId];
                     const name = names
                       ? locale === "ru" ? names.ru : names.en
-                      : geo.properties?.name ?? numericId;
+                      : String(geo.properties?.name ?? numericId);
                     const rect = (e.target as SVGPathElement)
                       .closest("svg")
                       ?.getBoundingClientRect();
