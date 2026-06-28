@@ -25,16 +25,57 @@ export async function generateMetadata({
     ar: "إجابات على الأسئلة الشائعة حول الشحن والأصالة والدفع لقطع غيار هيونداي وكيا وجينيسيس من كوريا.",
   };
 
+  const title = titles[lang] ?? t("title");
+  const description = descriptions[lang];
+
   return {
-    title: titles[lang] ?? t("title"),
-    description: descriptions[lang],
+    title,
+    description,
     alternates: {
       languages: Object.fromEntries(LOCALES.map((l) => [l, `${BASE}/${l}/faq`])),
       canonical: `${BASE}/${lang}/faq`,
     },
+    openGraph: {
+      title,
+      description,
+      url: `${BASE}/${lang}/faq`,
+    },
   };
 }
 
-export default function FaqPage() {
-  return <FaqClient />;
+const FAQ_KEYS = [
+  { q: "q1", a: "a1" },
+  { q: "q2", a: "a2" },
+  { q: "q3", a: "a3" },
+  { q: "q4", a: "a4" },
+  { q: "q5", a: "a5" },
+];
+
+export default async function FaqPage({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}) {
+  const { lang } = await params;
+  const t = await getTranslations({ locale: lang as Locale, namespace: "faq" });
+
+  const faqLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQ_KEYS.map(({ q, a }) => ({
+      "@type": "Question",
+      name: t(q),
+      acceptedAnswer: { "@type": "Answer", text: t(a) },
+    })),
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+      />
+      <FaqClient />
+    </>
+  );
 }

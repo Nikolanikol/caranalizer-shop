@@ -48,7 +48,10 @@
     "step3Title": "Manager Contacts You",
     "step3Desc": "Our manager will confirm details and calculate shipping",
     "step4Title": "Payment & Delivery",
-    "step4Desc": "Pay for your order and receive parts from Korea"
+    "step4Desc": "Pay for your order and receive parts from Korea",
+    "deliveryTitle": "Where We Deliver",
+    "deliveryDesc": "100+ countries via EMS and international courier services",
+    "shippingCalcTitle": "Shipping Calculator"
   },
   "catalog": {
     "title": "Parts Catalog",
@@ -144,16 +147,19 @@
     "a2": "Delivery takes 7 to 14 business days depending on your country and chosen shipping method.",
     "q3": "How do I pay?",
     "a3": "After submitting your request, our manager will contact you and offer convenient payment options. We accept bank transfers and popular payment systems.",
-    "q5": "How do I check a car's VIN?",
-    "a5": "Use our Telegram bot @caranalizer_bot — it will verify the history of any Korean car by VIN code for free.",
-    "q6": "Do you ship worldwide?",
-    "a6": "We ship parts to most countries via EMS and other international delivery services."
+    "q4": "How do I check a car's VIN?",
+    "a4": "Use our Telegram bot @caranalizer_bot — it will verify the history of any Korean car by VIN code for free.",
+    "q5": "Do you ship worldwide?",
+    "a5": "We ship parts to most countries via EMS and other international delivery services."
   },
   "contact": {
     "title": "Contact Us",
     "name": "Your Name",
+    "namePlaceholder": "Enter your name",
     "phone": "Phone",
+    "phonePlaceholder": "+1 (555) 123-4567",
     "message": "Message",
+    "messagePlaceholder": "Describe your request or question",
     "send": "Send",
     "sending": "Sending...",
     "success": "Message sent!"

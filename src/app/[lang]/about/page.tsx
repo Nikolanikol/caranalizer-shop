@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/container";
@@ -24,12 +25,20 @@ export async function generateMetadata({
     ar: "من نحن — موردو قطع غيار السيارات الكورية | Caranalizer",
   };
 
+  const title = titles[lang] ?? t("title");
+  const description = t("description");
+
   return {
-    title: titles[lang] ?? t("title"),
-    description: t("description"),
+    title,
+    description,
     alternates: {
       languages: Object.fromEntries(LOCALES.map((l) => [l, `${BASE}/${l}/about`])),
       canonical: `${BASE}/${lang}/about`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `${BASE}/${lang}/about`,
     },
   };
 }
@@ -178,10 +187,12 @@ export default function AboutPage() {
 
             <ScrollReveal delay={0.15}>
               <div className="relative rounded-2xl overflow-hidden border border-border-subtle shadow-[0_8px_32px_rgba(0,0,0,0.3)] aspect-[4/3]">
-                <img
+                <Image
                   src="/mobis-factory.jpg"
                   alt="Hyundai Mobis factory in Asan, South Korea"
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 45vw"
                 />
                 <div
                   className="absolute inset-0"

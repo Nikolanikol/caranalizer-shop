@@ -26,6 +26,7 @@ export async function generateMetadata({
     title,
     description,
     alternates: {
+      canonical: `${BASE}/${lang}/catalog`,
       languages: Object.fromEntries(
         LOCALES.map((l) => [l, `${BASE}/${l}/catalog`])
       ),

@@ -25,12 +25,20 @@ export async function generateMetadata({
     ar: "تواصل معنا لطلب قطع غيار هيونداي وكيا وجينيسيس الأصلية من كوريا. رد سريع ومساعدة في اختيار القطعة المناسبة.",
   };
 
+  const title = titles[lang] ?? t("title");
+  const description = descriptions[lang];
+
   return {
-    title: titles[lang] ?? t("title"),
-    description: descriptions[lang],
+    title,
+    description,
     alternates: {
       languages: Object.fromEntries(LOCALES.map((l) => [l, `${BASE}/${l}/contact`])),
       canonical: `${BASE}/${lang}/contact`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `${BASE}/${lang}/contact`,
     },
   };
 }

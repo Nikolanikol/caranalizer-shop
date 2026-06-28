@@ -28,12 +28,20 @@ export async function generateMetadata({
     ar: "4 خطوات بسيطة: ابحث عن القطعة، أرسل الطلب، احصل على التأكيد، واستلم التوصيل من كوريا.",
   };
 
+  const title = titles[lang];
+  const description = descriptions[lang];
+
   return {
-    title: titles[lang],
-    description: descriptions[lang],
+    title,
+    description,
     alternates: {
       languages: Object.fromEntries(LOCALES.map((l) => [l, `${BASE}/${l}/how-it-works`])),
       canonical: `${BASE}/${lang}/how-it-works`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `${BASE}/${lang}/how-it-works`,
     },
   };
 }
@@ -50,10 +58,8 @@ export default function HowItWorksPage() {
     Icon: STEP_ICONS[n - 1],
   }));
 
-  const deliveryTitle = locale === "ru" ? "Куда мы доставляем" : locale === "ar" ? "أين نوصل" : "Where We Deliver";
-  const deliveryDesc = locale === "ru"
-    ? "Более 100 стран через EMS и международные курьерские службы"
-    : "100+ countries via EMS and international courier services";
+  const deliveryTitle = t("deliveryTitle");
+  const deliveryDesc = t("deliveryDesc");
 
   return (
     <>
@@ -95,7 +101,7 @@ export default function HowItWorksPage() {
       <section className="py-12 border-t border-border-subtle">
         <Container className="max-w-5xl">
           <h2 className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase mb-2">
-            {locale === "ru" ? "Калькулятор доставки" : locale === "ar" ? "حاسبة الشحن" : "Shipping Calculator"}
+            {t("shippingCalcTitle")}
           </h2>
           <div className="w-10 h-0.5 bg-primary mb-8" />
           <ShippingCalculator />

@@ -48,11 +48,19 @@ export async function generateMetadata({
 
   const name = getProductName(product.name_ru, product.name_en, product.name_ko, product.part_number, locale);
   const brand = normalizeManufacturer(product.manufacturer) || "";
-  const title = `${name} ${product.part_number}${brand ? ` ${brand}` : ""} — купить | Caranalizer`;
+  const titleSuffix: Record<string, string> = {
+    ru: "купить",
+    en: "buy",
+    ar: "شراء",
+  };
+  const title = `${name} ${product.part_number}${brand ? ` ${brand}` : ""} — ${titleSuffix[locale] ?? titleSuffix.en} | Caranalizer`;
 
-  const description = locale === "ru"
-    ? `Купить ${name} ${product.part_number}${brand ? ` ${brand}` : ""} — оригинальная корейская запчасть с доставкой по всему миру за 7–14 дней.`
-    : `Buy ${name} ${product.part_number}${brand ? ` ${brand}` : ""} — genuine Korean OEM part shipped worldwide in 7–14 days.`;
+  const descriptions: Record<string, string> = {
+    ru: `Купить ${name} ${product.part_number}${brand ? ` ${brand}` : ""} — оригинальная корейская запчасть с доставкой по всему миру за 7–14 дней.`,
+    en: `Buy ${name} ${product.part_number}${brand ? ` ${brand}` : ""} — genuine Korean OEM part shipped worldwide in 7–14 days.`,
+    ar: `شراء ${name} ${product.part_number}${brand ? ` ${brand}` : ""} — قطعة غيار كورية أصلية مع الشحن العالمي خلال 7-14 يوم.`,
+  };
+  const description = descriptions[locale] ?? descriptions.en;
 
   const canonicalSlug = generatePartSlug(product.part_number, product.name_ru, product.id);
 

@@ -59,6 +59,7 @@ export function ContactClient() {
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                placeholder={t("namePlaceholder")}
                 required
               />
             </div>
@@ -70,6 +71,7 @@ export function ContactClient() {
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                placeholder={t("phonePlaceholder")}
                 required
               />
             </div>
@@ -80,6 +82,7 @@ export function ContactClient() {
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
+                placeholder={t("messagePlaceholder")}
                 rows={4}
                 className="w-full rounded-lg border border-border bg-elevated px-4 py-3 text-sm text-text placeholder:text-text-dim focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors resize-none"
               />

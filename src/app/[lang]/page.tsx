@@ -35,6 +35,11 @@ export async function generateMetadata({
       languages: Object.fromEntries(LOCALES.map((l) => [l, `${BASE}/${l}`])),
       canonical: `${BASE}/${lang}`,
     },
+    openGraph: {
+      title: titles[lang],
+      description: descriptions[lang],
+      url: `${BASE}/${lang}`,
+    },
   };
 }
 import {
@@ -68,8 +73,37 @@ export default function HomePage() {
     { icon: FileSearch, title: t("feature4Title"), desc: t("feature4Desc") },
   ];
 
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "Caranalizer",
+      url: "https://caranalizer.com",
+      logo: "https://caranalizer.com/icon.png",
+      sameAs: [
+        "https://t.me/axiskorea",
+        "https://wa.me/821058654344",
+      ],
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "sales",
+        availableLanguage: ["Russian", "English", "Arabic"],
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Caranalizer",
+      url: "https://caranalizer.com",
+    },
+  ];
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* ===== Hero ===== */}
       <section className="relative min-h-[calc(100vh-4rem)] flex items-center justify-center overflow-hidden">
         <div

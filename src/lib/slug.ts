@@ -30,7 +30,7 @@ export function generatePartSlug(
 ): string {
   const slug = slugify(name ?? "");
   const identifier = partNumber || (id ? `id-${id}` : "unknown");
-  return `${identifier}--${slug}`;
+  return slug ? `${identifier}--${slug}` : identifier;
 }
 
 export function parsePartSlug(slug: string): {
@@ -39,12 +39,8 @@ export function parsePartSlug(slug: string): {
   nameSlug: string;
 } {
   const parts = slug.split("--");
-  if (parts.length < 2) {
-    return { partNumber: null, productId: null, nameSlug: "" };
-  }
-
   const identifier = parts[0];
-  const nameSlug = parts.slice(1).join("--");
+  const nameSlug = parts.length > 1 ? parts.slice(1).join("--") : "";
 
   if (identifier.startsWith("id-")) {
     const id = parseInt(identifier.substring(3), 10);
