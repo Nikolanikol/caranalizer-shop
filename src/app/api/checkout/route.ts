@@ -23,23 +23,42 @@ function formatWaLink(phone: string): string {
   return `https://wa.me/${digits}`;
 }
 
+function mask(val: string | undefined): string {
+  if (!val) return "(empty)";
+  if (val.length <= 6) return val;
+  return val.slice(0, 3) + "***" + val.slice(-3);
+}
+
 export async function POST(req: NextRequest) {
+  const t0 = Date.now();
   try {
     const body = (await req.json()) as CheckoutPayload;
     const { items, phone, messenger, tgUsername, lang } = body;
 
+    console.log("[checkout] === START ===");
+    console.log("[checkout] payload:", JSON.stringify({ phone: mask(phone), messenger, tgUsername, lang, itemCount: items?.length }));
+
     if (!items?.length) {
+      console.warn("[checkout] rejected: empty cart");
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
     }
     if (!phone) {
+      console.warn("[checkout] rejected: no phone");
       return NextResponse.json({ error: "Phone required" }, { status: 400 });
     }
 
-    const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    const chatId = process.env.TELEGRAM_CHAT_ID;
-    const workChatId = process.env.TELEGRAM_WORK_CHAT_ID;
+    const botToken = process.env.TELEGRAM_BOT_TOKEN?.trim();
+    const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
+    const workChatId = process.env.TELEGRAM_WORK_CHAT_ID?.trim();
+
+    console.log("[checkout] env check:", JSON.stringify({
+      BOT_TOKEN: botToken ? `set (${botToken.length} chars)` : "MISSING",
+      CHAT_ID: chatId ? `set: ${mask(chatId)}` : "MISSING",
+      WORK_CHAT_ID: workChatId ? `set: ${mask(workChatId)}` : "MISSING",
+    }));
+
     if (!botToken || !chatId) {
-      console.error("Missing env vars. BOT_TOKEN exists:", !!botToken, "CHAT_ID exists:", !!chatId);
+      console.error("[checkout] FATAL: missing required env vars");
       return NextResponse.json({ error: "Server config error" }, { status: 500 });
     }
 
@@ -73,22 +92,44 @@ ${itemLines}
 💰 Итого: ${formatKrw(totalKrw)}`;
 
     const chatIds = [chatId, workChatId].filter(Boolean) as string[];
-    const tgResults = await Promise.all(
-      chatIds.map((id) =>
-        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chat_id: id, text }),
-        }).then((r) => r.json())
-      )
+    console.log(`[checkout] sending to ${chatIds.length} chat(s):`, chatIds.map(mask));
+
+    const tgResults = await Promise.allSettled(
+      chatIds.map(async (id, i) => {
+        const t1 = Date.now();
+        try {
+          const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ chat_id: id, text }),
+          });
+          const data = await res.json();
+          console.log(`[checkout] TG[${i}] chat=${mask(id)} status=${res.status} ok=${data.ok} time=${Date.now() - t1}ms${data.ok ? "" : " error=" + JSON.stringify(data)}`);
+          return data;
+        } catch (fetchErr) {
+          console.error(`[checkout] TG[${i}] chat=${mask(id)} FETCH FAILED time=${Date.now() - t1}ms:`, fetchErr);
+          throw fetchErr;
+        }
+      })
     );
 
-    if (!tgResults[0]?.ok) {
-      console.error("Telegram error:", JSON.stringify(tgResults[0]));
+    const firstResult = tgResults[0];
+    const firstOk = firstResult.status === "fulfilled" && firstResult.value?.ok;
+
+    console.log("[checkout] TG results summary:", tgResults.map((r, i) => ({
+      chat: mask(chatIds[i]),
+      status: r.status,
+      ok: r.status === "fulfilled" ? r.value?.ok : false,
+      error: r.status === "rejected" ? String(r.reason) : (r.status === "fulfilled" && !r.value?.ok ? r.value?.description : undefined),
+    })));
+
+    if (!firstOk) {
+      console.error("[checkout] primary chat failed, returning 500");
       return NextResponse.json({ error: "Failed to send notification" }, { status: 500 });
     }
 
     try {
+      const t2 = Date.now();
       await createServerClient().from("leads").insert({
         name: phone,
         phone,
@@ -97,13 +138,15 @@ ${itemLines}
         source_page: "checkout",
         messenger: messenger || null,
       });
+      console.log(`[checkout] Supabase insert OK time=${Date.now() - t2}ms`);
     } catch (err) {
-      console.error("leads insert failed:", err);
+      console.error("[checkout] Supabase insert FAILED:", err);
     }
 
+    console.log(`[checkout] === DONE total=${Date.now() - t0}ms ===`);
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("[/api/checkout]", err);
+    console.error(`[checkout] UNHANDLED ERROR total=${Date.now() - t0}ms:`, err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
