@@ -10,6 +10,7 @@ import { CurrencyProvider } from "@/providers/CurrencyProvider";
 import { HtmlLang } from "@/components/HtmlLang";
 import { CookieBanner } from "@/components/CookieBanner";
 import { Toaster } from "sonner";
+import { MessengerButtons } from "@/components/MessengerButtons";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
 
@@ -62,6 +63,7 @@ export default async function LangLayout({
             <main className="flex-1">{children}</main>
             <Footer />
             <CookieBanner />
+            <MessengerButtons />
             <Toaster theme="dark" position="top-center" richColors />
           </CurrencyProvider>
         </CartProvider>
