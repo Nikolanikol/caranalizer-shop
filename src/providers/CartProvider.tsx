@@ -6,11 +6,13 @@ import {
   useReducer,
   useEffect,
   useCallback,
+  useState,
   type ReactNode,
 } from "react";
 import type { CartItem, CartState, CartAction } from "@/types/cart";
 
 const STORAGE_KEY = "caranalizer-cart";
+const EMPTY: CartState = { items: [] };
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
@@ -40,6 +42,8 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       };
     case "CLEAR":
       return { items: [] };
+    case "HYDRATE":
+      return { items: action.items };
     default:
       return state;
   }
@@ -57,24 +61,28 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-function loadCart(): CartState {
-  if (typeof window === "undefined") return { items: [] };
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed.items)) return parsed as CartState;
-    }
-  } catch {}
-  return { items: [] };
-}
-
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(cartReducer, { items: [] }, loadCart);
+  const [state, dispatch] = useReducer(cartReducer, EMPTY);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [state]);
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.items)) {
+          dispatch({ type: "HYDRATE", items: parsed.items });
+        }
+      }
+    } catch {}
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (hydrated) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+  }, [state, hydrated]);
 
   const addItem = useCallback(
     (item: Omit<CartItem, "quantity">) => dispatch({ type: "ADD", item }),

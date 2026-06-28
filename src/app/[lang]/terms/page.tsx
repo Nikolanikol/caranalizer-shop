@@ -92,7 +92,7 @@ export default function TermsPage() {
 
           <div>
             <h2 className="text-text text-xl font-semibold mb-3">8. Contact</h2>
-            <p>For any questions regarding these terms: <a href="https://t.me/kmotors_bot" className="text-primary hover:underline">Telegram Manager</a></p>
+            <p>For any questions regarding these terms: <a href="https://t.me/axiskorea" className="text-primary hover:underline">Telegram Manager</a></p>
           </div>
         </div>
       </Container>
@@ -145,7 +145,7 @@ export default function TermsPage() {
           </div>
           <div>
             <h2 className="text-text text-xl font-semibold mb-3">٦. التواصل</h2>
-            <p><a href="https://t.me/kmotors_bot" className="text-primary hover:underline">مدير تيليغرام</a></p>
+            <p><a href="https://t.me/axiskorea" className="text-primary hover:underline">مدير تيليغرام</a></p>
           </div>
         </div>
       </Container>
@@ -240,7 +240,7 @@ export default function TermsPage() {
 
           <div>
             <h2 className="text-text text-xl font-semibold mb-3">11. Контакты и связь</h2>
-            <p>По всем вопросам, связанным с работой платформы, подбором запчастей и оформлением заявок: <a href="https://t.me/kmotors_bot" className="text-primary hover:underline">Менеджер в Telegram</a></p>
+            <p>По всем вопросам, связанным с работой платформы, подбором запчастей и оформлением заявок: <a href="https://t.me/axiskorea" className="text-primary hover:underline">Менеджер в Telegram</a></p>
           </div>
         </div>
       </Container>

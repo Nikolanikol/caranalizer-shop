@@ -46,7 +46,7 @@ export default function CartPage() {
 
         <div className="space-y-4">
           {items.map((item) => {
-            const name = locale === "ru" ? item.nameRu : item.nameEn;
+            const name = (locale === "ru" ? item.nameRu : item.nameEn) || item.nameEn || "";
             return (
               <div
                 key={item.productId}

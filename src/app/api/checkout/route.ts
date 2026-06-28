@@ -12,27 +12,34 @@ interface CheckoutItem {
 
 interface CheckoutPayload {
   items: CheckoutItem[];
-  contactMethod: "phone" | "telegram" | "none";
-  contactValue?: string;
+  phone: string;
+  messenger: string;
+  tgUsername?: string;
   lang?: string;
+}
+
+function formatWaLink(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  return `https://wa.me/${digits}`;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as CheckoutPayload;
-    const { items, contactMethod, contactValue, lang } = body;
+    const { items, phone, messenger, tgUsername, lang } = body;
 
     if (!items?.length) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
     }
-    if (contactMethod !== "none" && !contactValue?.trim()) {
-      return NextResponse.json({ error: "Contact info required" }, { status: 400 });
+    if (!phone) {
+      return NextResponse.json({ error: "Phone required" }, { status: 400 });
     }
 
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     const chatId = process.env.TELEGRAM_CHAT_ID;
     const workChatId = process.env.TELEGRAM_WORK_CHAT_ID;
     if (!botToken || !chatId) {
+      console.error("Missing env vars. BOT_TOKEN exists:", !!botToken, "CHAT_ID exists:", !!chatId);
       return NextResponse.json({ error: "Server config error" }, { status: 500 });
     }
 
@@ -42,15 +49,22 @@ export async function POST(req: NextRequest) {
       .map((i) => `  • ${i.partNumber} — ${i.nameRu}\n    × ${i.quantity} = ${formatKrw(i.priceKrw * i.quantity)}`)
       .join("\n");
 
-    const contactLine = (() => {
-      if (contactMethod === "phone") return `📞 Телефон: ${contactValue}`;
-      if (contactMethod === "telegram") return `✈️ Telegram: ${contactValue}`;
-      return "❌ Контакт не указан (клиент выбрал «нет контакта»)";
+    const messengerLine = (() => {
+      if (messenger === "whatsapp") {
+        return `\n📱 Мессенджер: 💚 WhatsApp\n🔗 ${formatWaLink(phone)}`;
+      }
+      if (messenger === "telegram") {
+        const tgLink = tgUsername
+          ? `\n🔗 https://t.me/${tgUsername.replace(/^@/, "")}`
+          : "";
+        return `\n📱 Мессенджер: ✈️ Telegram${tgLink}`;
+      }
+      return "";
     })();
 
     const text = `🛒 Новый заказ — Caranalizer.com
 
-${contactLine}
+📞 Телефон: ${phone}${messengerLine}
 🌐 Язык: ${lang ?? "ru"}
 
 📦 Товары (${items.length}):
@@ -70,18 +84,18 @@ ${itemLines}
     );
 
     if (!tgResults[0]?.ok) {
-      console.error("Telegram error:", tgResults[0]);
+      console.error("Telegram error:", JSON.stringify(tgResults[0]));
       return NextResponse.json({ error: "Failed to send notification" }, { status: 500 });
     }
 
     try {
       await createServerClient().from("leads").insert({
-        name: contactValue?.trim() || "no-contact",
-        phone: contactMethod === "phone" ? contactValue : null,
-        tg_username: contactMethod === "telegram" ? contactValue : null,
+        name: phone,
+        phone,
+        tg_username: tgUsername || null,
         message: `Заказ: ${items.length} поз., ${formatKrw(totalKrw)}`,
         source_page: "checkout",
-        messenger: contactMethod === "none" ? null : contactMethod,
+        messenger: messenger || null,
       });
     } catch (err) {
       console.error("leads insert failed:", err);

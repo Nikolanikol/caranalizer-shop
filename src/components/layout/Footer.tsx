@@ -65,13 +65,13 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://t.me/kmotors_bot"
+                  href="https://t.me/axiskorea"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-primary transition-colors"
                 >
                   <Send className="h-4 w-4" />
-                  <span>KMotors Manager</span>
+                  <span>Caranalizer Manager</span>
                 </a>
               </li>
             </ul>

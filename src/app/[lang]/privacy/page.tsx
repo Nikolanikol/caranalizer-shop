@@ -42,7 +42,7 @@ export default function PrivacyPage() {
           <h2 className="text-text text-xl font-semibold mt-6">كيف نستخدم البيانات</h2>
           <p>نستخدم البيانات المجمعة فقط لتحسين الموقع وتجربة المستخدم. لا نبيع البيانات لأطراف ثالثة.</p>
           <h2 className="text-text text-xl font-semibold mt-6">التواصل</h2>
-          <p>للاستفسارات: <a href="https://t.me/kmotors_bot" className="text-primary">Telegram</a></p>
+          <p>للاستفسارات: <a href="https://t.me/axiskorea" className="text-primary">Telegram</a></p>
         </div>
       </Container>
     </section>
@@ -74,7 +74,7 @@ export default function PrivacyPage() {
           <p>Мы используем сторонние аналитические сервисы (Google, Яндекс, Microsoft), которые могут собирать данные в соответствии со своими политиками конфиденциальности. Рекомендуем ознакомиться с ними отдельно.</p>
 
           <h2 className="text-text text-xl font-semibold">Контакты</h2>
-          <p>По вопросам обработки персональных данных: <a href="https://t.me/kmotors_bot" className="text-primary hover:underline">Telegram</a></p>
+          <p>По вопросам обработки персональных данных: <a href="https://t.me/axiskorea" className="text-primary hover:underline">Telegram</a></p>
         </div>
       </Container>
     </section>
@@ -106,7 +106,7 @@ export default function PrivacyPage() {
           <p>We use third-party analytics services (Google, Yandex, Microsoft) which may collect data according to their own privacy policies.</p>
 
           <h2 className="text-text text-xl font-semibold">Contact</h2>
-          <p>For data privacy inquiries: <a href="https://t.me/kmotors_bot" className="text-primary hover:underline">Telegram</a></p>
+          <p>For data privacy inquiries: <a href="https://t.me/axiskorea" className="text-primary hover:underline">Telegram</a></p>
         </div>
       </Container>
     </section>

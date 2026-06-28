@@ -134,3 +134,14 @@
   box-shadow: 0 0 0 2px var(--color-primary);
   cursor: pointer;
 }
+
+/* Phone input country select — dark theme */
+.PhoneInputCountrySelect {
+  background-color: var(--color-elevated);
+  color: var(--color-text);
+}
+
+.PhoneInputCountrySelect option {
+  background-color: var(--color-elevated);
+  color: var(--color-text);
+}

@@ -2,17 +2,18 @@
 
 import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { type Value } from "react-phone-number-input";
 import { Link } from "@/i18n/navigation";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/PhoneInput";
+import { MessengerSelector } from "@/components/ui/MessengerSelector";
 import { PriceDisplay } from "@/components/PriceDisplay";
 import { useCart } from "@/providers/CartProvider";
 import { useCurrency } from "@/providers/CurrencyProvider";
-import { CheckCircle, ArrowRight } from "lucide-react";
+import { CheckCircle, ArrowRight, Loader2, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 import type { Locale } from "@/i18n/routing";
-
-type ContactMethod = "phone" | "telegram" | "none";
 
 export default function CheckoutPage() {
   const t = useTranslations("checkout");
@@ -20,19 +21,26 @@ export default function CheckoutPage() {
   const { items, totalKrw, clearCart } = useCart();
   const { currency, rate } = useCurrency();
 
-  const [contactMethod, setContactMethod] = useState<ContactMethod>("phone");
-  const [contactValue, setContactValue] = useState("");
+  const [phone, setPhone] = useState<Value | undefined>();
+  const [messenger, setMessenger] = useState("whatsapp");
+  const [tgUsername, setTgUsername] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [error, setError] = useState("");
+  const [attempted, setAttempted] = useState(false);
+
+  const errors = {
+    phone: attempted && !phone,
+    tgUsername: attempted && messenger === "telegram" && !tgUsername.trim(),
+  };
+
+  const isValid = !!phone && (messenger !== "telegram" || !!tgUsername.trim());
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (items.length === 0) return;
-    if (contactMethod !== "none" && !contactValue.trim()) return;
+    setAttempted(true);
+    if (items.length === 0 || !isValid) return;
 
     setSubmitting(true);
-    setError("");
 
     try {
       const res = await fetch("/api/checkout", {
@@ -46,8 +54,9 @@ export default function CheckoutPage() {
             priceKrw: i.priceKrw,
             quantity: i.quantity,
           })),
-          contactMethod,
-          contactValue: contactMethod !== "none" ? contactValue : undefined,
+          phone: phone ?? "",
+          messenger,
+          tgUsername: messenger === "telegram" ? tgUsername : undefined,
           lang: locale,
         }),
       });
@@ -55,12 +64,21 @@ export default function CheckoutPage() {
       if (!res.ok) throw new Error("Failed");
       setSuccess(true);
       clearCart();
+      toast.success(t("successTitle"));
     } catch {
-      setError("Something went wrong. Please try again.");
+      toast.error(t("error"));
     } finally {
       setSubmitting(false);
     }
   }
+
+  const errorHint = (show: boolean) =>
+    show ? (
+      <p className="flex items-center gap-1 text-xs text-error mt-1">
+        <AlertCircle className="w-3 h-3 shrink-0" />
+        {t("contactRequired")}
+      </p>
+    ) : null;
 
   if (success) {
     return (
@@ -74,7 +92,7 @@ export default function CheckoutPage() {
             <p className="text-text-muted">{t("successDesc")}</p>
             <Link href="/catalog">
               <Button variant="primary" className="mt-4 gap-2">
-                {t("orderSummary")}
+                {t("backToCatalog")}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
@@ -88,10 +106,10 @@ export default function CheckoutPage() {
     return (
       <section className="py-8">
         <Container className="max-w-lg text-center py-20">
-          <p className="text-text-muted">Cart is empty</p>
+          <p className="text-text-muted">{t("emptyCart")}</p>
           <Link href="/catalog">
             <Button variant="primary" className="mt-4">
-              Go to catalog
+              {t("goToCatalog")}
             </Button>
           </Link>
         </Container>
@@ -102,6 +120,13 @@ export default function CheckoutPage() {
   return (
     <section className="py-8">
       <Container className="max-w-2xl">
+        <Link
+          href="/cart"
+          className="inline-block text-sm text-text-secondary hover:text-text transition-colors mb-4"
+        >
+          {t("backToCart")}
+        </Link>
+
         <h1 className="text-3xl font-bold font-[family-name:var(--font-heading)] mb-8">
           {t("title")}
         </h1>
@@ -124,7 +149,7 @@ export default function CheckoutPage() {
             ))}
           </div>
           <div className="mt-4 pt-4 border-t border-border-subtle flex justify-between">
-            <span className="font-semibold">{t("orderSummary")}</span>
+            <span className="font-semibold">{t("orderTotal")}</span>
             <PriceDisplay
               priceKrw={totalKrw}
               currency={currency}
@@ -134,76 +159,30 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <h2 className="text-lg font-semibold mb-4">{t("contactMethod")}</h2>
-            <div className="space-y-3">
-              {(["phone", "telegram", "none"] as const).map((method) => (
-                <label
-                  key={method}
-                  className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${
-                    contactMethod === method
-                      ? "border-primary bg-primary/5"
-                      : "border-border-subtle hover:border-border"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="contactMethod"
-                    value={method}
-                    checked={contactMethod === method}
-                    onChange={() => setContactMethod(method)}
-                    className="mt-0.5 accent-primary"
-                  />
-                  <div>
-                    <span className="text-sm font-medium text-text">
-                      {t(method === "none" ? "noContact" : method)}
-                    </span>
-                    {method === "none" && (
-                      <p className="text-xs text-text-dim mt-0.5">
-                        {t("noContactDesc")}
-                      </p>
-                    )}
-                  </div>
-                </label>
-              ))}
-            </div>
+        <form onSubmit={handleSubmit} noValidate className="space-y-6">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-text-secondary">
+              {t("phoneLabel")} <span className="text-cta">*</span>
+            </label>
+            <PhoneInput
+              value={phone}
+              onChange={setPhone}
+              placeholder={t("phonePlaceholder")}
+              error={errors.phone}
+            />
+            {errorHint(errors.phone)}
           </div>
 
-          {contactMethod === "phone" && (
-            <Input
-              type="tel"
-              placeholder={t("phonePlaceholder")}
-              value={contactValue}
-              onChange={(e) => setContactValue(e.target.value)}
-              required
-            />
-          )}
-          {contactMethod === "telegram" && (
-            <Input
-              placeholder={t("telegramPlaceholder")}
-              value={contactValue}
-              onChange={(e) => setContactValue(e.target.value)}
-              required
-            />
-          )}
-          {contactMethod === "none" && (
-            <div className="rounded-lg bg-cta/10 border border-cta/20 p-4 text-sm">
-              <p className="font-medium text-cta mb-2">{t("ourContacts")}</p>
-              <a
-                href="https://t.me/kmotors_bot"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                @kmotors_bot — Telegram
-              </a>
-            </div>
-          )}
-
-          {error && (
-            <p className="text-sm text-error">{error}</p>
-          )}
+          <MessengerSelector
+            messenger={messenger}
+            onMessengerChange={setMessenger}
+            tgUsername={tgUsername}
+            onTgUsernameChange={setTgUsername}
+            label={t("messengerLabel")}
+            usernamePlaceholder={t("telegramPlaceholder")}
+            error={errors.tgUsername}
+          />
+          {errorHint(errors.tgUsername)}
 
           <Button
             type="submit"
@@ -212,7 +191,14 @@ export default function CheckoutPage() {
             className="w-full"
             disabled={submitting}
           >
-            {submitting ? t("submitting") : t("submit")}
+            {submitting ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                {t("submitting")}
+              </>
+            ) : (
+              t("submit")
+            )}
           </Button>
         </form>
       </Container>
