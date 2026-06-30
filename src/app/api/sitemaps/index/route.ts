@@ -5,16 +5,22 @@ const PRODUCTS_PER_CHUNK = 1000;
 
 export async function GET() {
   const supabase = createServerClient();
-  const { count } = await supabase
-    .from("parts_products")
-    .select("*", { count: "exact", head: true });
+  const [productsRes, stagingRes] = await Promise.all([
+    supabase.from("parts_products").select("*", { count: "exact", head: true }),
+    supabase.from("parts_staging").select("*", { count: "exact", head: true }).eq("status", "new").eq("in_stock", true),
+  ]);
 
-  const totalProducts = count ?? 0;
+  const totalProducts = productsRes.count ?? 0;
+  const totalStaging = stagingRes.count ?? 0;
   const productChunks = Math.ceil(totalProducts / PRODUCTS_PER_CHUNK);
+  const stagingChunks = Math.ceil(totalStaging / PRODUCTS_PER_CHUNK);
 
   const sitemaps = [`${BASE}/sitemap.xml`];
   for (let i = 0; i < productChunks; i++) {
     sitemaps.push(`${BASE}/api/sitemaps/parts/${i}`);
+  }
+  for (let i = 0; i < stagingChunks; i++) {
+    sitemaps.push(`${BASE}/api/sitemaps/staging/${i}`);
   }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
