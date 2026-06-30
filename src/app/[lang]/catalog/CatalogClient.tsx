@@ -125,7 +125,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    applyFilter({ q: searchInput, page: "" });
+    applyFilter({ q: searchInput, cat: "", page: "" });
   }
 
   function handleAddToCart(product: Product) {
@@ -178,7 +178,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
             <h3 className="text-sm font-semibold text-text mb-2">{t("allCategories")}</h3>
             <div className="space-y-1">
               <button
-                onClick={() => applyFilter({ cat: "", page: "" })}
+                onClick={() => { applyFilter({ cat: "", q: "", page: "" }); setSearchInput(""); }}
                 className={`block w-full text-start text-sm px-2 py-1 rounded cursor-pointer ${
                   !cat ? "text-primary bg-primary/10" : "text-text-secondary hover:text-text hover:bg-elevated"
                 }`}
@@ -188,7 +188,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
               {categories.map((c) => (
                 <button
                   key={c.slug}
-                  onClick={() => applyFilter({ cat: c.slug, page: "" })}
+                  onClick={() => { applyFilter({ cat: c.slug, q: "", page: "" }); setSearchInput(""); }}
                   className={`flex w-full items-center justify-between text-start text-sm px-2 py-1 rounded cursor-pointer ${
                     cat === c.slug ? "text-primary bg-primary/10" : "text-text-secondary hover:text-text hover:bg-elevated"
                   }`}
