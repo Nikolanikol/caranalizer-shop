@@ -123,21 +123,26 @@ export async function GET(req: NextRequest) {
       supabase.from("v_catalog_combined").select("*", { count: "exact", head: true })
     );
 
-    const [productsRes, countRes, catCounts] = await Promise.all([
+    const [productsRes, countRes, catCountsRes] = await Promise.all([
       productQuery,
       countQuery,
-      Promise.all(
-        catsData
-          .filter((c) => c.parent_id === null)
-          .map(async (c) => {
-            const { count } = await applyBase(
-              supabase.from("v_catalog_combined").select("*", { count: "exact", head: true })
-            ).eq("category_id", c.id);
-            const name = lang === "en" ? (c.name_en ?? c.name_ru) : lang === "ar" ? (c.name_en ?? c.name_ru) : c.name_ru;
-            return { slug: c.slug, name, count: count ?? 0 };
-          })
-      ),
+      supabase.rpc("get_category_counts"),
     ]);
+
+    const countMap = new Map<number, number>();
+    if (catCountsRes.data) {
+      for (const row of catCountsRes.data) {
+        countMap.set(row.category_id, Number(row.cnt));
+      }
+    }
+
+    const catCounts = catsData
+      .filter((c) => c.parent_id === null)
+      .map((c) => {
+        const name = lang === "en" ? (c.name_en ?? c.name_ru) : lang === "ar" ? (c.name_en ?? c.name_ru) : c.name_ru;
+        return { slug: c.slug, name, count: countMap.get(c.id) ?? 0 };
+      })
+      .filter((c) => c.count > 0);
 
     return NextResponse.json(
       {
@@ -145,9 +150,7 @@ export async function GET(req: NextRequest) {
         total: countRes.count ?? 0,
         page,
         pageSize: PAGE_SIZE,
-        facets: {
-          categories: catCounts.filter((c) => c.count > 0),
-        },
+        facets: { categories: catCounts },
       },
       { headers: { "Cache-Control": cacheHeader } }
     );

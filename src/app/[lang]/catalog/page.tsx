@@ -39,17 +39,6 @@ export async function generateMetadata({
   };
 }
 
-const getBrands = unstable_cache(
-  async () => {
-    const { data } = await createServerClient()
-      .from("parts_brands")
-      .select("id, slug, name");
-    return data ?? [];
-  },
-  ["catalog-brands"],
-  { revalidate: 3600 }
-);
-
 const getCategories = unstable_cache(
   async () => {
     const { data } = await createServerClient()
@@ -73,7 +62,7 @@ export default async function CatalogPage({
 
   const supabase = createServerClient();
 
-  const [productsRes, countRes, , catsData] = await Promise.all([
+  const [productsRes, countRes, catsData, catCountsRes] = await Promise.all([
     supabase
       .from("v_catalog_combined")
       .select("id, name_ru, name_en, name_ko, part_number, price_krw, brand_id, category_id, subcategory_id, image_url, is_new, weight_kg, manufacturer")
@@ -83,23 +72,25 @@ export default async function CatalogPage({
     supabase
       .from("v_catalog_combined")
       .select("*", { count: "exact", head: true }),
-    getBrands(),
     getCategories(),
+    supabase.rpc("get_category_counts"),
   ]);
 
-  const catCountsPromise = Promise.all(
-    catsData
-      .filter((c) => c.parent_id === null)
-      .map(async (c) => {
-        const { count } = await supabase
-          .from("v_catalog_combined")
-          .select("*", { count: "exact", head: true })
-          .eq("category_id", c.id);
-        return { slug: c.slug, name: c.name_ru, count: count ?? 0 };
-      })
-  );
+  const countMap = new Map<number, number>();
+  if (catCountsRes.data) {
+    for (const row of catCountsRes.data as { category_id: number; cnt: number }[]) {
+      countMap.set(row.category_id, Number(row.cnt));
+    }
+  }
 
-  const catCounts = await catCountsPromise;
+  const catCounts = catsData
+    .filter((c) => c.parent_id === null)
+    .map((c) => ({
+      slug: c.slug,
+      name: c.name_ru,
+      count: countMap.get(c.id) ?? 0,
+    }))
+    .filter((c) => c.count > 0);
 
   const initialData = {
     products: productsRes.data ?? [],
