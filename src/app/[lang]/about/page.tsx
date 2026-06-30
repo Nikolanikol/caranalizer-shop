@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/container";
@@ -187,12 +186,10 @@ export default function AboutPage() {
 
             <ScrollReveal delay={0.15}>
               <div className="relative rounded-2xl overflow-hidden border border-border-subtle shadow-[0_8px_32px_rgba(0,0,0,0.3)] aspect-[4/3]">
-                <Image
+                <img
                   src="/mobis-factory.jpg"
                   alt="Hyundai Mobis factory in Asan, South Korea"
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 45vw"
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
                 <div
                   className="absolute inset-0"

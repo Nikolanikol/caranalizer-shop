@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { useLocale } from "next-intl";
 import { ShoppingCart, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -51,13 +50,10 @@ export function ProductDetail({
     <div className="mt-6 grid gap-8 lg:grid-cols-2">
       <div className="relative aspect-square rounded-xl bg-elevated border border-border-subtle overflow-hidden">
         {product.image_url ? (
-          <Image
+          <img
             src={product.image_url}
             alt={name}
-            fill
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-contain p-6"
-            priority
+            className="absolute inset-0 w-full h-full object-contain p-6"
           />
         ) : (
           <div className="flex items-center justify-center h-full text-text-dim">

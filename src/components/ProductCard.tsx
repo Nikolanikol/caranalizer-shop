@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { ShoppingCart } from "lucide-react";
@@ -33,12 +32,11 @@ export function ProductCard({
     <div className="group rounded-xl border border-border-subtle bg-elevated hover:border-primary/30 transition-all duration-200 overflow-hidden flex flex-col">
       <Link href={`/parts/${slug}`} className="relative aspect-square bg-surface/30 overflow-hidden">
         {product.image_url ? (
-          <Image
+          <img
             src={product.image_url}
             alt={name}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-contain p-3 group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
           <div className="flex items-center justify-center h-full text-text-dim text-sm">

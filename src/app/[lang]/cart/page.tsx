@@ -2,7 +2,6 @@
 
 import { useTranslations, useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import Image from "next/image";
 import { ShoppingCart, Trash2, Plus, Minus } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
@@ -54,12 +53,11 @@ export default function CartPage() {
               >
                 <div className="relative w-20 h-20 rounded-lg bg-surface/30 shrink-0 overflow-hidden">
                   {item.imageUrl ? (
-                    <Image
+                    <img
                       src={item.imageUrl}
                       alt={name}
-                      fill
-                      sizes="80px"
-                      className="object-contain p-1"
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-contain p-1"
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full text-text-dim text-xs">
