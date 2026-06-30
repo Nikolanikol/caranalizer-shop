@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { usePathname } from "@/i18n/navigation";
 import { Search, SlidersHorizontal, X } from "lucide-react";
@@ -34,7 +34,6 @@ interface InitialData {
 export function CatalogClient({ initialData }: { initialData?: InitialData }) {
   const t = useTranslations("catalog");
   const locale = useLocale();
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { currency, rate } = useCurrency();
@@ -46,30 +45,52 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
   const [loading, setLoading] = useState(!initialData);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const page = Number(searchParams.get("page") ?? "1");
-  const cat = searchParams.get("cat") ?? "";
-  const sort = searchParams.get("sort") ?? "default";
-  const q = searchParams.get("q") ?? "";
-  const min = searchParams.get("min") ?? "";
-  const max = searchParams.get("max") ?? "";
+  const [cat, setCat] = useState(searchParams.get("cat") ?? "");
+  const [sort, setSort] = useState(searchParams.get("sort") ?? "default");
+  const [q, setQ] = useState(searchParams.get("q") ?? "");
+  const [min, setMin] = useState(searchParams.get("min") ?? "");
+  const [max, setMax] = useState(searchParams.get("max") ?? "");
+  const [page, setPage] = useState(Number(searchParams.get("page") ?? "1"));
 
-  const buildUrl = useCallback(
+  const isFirstRender = useRef(true);
+
+  const updateUrl = useCallback(
     (overrides: Record<string, string>) => {
-      const params = new URLSearchParams(searchParams.toString());
-      Object.entries(overrides).forEach(([k, v]) => {
-        if (v) params.set(k, v);
-        else params.delete(k);
-      });
-      if (overrides.page === undefined && Object.keys(overrides).some((k) => k !== "page")) {
-        params.delete("page");
-      }
+      const params = new URLSearchParams();
+      const merged = { cat, sort, q, min, max, page: String(page), ...overrides };
+      if (merged.cat) params.set("cat", merged.cat);
+      if (merged.q) params.set("q", merged.q);
+      if (merged.min) params.set("min", merged.min);
+      if (merged.max) params.set("max", merged.max);
+      if (merged.sort && merged.sort !== "default") params.set("sort", merged.sort);
+      if (merged.page && merged.page !== "1" && merged.page !== "") params.set("page", merged.page);
       const qs = params.toString();
-      return qs ? `${pathname}?${qs}` : pathname;
+      const url = qs ? `${pathname}?${qs}` : pathname;
+      window.history.pushState(null, "", `/${locale}${url}`);
     },
-    [searchParams, pathname]
+    [cat, sort, q, min, max, page, pathname, locale]
+  );
+
+  const applyFilter = useCallback(
+    (overrides: Record<string, string>) => {
+      if ("cat" in overrides) setCat(overrides.cat);
+      if ("sort" in overrides) setSort(overrides.sort);
+      if ("q" in overrides) setQ(overrides.q);
+      if ("min" in overrides) setMin(overrides.min);
+      if ("max" in overrides) setMax(overrides.max);
+      if (!("page" in overrides)) setPage(1);
+      else if (overrides.page) setPage(Number(overrides.page));
+      else setPage(1);
+    },
+    []
   );
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      if (initialData) return;
+    }
+
     const controller = new AbortController();
     setLoading(true);
 
@@ -82,6 +103,8 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
     if (page > 1) params.set("page", String(page));
     params.set("lang", locale);
 
+    updateUrl({});
+
     fetch(`/api/parts/products?${params}`, { signal: controller.signal })
       .then((r) => r.json())
       .then((data) => {
@@ -89,6 +112,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
         setTotal(data.total ?? 0);
         setCategories(data.facets?.categories ?? []);
         setLoading(false);
+        window.scrollTo({ top: 0, behavior: "smooth" });
       })
       .catch((err) => {
         if (err.name !== "AbortError") setLoading(false);
@@ -98,11 +122,10 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
   }, [cat, q, min, max, sort, page]);
 
   const [searchInput, setSearchInput] = useState(q);
-  useEffect(() => setSearchInput(q), [q]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    router.push(buildUrl({ q: searchInput, page: "" }));
+    applyFilter({ q: searchInput, page: "" });
   }
 
   function handleAddToCart(product: Product) {
@@ -155,7 +178,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
             <h3 className="text-sm font-semibold text-text mb-2">{t("allCategories")}</h3>
             <div className="space-y-1">
               <button
-                onClick={() => router.push(buildUrl({ cat: "", page: "" }))}
+                onClick={() => applyFilter({ cat: "", page: "" })}
                 className={`block w-full text-start text-sm px-2 py-1 rounded cursor-pointer ${
                   !cat ? "text-primary bg-primary/10" : "text-text-secondary hover:text-text hover:bg-elevated"
                 }`}
@@ -165,7 +188,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
               {categories.map((c) => (
                 <button
                   key={c.slug}
-                  onClick={() => router.push(buildUrl({ cat: c.slug, page: "" }))}
+                  onClick={() => applyFilter({ cat: c.slug, page: "" })}
                   className={`flex w-full items-center justify-between text-start text-sm px-2 py-1 rounded cursor-pointer ${
                     cat === c.slug ? "text-primary bg-primary/10" : "text-text-secondary hover:text-text hover:bg-elevated"
                   }`}
@@ -185,14 +208,14 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
               type="number"
               placeholder={t("from")}
               value={min}
-              onChange={(e) => router.push(buildUrl({ min: e.target.value, page: "" }))}
+              onChange={(e) => applyFilter({ min: e.target.value, page: "" })}
               className="text-xs"
             />
             <Input
               type="number"
               placeholder={t("to")}
               value={max}
-              onChange={(e) => router.push(buildUrl({ max: e.target.value, page: "" }))}
+              onChange={(e) => applyFilter({ max: e.target.value, page: "" })}
               className="text-xs"
             />
           </div>
@@ -202,7 +225,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push(pathname)}
+            onClick={() => applyFilter({ cat: "", q: "", min: "", max: "", sort: "default", page: "" })}
             className="gap-1"
           >
             <X className="h-3 w-3" />
@@ -219,7 +242,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
           </p>
           <Select
             value={sort}
-            onChange={(e) => router.push(buildUrl({ sort: e.target.value, page: "" }))}
+            onChange={(e) => applyFilter({ sort: e.target.value, page: "" })}
             className="w-auto min-w-40"
           >
             <option value="default">{t("sortDefault")}</option>
@@ -260,7 +283,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
               ))}
             </div>
             <div className="mt-8">
-              <Pagination total={total} pageSize={24} currentPage={page} />
+              <Pagination total={total} pageSize={24} currentPage={page} onPageChange={(p) => applyFilter({ page: String(p) })} />
             </div>
           </>
         )}

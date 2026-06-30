@@ -1,32 +1,18 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { Link, usePathname } from "@/i18n/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PaginationProps {
   total: number;
   pageSize: number;
   currentPage: number;
+  onPageChange?: (page: number) => void;
 }
 
-export function Pagination({ total, pageSize, currentPage }: PaginationProps) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+export function Pagination({ total, pageSize, currentPage, onPageChange }: PaginationProps) {
   const totalPages = Math.ceil(total / pageSize);
 
   if (totalPages <= 1) return null;
-
-  function buildHref(page: number) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (page <= 1) {
-      params.delete("page");
-    } else {
-      params.set("page", String(page));
-    }
-    const qs = params.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
-  }
 
   const pages: (number | "...")[] = [];
   if (totalPages <= 7) {
@@ -47,9 +33,10 @@ export function Pagination({ total, pageSize, currentPage }: PaginationProps) {
 
   return (
     <nav aria-label="Pagination" className="flex items-center justify-center gap-1">
-      <Link
-        href={buildHref(currentPage - 1)}
-        className={`p-2 rounded-lg transition-colors ${
+      <button
+        onClick={() => onPageChange?.(currentPage - 1)}
+        disabled={currentPage <= 1}
+        className={`p-2 rounded-lg transition-colors cursor-pointer ${
           currentPage <= 1
             ? "pointer-events-none text-text-dim"
             : "text-text-secondary hover:bg-elevated hover:text-text"
@@ -57,7 +44,7 @@ export function Pagination({ total, pageSize, currentPage }: PaginationProps) {
         aria-label="Previous"
       >
         <ChevronLeft className="h-4 w-4" />
-      </Link>
+      </button>
 
       {pages.map((p, i) =>
         p === "..." ? (
@@ -65,23 +52,24 @@ export function Pagination({ total, pageSize, currentPage }: PaginationProps) {
             …
           </span>
         ) : (
-          <Link
+          <button
             key={p}
-            href={buildHref(p)}
-            className={`min-w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+            onClick={() => onPageChange?.(p)}
+            className={`min-w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors cursor-pointer ${
               p === currentPage
                 ? "bg-primary text-white"
                 : "text-text-secondary hover:bg-elevated hover:text-text"
             }`}
           >
             {p}
-          </Link>
+          </button>
         )
       )}
 
-      <Link
-        href={buildHref(currentPage + 1)}
-        className={`p-2 rounded-lg transition-colors ${
+      <button
+        onClick={() => onPageChange?.(currentPage + 1)}
+        disabled={currentPage >= totalPages}
+        className={`p-2 rounded-lg transition-colors cursor-pointer ${
           currentPage >= totalPages
             ? "pointer-events-none text-text-dim"
             : "text-text-secondary hover:bg-elevated hover:text-text"
@@ -89,7 +77,7 @@ export function Pagination({ total, pageSize, currentPage }: PaginationProps) {
         aria-label="Next"
       >
         <ChevronRight className="h-4 w-4" />
-      </Link>
+      </button>
     </nav>
   );
 }
