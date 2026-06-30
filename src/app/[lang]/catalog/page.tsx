@@ -62,16 +62,13 @@ export default async function CatalogPage({
 
   const supabase = createServerClient();
 
-  const [productsRes, countRes, catsData, catCountsRes] = await Promise.all([
+  const [productsRes, catsData, catCountsRes] = await Promise.all([
     supabase
       .from("v_catalog_combined")
       .select("id, name_ru, name_en, name_ko, part_number, price_krw, brand_id, category_id, subcategory_id, image_url, is_new, weight_kg, manufacturer")
       .order("name_ru", { ascending: true, nullsFirst: false })
       .order("part_number", { ascending: true })
       .range(0, PAGE_SIZE - 1),
-    supabase
-      .from("v_catalog_combined")
-      .select("*", { count: "exact", head: true }),
     getCategories(),
     supabase.rpc("get_category_counts"),
   ]);
@@ -82,6 +79,8 @@ export default async function CatalogPage({
       countMap.set(row.category_id, Number(row.cnt));
     }
   }
+
+  const totalFromCounts = Array.from(countMap.values()).reduce((s, v) => s + v, 0);
 
   const catCounts = catsData
     .filter((c) => c.parent_id === null)
@@ -94,7 +93,7 @@ export default async function CatalogPage({
 
   const initialData = {
     products: productsRes.data ?? [],
-    total: countRes.count ?? 0,
+    total: totalFromCounts,
     page: 1,
     pageSize: PAGE_SIZE,
     facets: {

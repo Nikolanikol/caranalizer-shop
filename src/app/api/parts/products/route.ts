@@ -119,14 +119,16 @@ export async function GET(req: NextRequest) {
     }
     productQuery = productQuery.range(from, from + PAGE_SIZE - 1);
 
-    const countQuery = applyFull(
-      supabase.from("v_catalog_combined").select("*", { count: "exact", head: true })
-    );
+    const hasBaseFilters = !!(q || minPrice !== null || maxPrice !== null || brandId || modelProductIds);
 
-    const [productsRes, countRes, catCountsRes] = await Promise.all([
+    const [productsRes, catCountsRes, filteredCountRes] = await Promise.all([
       productQuery,
-      countQuery,
       supabase.rpc("get_category_counts"),
+      hasBaseFilters
+        ? applyFull(
+            supabase.from("v_catalog_combined").select("*", { count: "exact", head: true })
+          )
+        : null,
     ]);
 
     const countMap = new Map<number, number>();
@@ -144,10 +146,19 @@ export async function GET(req: NextRequest) {
       })
       .filter((c) => c.count > 0);
 
+    let total: number;
+    if (filteredCountRes) {
+      total = filteredCountRes.count ?? 0;
+    } else if (catId) {
+      total = countMap.get(catId) ?? 0;
+    } else {
+      total = Array.from(countMap.values()).reduce((s, v) => s + v, 0);
+    }
+
     return NextResponse.json(
       {
         products: productsRes.data ?? [],
-        total: countRes.count ?? 0,
+        total,
         page,
         pageSize: PAGE_SIZE,
         facets: { categories: catCounts },

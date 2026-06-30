@@ -21,9 +21,11 @@ UPDATE parts_staging SET category_id = CASE source_category
 END
 WHERE category_id IS NULL;
 
--- 3. Индекс для быстрой фильтрации
+-- 3. Индексы для быстрой фильтрации
 CREATE INDEX IF NOT EXISTS idx_staging_category ON parts_staging(category_id);
 CREATE INDEX IF NOT EXISTS idx_staging_status_instock ON parts_staging(status, in_stock);
+CREATE INDEX IF NOT EXISTS idx_staging_composite ON parts_staging(status, in_stock, category_id);
+CREATE INDEX IF NOT EXISTS idx_products_category ON parts_products(category_id);
 
 -- 4. Обновить view — теперь читает category_id напрямую
 DROP VIEW IF EXISTS v_catalog_combined;
@@ -59,14 +61,24 @@ WHERE status = 'new' AND in_stock = true;
 GRANT SELECT ON v_catalog_combined TO anon;
 GRANT SELECT ON v_catalog_combined TO authenticated;
 
--- 5. Обновить RPC (пересоздать на случай если view изменился)
+-- 5. RPC: считает по таблицам напрямую (не через view) — использует индексы
 CREATE OR REPLACE FUNCTION get_category_counts()
 RETURNS TABLE(category_id integer, cnt bigint)
 LANGUAGE sql STABLE
 AS $$
-  SELECT category_id, count(*) AS cnt
-  FROM v_catalog_combined
-  WHERE category_id IS NOT NULL
+  SELECT category_id, SUM(c)::bigint AS cnt FROM (
+    SELECT category_id, count(*) AS c
+    FROM parts_products
+    WHERE category_id IS NOT NULL
+    GROUP BY category_id
+
+    UNION ALL
+
+    SELECT category_id, count(*) AS c
+    FROM parts_staging
+    WHERE status = 'new' AND in_stock = true AND category_id IS NOT NULL
+    GROUP BY category_id
+  ) sub
   GROUP BY category_id;
 $$;
 
