@@ -73,42 +73,33 @@ export default async function CatalogPage({
 
   const supabase = createServerClient();
 
-  const [productsRes, countRes, brandsData, catsData] = await Promise.all([
+  const [productsRes, countRes, , catsData] = await Promise.all([
     supabase
-      .from("parts_products")
+      .from("v_catalog_combined")
       .select("id, name_ru, name_en, name_ko, part_number, price_krw, brand_id, category_id, subcategory_id, image_url, is_new, weight_kg, manufacturer")
-      .order("name_ru", { ascending: true })
+      .order("name_ru", { ascending: true, nullsFirst: false })
+      .order("part_number", { ascending: true })
       .range(0, PAGE_SIZE - 1),
     supabase
-      .from("parts_products")
+      .from("v_catalog_combined")
       .select("*", { count: "exact", head: true }),
     getBrands(),
     getCategories(),
   ]);
-
-  const brandCountsPromise = Promise.all(
-    brandsData.map(async (b) => {
-      const { count } = await supabase
-        .from("parts_products")
-        .select("*", { count: "exact", head: true })
-        .eq("brand_id", b.id);
-      return { slug: b.slug, name: b.name, count: count ?? 0 };
-    })
-  );
 
   const catCountsPromise = Promise.all(
     catsData
       .filter((c) => c.parent_id === null)
       .map(async (c) => {
         const { count } = await supabase
-          .from("parts_products")
+          .from("v_catalog_combined")
           .select("*", { count: "exact", head: true })
           .eq("category_id", c.id);
         return { slug: c.slug, name: c.name_ru, count: count ?? 0 };
       })
   );
 
-  const [brandCounts, catCounts] = await Promise.all([brandCountsPromise, catCountsPromise]);
+  const catCounts = await catCountsPromise;
 
   const initialData = {
     products: productsRes.data ?? [],
@@ -116,7 +107,6 @@ export default async function CatalogPage({
     page: 1,
     pageSize: PAGE_SIZE,
     facets: {
-      brands: brandCounts.filter((b) => b.count > 0),
       categories: catCounts.filter((c) => c.count > 0),
     },
   };

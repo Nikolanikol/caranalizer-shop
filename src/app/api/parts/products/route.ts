@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
       if (modelProductIds) query = query.in("id", modelProductIds);
       if (minPrice !== null) query = query.gte("price_krw", minPrice);
       if (maxPrice !== null) query = query.lte("price_krw", maxPrice);
-      if (q) query = query.or(`part_number.ilike.%${q}%,name_ru.ilike.%${q}%,name_en.ilike.%${q}%`);
+      if (q) query = query.or(`part_number.ilike.%${q}%,name_ru.ilike.%${q}%,name_en.ilike.%${q}%,name_ko.ilike.%${q}%`);
       return query;
     }
 
@@ -108,38 +108,30 @@ export async function GET(req: NextRequest) {
 
     let productQuery = applyFull(
       supabase
-        .from("parts_products")
+        .from("v_catalog_combined")
         .select("id, name_ru, name_en, name_ko, part_number, price_krw, brand_id, category_id, subcategory_id, image_url, is_new, weight_kg, manufacturer")
     );
 
     switch (sort) {
       case "price_asc": productQuery = productQuery.order("price_krw", { ascending: true }); break;
       case "price_desc": productQuery = productQuery.order("price_krw", { ascending: false }); break;
-      default: productQuery = productQuery.order("name_ru", { ascending: true }); break;
+      default: productQuery = productQuery.order("name_ru", { ascending: true, nullsFirst: false }).order("part_number", { ascending: true }); break;
     }
     productQuery = productQuery.range(from, from + PAGE_SIZE - 1);
 
     const countQuery = applyFull(
-      supabase.from("parts_products").select("*", { count: "exact", head: true })
+      supabase.from("v_catalog_combined").select("*", { count: "exact", head: true })
     );
 
-    const [productsRes, countRes, brandCounts, catCounts] = await Promise.all([
+    const [productsRes, countRes, catCounts] = await Promise.all([
       productQuery,
       countQuery,
-      Promise.all(
-        brandsData.map(async (b) => {
-          const { count } = await applyBase(
-            supabase.from("parts_products").select("*", { count: "exact", head: true })
-          ).eq("brand_id", b.id);
-          return { slug: b.slug, name: b.name, count: count ?? 0 };
-        })
-      ),
       Promise.all(
         catsData
           .filter((c) => c.parent_id === null)
           .map(async (c) => {
             const { count } = await applyBase(
-              supabase.from("parts_products").select("*", { count: "exact", head: true })
+              supabase.from("v_catalog_combined").select("*", { count: "exact", head: true })
             ).eq("category_id", c.id);
             const name = lang === "en" ? (c.name_en ?? c.name_ru) : lang === "ar" ? (c.name_en ?? c.name_ru) : c.name_ru;
             return { slug: c.slug, name, count: count ?? 0 };
@@ -154,7 +146,6 @@ export async function GET(req: NextRequest) {
         page,
         pageSize: PAGE_SIZE,
         facets: {
-          brands: brandCounts.filter((b) => b.count > 0),
           categories: catCounts.filter((c) => c.count > 0),
         },
       },

@@ -20,7 +20,7 @@ async function getProduct(slug: string) {
   const supabase = createServerClient();
 
   let query = supabase
-    .from("parts_products")
+    .from("v_catalog_combined")
     .select("id, part_number, name_ru, name_en, name_ko, price_krw, image_url, is_new, weight_kg, manufacturer, category_id, subcategory_id");
 
   if (partNumber) {

@@ -27,7 +27,6 @@ interface InitialData {
   page: number;
   pageSize: number;
   facets: {
-    brands: FacetItem[];
     categories: FacetItem[];
   };
 }
@@ -43,13 +42,11 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
 
   const [products, setProducts] = useState<Product[]>(initialData?.products ?? []);
   const [total, setTotal] = useState(initialData?.total ?? 0);
-  const [brands, setBrands] = useState<FacetItem[]>(initialData?.facets.brands ?? []);
   const [categories, setCategories] = useState<FacetItem[]>(initialData?.facets.categories ?? []);
   const [loading, setLoading] = useState(!initialData);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const page = Number(searchParams.get("page") ?? "1");
-  const brand = searchParams.get("brand") ?? "";
   const cat = searchParams.get("cat") ?? "";
   const sort = searchParams.get("sort") ?? "default";
   const q = searchParams.get("q") ?? "";
@@ -77,7 +74,6 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
     setLoading(true);
 
     const params = new URLSearchParams();
-    if (brand) params.set("brand", brand);
     if (cat) params.set("cat", cat);
     if (q) params.set("q", q);
     if (min) params.set("min", min);
@@ -91,7 +87,6 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
       .then((data) => {
         setProducts(data.products ?? []);
         setTotal(data.total ?? 0);
-        setBrands(data.facets?.brands ?? []);
         setCategories(data.facets?.categories ?? []);
         setLoading(false);
       })
@@ -100,7 +95,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
       });
 
     return () => controller.abort();
-  }, [brand, cat, q, min, max, sort, page]);
+  }, [cat, q, min, max, sort, page]);
 
   const [searchInput, setSearchInput] = useState(q);
   useEffect(() => setSearchInput(q), [q]);
@@ -121,7 +116,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
     });
   }
 
-  const hasActiveFilters = !!(brand || cat || q || min || max);
+  const hasActiveFilters = !!(cat || q || min || max);
 
   return (
     <div className="flex flex-col lg:flex-row gap-8">
@@ -154,34 +149,6 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
             <Search className="h-4 w-4" />
           </button>
         </form>
-
-        {brands.length > 0 && (
-          <div>
-            <h3 className="text-sm font-semibold text-text mb-2">{t("allBrands")}</h3>
-            <div className="space-y-1">
-              <button
-                onClick={() => router.push(buildUrl({ brand: "", page: "" }))}
-                className={`block w-full text-start text-sm px-2 py-1 rounded cursor-pointer ${
-                  !brand ? "text-primary bg-primary/10" : "text-text-secondary hover:text-text hover:bg-elevated"
-                }`}
-              >
-                {t("allBrands")}
-              </button>
-              {brands.map((b) => (
-                <button
-                  key={b.slug}
-                  onClick={() => router.push(buildUrl({ brand: b.slug, page: "" }))}
-                  className={`flex w-full items-center justify-between text-start text-sm px-2 py-1 rounded cursor-pointer ${
-                    brand === b.slug ? "text-primary bg-primary/10" : "text-text-secondary hover:text-text hover:bg-elevated"
-                  }`}
-                >
-                  <span>{b.name}</span>
-                  <span className="text-xs text-text-dim">{b.count}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {categories.length > 0 && (
           <div>
