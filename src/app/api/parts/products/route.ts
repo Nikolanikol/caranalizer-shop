@@ -38,7 +38,8 @@ export async function GET(req: NextRequest) {
     const catSlug = sp.get("cat") ?? "";
     const subSlug = sp.get("sub") ?? "";
     const modelName = sp.get("model") ?? "";
-    const q = sp.get("q") ?? "";
+    const qRaw = sp.get("q") ?? "";
+    const q = qRaw.replace(/[\s\-_.]/g, "").toUpperCase();
     const minPrice = sp.get("min") ? Number(sp.get("min")) : null;
     const maxPrice = sp.get("max") ? Number(sp.get("max")) : null;
     const sort = sp.get("sort") ?? "default";
@@ -93,7 +94,7 @@ export async function GET(req: NextRequest) {
       if (modelProductIds) query = query.in("id", modelProductIds);
       if (minPrice !== null) query = query.gte("price_krw", minPrice);
       if (maxPrice !== null) query = query.lte("price_krw", maxPrice);
-      if (q) query = query.or(`part_number.ilike.%${q}%,name_ru.ilike.%${q}%,name_en.ilike.%${q}%,name_ko.ilike.%${q}%`);
+      if (q) query = query.ilike("part_number", `%${q}%`);
       return query;
     }
 
