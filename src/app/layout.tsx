@@ -11,11 +11,11 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: {
-    default: "Caranalizer | Korean Car Parts & VIN Check",
+    default: "Caranalizer | Korean Auto Parts — Hyundai, Kia, Genesis OEM Parts from Korea",
     template: "%s",
   },
   description:
-    "Genuine Korean car parts — 48,000+ Hyundai, Kia, Genesis OEM parts shipped worldwide. VIN verification for Korean vehicles.",
+    "Buy 140,000+ genuine Hyundai, Kia, Genesis OEM parts direct from Korea. Korean auto parts & Mobis parts shipped worldwide.",
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL || "https://caranalizer.com"
   ),

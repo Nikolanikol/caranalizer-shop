@@ -19,9 +19,9 @@ export async function generateMetadata({
   const t = await getTranslations({ locale: lang as Locale, namespace: "about" });
 
   const titles: Record<string, string> = {
-    ru: "О компании — поставки запчастей из Кореи | Caranalizer",
-    en: "About Us — Korean Car Parts Supplier | Caranalizer",
-    ar: "من نحن — موردو قطع غيار السيارات الكورية | Caranalizer",
+    ru: "О компании — оригинальные запчасти Hyundai, Kia из Кореи | Caranalizer",
+    en: "About Us — Genuine Hyundai & Kia OEM Parts from Korea | Caranalizer",
+    ar: "من نحن — قطع غيار هيونداي وكيا الأصلية من كوريا | Caranalizer",
   };
 
   const title = titles[lang] ?? t("title");
