@@ -1,32 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
-import { unstable_cache } from "next/cache";
 import { createServerClient } from "@/lib/supabase";
+import { cachedFetch } from "@/lib/server-cache";
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE_DEFAULT = 24;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Q = any;
 
-const getBrands = unstable_cache(
+const getBrands = cachedFetch(
+  "parts-brands",
   async () => {
     const { data } = await createServerClient()
       .from("parts_brands")
       .select("id, slug, name");
     return data ?? [];
   },
-  ["parts-brands"],
-  { revalidate: 3600 }
+  3600
 );
 
-const getCategories = unstable_cache(
+const getCategories = cachedFetch(
+  "parts-categories",
   async () => {
     const { data } = await createServerClient()
       .from("parts_categories")
       .select("id, slug, name_ru, name_en, parent_id");
     return data ?? [];
   },
-  ["parts-categories"],
-  { revalidate: 3600 }
+  3600
+);
+
+const getCategoryCounts = cachedFetch(
+  "parts-category-counts",
+  async () => {
+    const { data } = await createServerClient().rpc("get_category_counts");
+    return data ?? [];
+  },
+  300
 );
 
 export async function GET(req: NextRequest) {
@@ -44,6 +53,7 @@ export async function GET(req: NextRequest) {
     const maxPrice = sp.get("max") ? Number(sp.get("max")) : null;
     const sort = sp.get("sort") ?? "default";
     const page = Math.max(1, Number(sp.get("page") ?? "1"));
+    const pageSize = Math.min(48, Math.max(1, Number(sp.get("pageSize") ?? PAGE_SIZE_DEFAULT)));
 
     const hasSearch = !!(q || minPrice || maxPrice);
     const hasFilters = !!(brandSlug || catSlug || subSlug || modelName || sort !== "default");
@@ -105,7 +115,7 @@ export async function GET(req: NextRequest) {
       return query;
     }
 
-    const from = (page - 1) * PAGE_SIZE;
+    const from = (page - 1) * pageSize;
 
     let productQuery = applyFull(
       supabase
@@ -118,13 +128,13 @@ export async function GET(req: NextRequest) {
       case "price_desc": productQuery = productQuery.order("price_krw", { ascending: false }); break;
       default: productQuery = productQuery.order("name_ru", { ascending: true, nullsFirst: false }).order("part_number", { ascending: true }); break;
     }
-    productQuery = productQuery.range(from, from + PAGE_SIZE - 1);
+    productQuery = productQuery.range(from, from + pageSize - 1);
 
     const hasBaseFilters = !!(q || minPrice !== null || maxPrice !== null || brandId || modelProductIds);
 
-    const [productsRes, catCountsRes, filteredCountRes] = await Promise.all([
+    const [productsRes, catCountsData, filteredCountRes] = await Promise.all([
       productQuery,
-      supabase.rpc("get_category_counts"),
+      getCategoryCounts(),
       hasBaseFilters
         ? applyFull(
             supabase.from("v_catalog_combined").select("*", { count: "exact", head: true })
@@ -133,10 +143,8 @@ export async function GET(req: NextRequest) {
     ]);
 
     const countMap = new Map<number, number>();
-    if (catCountsRes.data) {
-      for (const row of catCountsRes.data) {
-        countMap.set(row.category_id, Number(row.cnt));
-      }
+    for (const row of catCountsData) {
+      countMap.set(row.category_id, Number(row.cnt));
     }
 
     const catCounts = catsData
@@ -161,7 +169,7 @@ export async function GET(req: NextRequest) {
         products: productsRes.data ?? [],
         total,
         page,
-        pageSize: PAGE_SIZE,
+        pageSize,
         facets: { categories: catCounts },
       },
       { headers: { "Cache-Control": cacheHeader } }

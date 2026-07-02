@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { unstable_cache } from "next/cache";
 import { Container } from "@/components/ui/container";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CatalogClient } from "./CatalogClient";
 import { createServerClient } from "@/lib/supabase";
+import { cachedFetch } from "@/lib/server-cache";
 import type { Locale } from "@/i18n/routing";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
@@ -39,15 +39,24 @@ export async function generateMetadata({
   };
 }
 
-const getCategories = unstable_cache(
+const getCategories = cachedFetch(
+  "catalog-categories",
   async () => {
     const { data } = await createServerClient()
       .from("parts_categories")
       .select("id, slug, name_ru, name_en, parent_id");
     return data ?? [];
   },
-  ["catalog-categories"],
-  { revalidate: 3600 }
+  3600
+);
+
+const getCategoryCounts = cachedFetch(
+  "catalog-category-counts",
+  async () => {
+    const { data } = await createServerClient().rpc("get_category_counts");
+    return data ?? [];
+  },
+  300
 );
 
 export default async function CatalogPage({
@@ -62,7 +71,7 @@ export default async function CatalogPage({
 
   const supabase = createServerClient();
 
-  const [productsRes, catsData, catCountsRes] = await Promise.all([
+  const [productsRes, catsData, catCountsData] = await Promise.all([
     supabase
       .from("v_catalog_combined")
       .select("id, name_ru, name_en, name_ko, part_number, price_krw, brand_id, category_id, subcategory_id, image_url, is_new, weight_kg, manufacturer")
@@ -70,14 +79,12 @@ export default async function CatalogPage({
       .order("part_number", { ascending: true })
       .range(0, PAGE_SIZE - 1),
     getCategories(),
-    supabase.rpc("get_category_counts"),
+    getCategoryCounts(),
   ]);
 
   const countMap = new Map<number, number>();
-  if (catCountsRes.data) {
-    for (const row of catCountsRes.data as { category_id: number; cnt: number }[]) {
-      countMap.set(row.category_id, Number(row.cnt));
-    }
+  for (const row of catCountsData as { category_id: number; cnt: number }[]) {
+    countMap.set(row.category_id, Number(row.cnt));
   }
 
   const totalFromCounts = Array.from(countMap.values()).reduce((s, v) => s + v, 0);

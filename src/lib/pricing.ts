@@ -35,7 +35,7 @@ export function convertPrice(
 }
 
 export function formatPrice(amount: number, currency: string): string {
-  return getFormatter(currency).format(amount);
+  return getFormatter(currency || "RUB").format(amount);
 }
 
 export function formatKrw(priceKrw: number): string {

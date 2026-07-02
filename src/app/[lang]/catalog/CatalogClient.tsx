@@ -31,6 +31,9 @@ interface InitialData {
   };
 }
 
+const PAGE_SIZE_MOBILE = 12;
+const PAGE_SIZE_DESKTOP = 24;
+
 export function CatalogClient({ initialData }: { initialData?: InitialData }) {
   const t = useTranslations("catalog");
   const locale = useLocale();
@@ -38,6 +41,8 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
   const searchParams = useSearchParams();
   const { currency, rate } = useCurrency();
   const { addItem } = useCart();
+
+  const [pageSize, setPageSize] = useState(PAGE_SIZE_DESKTOP);
 
   const [products, setProducts] = useState<Product[]>(initialData?.products ?? []);
   const [total, setTotal] = useState(initialData?.total ?? 0);
@@ -53,6 +58,15 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
   const [page, setPage] = useState(Number(searchParams.get("page") ?? "1"));
 
   const isFirstRender = useRef(true);
+  const skipNextFetch = useRef(false);
+
+  useEffect(() => {
+    const mobile = window.innerWidth < 768;
+    if (mobile) {
+      skipNextFetch.current = true;
+      setPageSize(PAGE_SIZE_MOBILE);
+    }
+  }, []);
 
   const updateUrl = useCallback(
     (overrides: Record<string, string>) => {
@@ -91,6 +105,11 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
       if (initialData) return;
     }
 
+    if (skipNextFetch.current) {
+      skipNextFetch.current = false;
+      return;
+    }
+
     const controller = new AbortController();
     setLoading(true);
 
@@ -101,6 +120,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
     if (max) params.set("max", max);
     if (sort !== "default") params.set("sort", sort);
     if (page > 1) params.set("page", String(page));
+    params.set("pageSize", String(pageSize));
     params.set("lang", locale);
 
     updateUrl({});
@@ -119,7 +139,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
       });
 
     return () => controller.abort();
-  }, [cat, q, min, max, sort, page]);
+  }, [cat, q, min, max, sort, page, pageSize]);
 
   const [searchInput, setSearchInput] = useState(q);
 
@@ -143,14 +163,30 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
 
   return (
     <div className="flex flex-col lg:flex-row gap-8">
-      {/* Mobile filter toggle */}
-      <button
-        className="lg:hidden flex items-center gap-2 text-sm text-text-secondary hover:text-text cursor-pointer"
-        onClick={() => setFiltersOpen(!filtersOpen)}
-      >
-        <SlidersHorizontal className="h-4 w-4" />
-        {t("filters")}
-      </button>
+      {/* Mobile search + filter toggle */}
+      <div className="lg:hidden space-y-3">
+        <form onSubmit={handleSearch} className="relative">
+          <Input
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder={t("search")}
+            className="pe-10"
+          />
+          <button
+            type="submit"
+            className="absolute end-3 top-1/2 -translate-y-1/2 text-text-dim hover:text-text cursor-pointer"
+          >
+            <Search className="h-4 w-4" />
+          </button>
+        </form>
+        <button
+          className="flex items-center gap-2 text-sm text-text-secondary hover:text-text cursor-pointer"
+          onClick={() => setFiltersOpen(!filtersOpen)}
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+          {t("filters")}
+        </button>
+      </div>
 
       {/* Sidebar */}
       <aside
@@ -253,14 +289,17 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
 
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="rounded-xl border border-border-subtle bg-elevated overflow-hidden">
-                <Skeleton className="aspect-square" />
-                <div className="p-4 space-y-2">
+            {Array.from({ length: pageSize }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-border-subtle bg-elevated overflow-hidden flex flex-col">
+                <div className="aspect-square bg-surface/30" />
+                <div className="flex flex-col flex-1 p-4 gap-2">
                   <Skeleton className="h-3 w-20" />
                   <Skeleton className="h-4 w-full" />
                   <Skeleton className="h-4 w-2/3" />
-                  <Skeleton className="h-6 w-24 mt-3" />
+                  <div className="mt-auto pt-3 flex items-end justify-between gap-2">
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-9 w-9 rounded-lg" />
+                  </div>
                 </div>
               </div>
             ))}
@@ -272,7 +311,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-              {products.map((p) => (
+              {products.slice(0, pageSize).map((p) => (
                 <ProductCard
                   key={p.id}
                   product={p}
@@ -283,7 +322,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
               ))}
             </div>
             <div className="mt-8">
-              <Pagination total={total} pageSize={24} currentPage={page} onPageChange={(p) => applyFilter({ page: String(p) })} />
+              <Pagination total={total} pageSize={pageSize} currentPage={page} onPageChange={(p) => applyFilter({ page: String(p) })} />
             </div>
           </>
         )}
