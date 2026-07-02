@@ -134,16 +134,25 @@ export default async function ProductPage({
 
   const canonicalSlug = generatePartSlug(product.part_number, product.name_ru, product.id);
 
+  const brandName = normalizeManufacturer(product.manufacturer) || "Hyundai Mobis";
+  const productName = name || product.part_number;
+
+  const descriptions: Record<string, string> = {
+    ru: `${productName} ${product.part_number} — оригинальная запчасть ${brandName}.${categoryName ? ` Категория: ${categoryName}.` : ""} Доставка из Кореи 7–14 дней.`,
+    en: `${productName} ${product.part_number} — genuine OEM part by ${brandName}.${categoryName ? ` Category: ${categoryName}.` : ""} Ships from Korea in 7–14 days.`,
+    ar: `${productName} ${product.part_number} — قطعة غيار أصلية ${brandName}.${categoryName ? ` الفئة: ${categoryName}.` : ""} الشحن من كوريا خلال 7-14 يوم.`,
+  };
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: name || product.part_number,
+    name: productName,
+    description: descriptions[locale] ?? descriptions.en,
     sku: product.part_number,
     mpn: product.part_number,
+    ...(categoryName && { category: categoryName }),
     ...(product.image_url && { image: product.image_url }),
-    ...(product.manufacturer && {
-      brand: { "@type": "Brand", name: product.manufacturer },
-    }),
+    brand: { "@type": "Brand", name: brandName },
     offers: {
       "@type": "Offer",
       priceCurrency: "KRW",
@@ -151,6 +160,26 @@ export default async function ProductPage({
       availability: "https://schema.org/InStock",
       url: `${BASE}/${lang}/parts/${canonicalSlug}`,
       seller: { "@type": "Organization", name: "Caranalizer" },
+      shippingDetails: {
+        "@type": "OfferShippingDetails",
+        shippingDestination: {
+          "@type": "DefinedRegion",
+          addressCountry: "EARTH",
+        },
+        deliveryTime: {
+          "@type": "ShippingDeliveryTime",
+          handlingTime: { "@type": "QuantitativeValue", minValue: 1, maxValue: 3, unitCode: "d" },
+          transitTime: { "@type": "QuantitativeValue", minValue: 7, maxValue: 14, unitCode: "d" },
+        },
+      },
+      hasMerchantReturnPolicy: {
+        "@type": "MerchantReturnPolicy",
+        applicableCountry: "KR",
+        returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+        merchantReturnDays: 14,
+        returnMethod: "https://schema.org/ReturnByMail",
+        returnFees: "https://schema.org/ReturnFeesCustomerResponsibility",
+      },
     },
   };
 
