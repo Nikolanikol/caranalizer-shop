@@ -21,11 +21,12 @@ export const metadata: Metadata = {
   ),
   icons: {
     icon: [
-      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-120.png", sizes: "120x120", type: "image/png" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
     ],
-    apple: "/apple-touch-icon.png",
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
+  manifest: "/site.webmanifest",
   verification: {
     google: "xyGySZjOk_Gt-JrVaVUX6TlL_w5nw-WPd9_yDA3c8GU",
     yandex: "1f004d7949535b31",
