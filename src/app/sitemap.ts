@@ -16,10 +16,12 @@ const STATIC_PAGES: { path: string; freq: "daily" | "weekly" | "monthly"; priori
   { path: "/contact", freq: "monthly", priority: 0.6 },
 ];
 
+// No lastModified: a "now" timestamp is meaningless to Google (it ignores
+// always-fresh dates) and GSC flags it as invalid when it lands in the future
+// relative to the crawl time.
 function entry(path: string, freq: "daily" | "weekly" | "monthly", priority: number) {
   return LOCALES.map((locale) => ({
     url: `${BASE}/${locale}${path}`,
-    lastModified: new Date(),
     changeFrequency: freq,
     priority,
     alternates: {
