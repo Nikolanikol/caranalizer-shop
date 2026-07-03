@@ -74,7 +74,18 @@
     "paginationLabel": "Pagination",
     "prevPage": "Previous page",
     "nextPage": "Next page",
-    "pageLabel": "Page {page}"
+    "pageLabel": "Page {page}",
+    "categoryTitle": "{category} Parts for Hyundai, Kia & Genesis — Genuine OEM from Korea",
+    "categoryMetaDescription": "Buy genuine {category} parts for Hyundai, Kia & Genesis online. Original OEM parts direct from Korea, worldwide shipping in 7-14 days.",
+    "categoryH1": "{category} — Genuine Hyundai, Kia & Genesis Parts",
+    "categoryIntro": {
+      "engine": "Genuine OEM engine parts for Hyundai, Kia and Genesis — pistons, gaskets, timing components, oil and cooling system parts, sensors and mounts. Every part is sourced directly in South Korea and matches factory specifications, so it fits and performs exactly like the original installed at the plant.",
+      "transmission": "Original transmission parts for Hyundai, Kia and Genesis: clutch kits, gears, shift levers, seals, filters and control units for manual and automatic gearboxes. Direct supply from Korea guarantees factory quality and exact fitment by part number.",
+      "chassis": "OEM chassis and suspension parts — control arms, bearings, shock absorbers, brake components, steering and drivetrain parts for Hyundai, Kia and Genesis. Genuine Korean parts restore factory ride quality and safety.",
+      "body": "Genuine body parts for Hyundai, Kia and Genesis: panels, bumpers, doors, mirrors, lighting, glass, trim and fasteners. Original Korean OEM parts ensure a perfect fit, correct geometry and long-lasting corrosion protection.",
+      "interior": "Original interior parts and trim for Hyundai, Kia and Genesis — seats and covers, dashboard components, switches, door cards, carpets and safety equipment. Factory-original quality direct from Korea.",
+      "fasteners-hardware": "Genuine OEM fasteners and hardware for Hyundai, Kia and Genesis: bolts, clips, retainers, seals and service consumables. The small parts that make every repair factory-correct."
+    }
   },
   "product": {
     "addToCart": "Add to Cart",

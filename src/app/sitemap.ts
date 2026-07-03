@@ -1,4 +1,8 @@
 import { MetadataRoute } from "next";
+import {
+  getCatalogCategories,
+  getCatalogCategoryCounts,
+} from "@/lib/catalog-data";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
 const LOCALES = ["ru", "en", "ar"] as const;
@@ -12,18 +16,38 @@ const STATIC_PAGES: { path: string; freq: "daily" | "weekly" | "monthly"; priori
   { path: "/contact", freq: "monthly", priority: 0.6 },
 ];
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  return STATIC_PAGES.flatMap((page) =>
-    LOCALES.map((locale) => ({
-      url: `${BASE}/${locale}${page.path}`,
-      lastModified: new Date(),
-      changeFrequency: page.freq,
-      priority: page.priority,
-      alternates: {
-        languages: Object.fromEntries(
-          LOCALES.map((l) => [l, `${BASE}/${l}${page.path}`])
-        ),
-      },
-    }))
+function entry(path: string, freq: "daily" | "weekly" | "monthly", priority: number) {
+  return LOCALES.map((locale) => ({
+    url: `${BASE}/${locale}${path}`,
+    lastModified: new Date(),
+    changeFrequency: freq,
+    priority,
+    alternates: {
+      languages: Object.fromEntries(
+        LOCALES.map((l) => [l, `${BASE}/${l}${path}`])
+      ),
+    },
+  }));
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const staticEntries = STATIC_PAGES.flatMap((page) =>
+    entry(page.path, page.freq, page.priority)
   );
+
+  let categoryEntries: MetadataRoute.Sitemap = [];
+  try {
+    const [cats, counts] = await Promise.all([
+      getCatalogCategories(),
+      getCatalogCategoryCounts(),
+    ]);
+    const countMap = new Map(counts.map((r) => [r.category_id, Number(r.cnt)]));
+    categoryEntries = cats
+      .filter((c) => c.parent_id === null && (countMap.get(c.id) ?? 0) > 0)
+      .flatMap((c) => entry(`/catalog/${c.slug}`, "daily", 0.8));
+  } catch {
+    // DB unavailable — ship static entries rather than failing the sitemap
+  }
+
+  return [...staticEntries, ...categoryEntries];
 }

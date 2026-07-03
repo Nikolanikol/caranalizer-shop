@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
-import { usePathname } from "@/i18n/navigation";
+import { usePathname, Link } from "@/i18n/navigation";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -34,13 +34,21 @@ interface InitialData {
 const PAGE_SIZE_MOBILE = 12;
 const PAGE_SIZE_DESKTOP = 24;
 
-export function CatalogClient({ initialData }: { initialData?: InitialData }) {
+export function CatalogClient({
+  initialData,
+  fixedCategory,
+}: {
+  initialData?: InitialData;
+  fixedCategory?: { slug: string; name: string };
+}) {
   const t = useTranslations("catalog");
   const locale = useLocale();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { currency, rate } = useCurrency();
   const { addItem } = useCart();
+
+  const cat = fixedCategory?.slug ?? "";
 
   const [pageSize, setPageSize] = useState(PAGE_SIZE_DESKTOP);
 
@@ -50,7 +58,6 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
   const [loading, setLoading] = useState(!initialData);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const [cat, setCat] = useState(searchParams.get("cat") ?? "");
   const [sort, setSort] = useState(searchParams.get("sort") ?? "default");
   const [q, setQ] = useState(searchParams.get("q") ?? "");
   const [min, setMin] = useState(searchParams.get("min") ?? "");
@@ -59,6 +66,16 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
 
   const isFirstRender = useRef(true);
   const skipNextFetch = useRef(false);
+  // SSR applies category (route) and page, but not q/min/max/sort — if those
+  // are in the URL on first load, the initial data doesn't match and we must fetch
+  const needsInitialFetch = useRef(
+    !!(
+      searchParams.get("q") ||
+      searchParams.get("min") ||
+      searchParams.get("max") ||
+      (searchParams.get("sort") && searchParams.get("sort") !== "default")
+    )
+  );
 
   useEffect(() => {
     const mobile = window.innerWidth < 768;
@@ -68,26 +85,39 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
     }
   }, []);
 
-  const updateUrl = useCallback(
+  const buildQuery = useCallback(
     (overrides: Record<string, string>) => {
+      const merged = { sort, q, min, max, page: String(page), ...overrides };
       const params = new URLSearchParams();
-      const merged = { cat, sort, q, min, max, page: String(page), ...overrides };
-      if (merged.cat) params.set("cat", merged.cat);
       if (merged.q) params.set("q", merged.q);
       if (merged.min) params.set("min", merged.min);
       if (merged.max) params.set("max", merged.max);
       if (merged.sort && merged.sort !== "default") params.set("sort", merged.sort);
       if (merged.page && merged.page !== "1" && merged.page !== "") params.set("page", merged.page);
-      const qs = params.toString();
+      return params.toString();
+    },
+    [sort, q, min, max, page]
+  );
+
+  const updateUrl = useCallback(
+    (overrides: Record<string, string>) => {
+      const qs = buildQuery(overrides);
       const url = qs ? `${pathname}?${qs}` : pathname;
       window.history.pushState(null, "", `/${locale}${url}`);
     },
-    [cat, sort, q, min, max, page, pathname, locale]
+    [buildQuery, pathname, locale]
+  );
+
+  const pageHref = useCallback(
+    (p: number) => {
+      const qs = buildQuery({ page: String(p) });
+      return `/${locale}${pathname}${qs ? `?${qs}` : ""}`;
+    },
+    [buildQuery, pathname, locale]
   );
 
   const applyFilter = useCallback(
     (overrides: Record<string, string>) => {
-      if ("cat" in overrides) setCat(overrides.cat);
       if ("sort" in overrides) setSort(overrides.sort);
       if ("q" in overrides) setQ(overrides.q);
       if ("min" in overrides) setMin(overrides.min);
@@ -102,7 +132,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
-      if (initialData) return;
+      if (initialData && !needsInitialFetch.current) return;
     }
 
     if (skipNextFetch.current) {
@@ -145,7 +175,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    applyFilter({ q: searchInput, cat: "", page: "" });
+    applyFilter({ q: searchInput, page: "" });
   }
 
   function handleAddToCart(product: Product) {
@@ -159,7 +189,12 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
     });
   }
 
-  const hasActiveFilters = !!(cat || q || min || max);
+  const hasActiveFilters = !!(q || min || max);
+
+  const categoryLinkClass = (active: boolean) =>
+    `flex w-full items-center justify-between text-start text-sm px-2 py-1 rounded ${
+      active ? "text-primary bg-primary/10" : "text-text-secondary hover:text-text hover:bg-elevated"
+    }`;
 
   return (
     <div className="flex flex-col lg:flex-row gap-8">
@@ -219,30 +254,26 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
         {categories.length > 0 && (
           <div>
             <h3 className="text-sm font-semibold text-text mb-2">{t("allCategories")}</h3>
-            <div className="space-y-1">
-              <button
-                onClick={() => { applyFilter({ cat: "", q: "", page: "" }); setSearchInput(""); }}
-                aria-pressed={!cat}
-                className={`block w-full text-start text-sm px-2 py-1 rounded cursor-pointer ${
-                  !cat ? "text-primary bg-primary/10" : "text-text-secondary hover:text-text hover:bg-elevated"
-                }`}
+            <nav className="space-y-1" aria-label={t("allCategories")}>
+              <Link
+                href="/catalog"
+                aria-current={!cat ? "page" : undefined}
+                className={categoryLinkClass(!cat)}
               >
                 {t("allCategories")}
-              </button>
+              </Link>
               {categories.map((c) => (
-                <button
+                <Link
                   key={c.slug}
-                  onClick={() => { applyFilter({ cat: c.slug, q: "", page: "" }); setSearchInput(""); }}
-                  aria-pressed={cat === c.slug}
-                  className={`flex w-full items-center justify-between text-start text-sm px-2 py-1 rounded cursor-pointer ${
-                    cat === c.slug ? "text-primary bg-primary/10" : "text-text-secondary hover:text-text hover:bg-elevated"
-                  }`}
+                  href={`/catalog/${c.slug}`}
+                  aria-current={cat === c.slug ? "page" : undefined}
+                  className={categoryLinkClass(cat === c.slug)}
                 >
                   <span>{c.name}</span>
                   <span className="text-xs text-text-dim">{c.count}</span>
-                </button>
+                </Link>
               ))}
-            </div>
+            </nav>
           </div>
         )}
 
@@ -272,7 +303,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => applyFilter({ cat: "", q: "", min: "", max: "", sort: "default", page: "" })}
+            onClick={() => { applyFilter({ q: "", min: "", max: "", sort: "default", page: "" }); setSearchInput(""); }}
             className="gap-1"
           >
             <X className="h-3 w-3" />
@@ -334,7 +365,13 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
               ))}
             </div>
             <div className="mt-8">
-              <Pagination total={total} pageSize={pageSize} currentPage={page} onPageChange={(p) => applyFilter({ page: String(p) })} />
+              <Pagination
+                total={total}
+                pageSize={pageSize}
+                currentPage={page}
+                getHref={pageHref}
+                onPageChange={(p) => applyFilter({ page: String(p) })}
+              />
             </div>
           </>
         )}

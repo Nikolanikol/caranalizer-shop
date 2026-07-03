@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
 import { cachedFetch } from "@/lib/server-cache";
+import { getCategoryName } from "@/lib/utils";
+import type { CategoryRow } from "@/lib/catalog-data";
 
 const PAGE_SIZE_DEFAULT = 24;
 
@@ -21,10 +23,11 @@ const getBrands = cachedFetch(
 const getCategories = cachedFetch(
   "parts-categories",
   async () => {
+    // select("*") keeps this working before and after the name_ar migration
     const { data } = await createServerClient()
       .from("parts_categories")
-      .select("id, slug, name_ru, name_en, parent_id");
-    return data ?? [];
+      .select("*");
+    return (data ?? []) as CategoryRow[];
   },
   3600
 );
@@ -149,10 +152,11 @@ export async function GET(req: NextRequest) {
 
     const catCounts = catsData
       .filter((c) => c.parent_id === null)
-      .map((c) => {
-        const name = lang === "en" ? (c.name_en ?? c.name_ru) : lang === "ar" ? (c.name_en ?? c.name_ru) : c.name_ru;
-        return { slug: c.slug, name, count: countMap.get(c.id) ?? 0 };
-      })
+      .map((c) => ({
+        slug: c.slug,
+        name: getCategoryName(c, lang),
+        count: countMap.get(c.id) ?? 0,
+      }))
       .filter((c) => c.count > 0);
 
     let total: number;

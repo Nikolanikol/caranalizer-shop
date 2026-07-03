@@ -20,6 +20,19 @@ export function normalizeManufacturer(raw: string | null | undefined): string | 
   return trimmed;
 }
 
+export interface CategoryNames {
+  name_ru: string | null;
+  name_en: string | null;
+  // Optional: the column may not exist until the name_ar migration is applied
+  name_ar?: string | null;
+}
+
+export function getCategoryName(cat: CategoryNames, locale: string): string {
+  if (locale === "ru") return cat.name_ru ?? cat.name_en ?? "";
+  if (locale === "ar") return cat.name_ar ?? cat.name_en ?? cat.name_ru ?? "";
+  return cat.name_en ?? cat.name_ru ?? "";
+}
+
 export function getProductName(
   name_ru: string | null | undefined,
   name_en: string | null | undefined,

@@ -8,9 +8,12 @@ interface PaginationProps {
   pageSize: number;
   currentPage: number;
   onPageChange?: (page: number) => void;
+  /** When set, page numbers render as real <a href> (crawlable); clicks are
+   * still intercepted and handled by onPageChange. */
+  getHref?: (page: number) => string;
 }
 
-export function Pagination({ total, pageSize, currentPage, onPageChange }: PaginationProps) {
+export function Pagination({ total, pageSize, currentPage, onPageChange, getHref }: PaginationProps) {
   const t = useTranslations("catalog");
   const totalPages = Math.ceil(total / pageSize);
 
@@ -35,53 +38,102 @@ export function Pagination({ total, pageSize, currentPage, onPageChange }: Pagin
 
   return (
     <nav aria-label={t("paginationLabel")} className="flex items-center justify-center gap-1">
-      <button
-        onClick={() => onPageChange?.(currentPage - 1)}
-        disabled={currentPage <= 1}
-        className={`p-2 rounded-lg transition-colors cursor-pointer ${
-          currentPage <= 1
-            ? "pointer-events-none text-text-dim"
-            : "text-text-secondary hover:bg-elevated hover:text-text"
-        }`}
-        aria-label={t("prevPage")}
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </button>
+      {getHref && currentPage > 1 ? (
+        <a
+          href={getHref(currentPage - 1)}
+          onClick={(e) => {
+            if (!onPageChange) return;
+            e.preventDefault();
+            onPageChange(currentPage - 1);
+          }}
+          className="p-2 rounded-lg transition-colors cursor-pointer text-text-secondary hover:bg-elevated hover:text-text"
+          aria-label={t("prevPage")}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </a>
+      ) : (
+        <button
+          onClick={() => onPageChange?.(currentPage - 1)}
+          disabled={currentPage <= 1}
+          className={`p-2 rounded-lg transition-colors cursor-pointer ${
+            currentPage <= 1
+              ? "pointer-events-none text-text-dim"
+              : "text-text-secondary hover:bg-elevated hover:text-text"
+          }`}
+          aria-label={t("prevPage")}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+      )}
 
-      {pages.map((p, i) =>
-        p === "..." ? (
-          <span key={`dot-${i}`} className="px-2 text-text-dim">
-            …
-          </span>
+      {pages.map((p, i) => {
+        if (p === "...") {
+          return (
+            <span key={`dot-${i}`} className="px-2 text-text-dim">
+              …
+            </span>
+          );
+        }
+        const className = `min-w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+          p === currentPage
+            ? "bg-primary text-white"
+            : "text-text-secondary hover:bg-elevated hover:text-text"
+        }`;
+        return getHref ? (
+          <a
+            key={p}
+            href={getHref(p)}
+            onClick={(e) => {
+              if (!onPageChange) return;
+              e.preventDefault();
+              onPageChange(p);
+            }}
+            aria-label={t("pageLabel", { page: p })}
+            aria-current={p === currentPage ? "page" : undefined}
+            className={className}
+          >
+            {p}
+          </a>
         ) : (
           <button
             key={p}
             onClick={() => onPageChange?.(p)}
             aria-label={t("pageLabel", { page: p })}
             aria-current={p === currentPage ? "page" : undefined}
-            className={`min-w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-              p === currentPage
-                ? "bg-primary text-white"
-                : "text-text-secondary hover:bg-elevated hover:text-text"
-            }`}
+            className={className}
           >
             {p}
           </button>
-        )
-      )}
+        );
+      })}
 
-      <button
-        onClick={() => onPageChange?.(currentPage + 1)}
-        disabled={currentPage >= totalPages}
-        className={`p-2 rounded-lg transition-colors cursor-pointer ${
-          currentPage >= totalPages
-            ? "pointer-events-none text-text-dim"
-            : "text-text-secondary hover:bg-elevated hover:text-text"
-        }`}
-        aria-label={t("nextPage")}
-      >
-        <ChevronRight className="h-4 w-4" />
-      </button>
+      {getHref && currentPage < totalPages ? (
+        <a
+          href={getHref(currentPage + 1)}
+          onClick={(e) => {
+            if (!onPageChange) return;
+            e.preventDefault();
+            onPageChange(currentPage + 1);
+          }}
+          className="p-2 rounded-lg transition-colors cursor-pointer text-text-secondary hover:bg-elevated hover:text-text"
+          aria-label={t("nextPage")}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </a>
+      ) : (
+        <button
+          onClick={() => onPageChange?.(currentPage + 1)}
+          disabled={currentPage >= totalPages}
+          className={`p-2 rounded-lg transition-colors cursor-pointer ${
+            currentPage >= totalPages
+              ? "pointer-events-none text-text-dim"
+              : "text-text-secondary hover:bg-elevated hover:text-text"
+          }`}
+          aria-label={t("nextPage")}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      )}
     </nav>
   );
 }
