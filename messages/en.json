@@ -6,7 +6,8 @@
     "howItWorks": "How It Works",
     "faq": "FAQ",
     "contact": "Contact",
-    "cart": "Cart"
+    "cart": "Cart",
+    "skipToContent": "Skip to content"
   },
   "home": {
     "badge": "Korean Car Parts Store",
@@ -54,7 +55,7 @@
     "shippingCalcTitle": "Shipping Calculator"
   },
   "catalog": {
-    "title": "Parts Catalog",
+    "title": "Korean Car Parts Catalog — 140,000+ Hyundai, Kia, Genesis OEM Parts",
     "metaDescription": "Buy 140,000+ genuine Hyundai, Kia & Genesis OEM parts online — Korean auto parts shipped worldwide from Korea",
     "search": "Search by name or part number",
     "allBrands": "All Brands",
@@ -68,7 +69,12 @@
     "clearFilters": "Clear",
     "priceRange": "Price",
     "from": "from",
-    "to": "to"
+    "to": "to",
+    "sortLabel": "Sort by",
+    "paginationLabel": "Pagination",
+    "prevPage": "Previous page",
+    "nextPage": "Next page",
+    "pageLabel": "Page {page}"
   },
   "product": {
     "addToCart": "Add to Cart",

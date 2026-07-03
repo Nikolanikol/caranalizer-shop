@@ -170,10 +170,12 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder={t("search")}
+            aria-label={t("search")}
             className="pe-10"
           />
           <button
             type="submit"
+            aria-label={t("search")}
             className="absolute end-3 top-1/2 -translate-y-1/2 text-text-dim hover:text-text cursor-pointer"
           >
             <Search className="h-4 w-4" />
@@ -182,6 +184,8 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
         <button
           className="flex items-center gap-2 text-sm text-text-secondary hover:text-text cursor-pointer"
           onClick={() => setFiltersOpen(!filtersOpen)}
+          aria-expanded={filtersOpen}
+          aria-controls="catalog-filters"
         >
           <SlidersHorizontal className="h-4 w-4" />
           {t("filters")}
@@ -190,6 +194,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
 
       {/* Sidebar */}
       <aside
+        id="catalog-filters"
         className={`w-full lg:w-64 shrink-0 space-y-6 ${
           filtersOpen ? "block" : "hidden lg:block"
         }`}
@@ -199,10 +204,12 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder={t("search")}
+            aria-label={t("search")}
             className="pe-10"
           />
           <button
             type="submit"
+            aria-label={t("search")}
             className="absolute end-3 top-1/2 -translate-y-1/2 text-text-dim hover:text-text cursor-pointer"
           >
             <Search className="h-4 w-4" />
@@ -215,6 +222,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
             <div className="space-y-1">
               <button
                 onClick={() => { applyFilter({ cat: "", q: "", page: "" }); setSearchInput(""); }}
+                aria-pressed={!cat}
                 className={`block w-full text-start text-sm px-2 py-1 rounded cursor-pointer ${
                   !cat ? "text-primary bg-primary/10" : "text-text-secondary hover:text-text hover:bg-elevated"
                 }`}
@@ -225,6 +233,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
                 <button
                   key={c.slug}
                   onClick={() => { applyFilter({ cat: c.slug, q: "", page: "" }); setSearchInput(""); }}
+                  aria-pressed={cat === c.slug}
                   className={`flex w-full items-center justify-between text-start text-sm px-2 py-1 rounded cursor-pointer ${
                     cat === c.slug ? "text-primary bg-primary/10" : "text-text-secondary hover:text-text hover:bg-elevated"
                   }`}
@@ -243,6 +252,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
             <Input
               type="number"
               placeholder={t("from")}
+              aria-label={`${t("priceRange")}: ${t("from")}`}
               value={min}
               onChange={(e) => applyFilter({ min: e.target.value, page: "" })}
               className="text-xs"
@@ -250,6 +260,7 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
             <Input
               type="number"
               placeholder={t("to")}
+              aria-label={`${t("priceRange")}: ${t("to")}`}
               value={max}
               onChange={(e) => applyFilter({ max: e.target.value, page: "" })}
               className="text-xs"
@@ -271,14 +282,15 @@ export function CatalogClient({ initialData }: { initialData?: InitialData }) {
       </aside>
 
       {/* Content */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0" aria-busy={loading}>
         <div className="flex items-center justify-between mb-6 gap-4">
-          <p className="text-sm text-text-muted">
+          <p className="text-sm text-text-muted" aria-live="polite">
             {t("results", { count: total })}
           </p>
           <Select
             value={sort}
             onChange={(e) => applyFilter({ sort: e.target.value, page: "" })}
+            aria-label={t("sortLabel")}
             className="w-auto min-w-40"
           >
             <option value="default">{t("sortDefault")}</option>

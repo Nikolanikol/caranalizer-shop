@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PaginationProps {
@@ -10,6 +11,7 @@ interface PaginationProps {
 }
 
 export function Pagination({ total, pageSize, currentPage, onPageChange }: PaginationProps) {
+  const t = useTranslations("catalog");
   const totalPages = Math.ceil(total / pageSize);
 
   if (totalPages <= 1) return null;
@@ -32,7 +34,7 @@ export function Pagination({ total, pageSize, currentPage, onPageChange }: Pagin
   }
 
   return (
-    <nav aria-label="Pagination" className="flex items-center justify-center gap-1">
+    <nav aria-label={t("paginationLabel")} className="flex items-center justify-center gap-1">
       <button
         onClick={() => onPageChange?.(currentPage - 1)}
         disabled={currentPage <= 1}
@@ -41,7 +43,7 @@ export function Pagination({ total, pageSize, currentPage, onPageChange }: Pagin
             ? "pointer-events-none text-text-dim"
             : "text-text-secondary hover:bg-elevated hover:text-text"
         }`}
-        aria-label="Previous"
+        aria-label={t("prevPage")}
       >
         <ChevronLeft className="h-4 w-4" />
       </button>
@@ -55,6 +57,8 @@ export function Pagination({ total, pageSize, currentPage, onPageChange }: Pagin
           <button
             key={p}
             onClick={() => onPageChange?.(p)}
+            aria-label={t("pageLabel", { page: p })}
+            aria-current={p === currentPage ? "page" : undefined}
             className={`min-w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors cursor-pointer ${
               p === currentPage
                 ? "bg-primary text-white"
@@ -74,7 +78,7 @@ export function Pagination({ total, pageSize, currentPage, onPageChange }: Pagin
             ? "pointer-events-none text-text-dim"
             : "text-text-secondary hover:bg-elevated hover:text-text"
         }`}
-        aria-label="Next"
+        aria-label={t("nextPage")}
       >
         <ChevronRight className="h-4 w-4" />
       </button>

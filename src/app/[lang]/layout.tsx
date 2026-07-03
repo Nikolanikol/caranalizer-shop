@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
+import { getMessages, getTranslations } from "next-intl/server";
 import { routing, type Locale } from "@/i18n/routing";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -51,16 +51,23 @@ export default async function LangLayout({
   }
 
   const messages = await getMessages();
+  const tn = await getTranslations({ locale: lang as Locale, namespace: "nav" });
   const dir = lang === "ar" ? "rtl" : "ltr";
 
   return (
     <div dir={dir} lang={lang} className="flex flex-col min-h-screen">
       <HtmlLang lang={lang} />
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:start-2 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-white"
+      >
+        {tn("skipToContent")}
+      </a>
       <NextIntlClientProvider messages={messages}>
         <CartProvider>
           <CurrencyProvider>
             <Header />
-            <main className="flex-1">{children}</main>
+            <main id="main-content" className="flex-1">{children}</main>
             <Footer />
             <CookieBanner />
             <MessengerButtons />

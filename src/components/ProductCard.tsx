@@ -30,7 +30,13 @@ export function ProductCard({
 
   return (
     <div className="group rounded-xl border border-border-subtle bg-elevated hover:border-primary/30 transition-all duration-200 overflow-hidden flex flex-col">
-      <Link href={`/parts/${slug}`} className="relative aspect-square bg-surface/30 overflow-hidden">
+      {/* Duplicate of the title link below — hidden from AT so each card is one tab stop */}
+      <Link
+        href={`/parts/${slug}`}
+        tabIndex={-1}
+        aria-hidden="true"
+        className="relative aspect-square bg-surface/30 overflow-hidden"
+      >
         {product.image_url ? (
           <img
             src={product.image_url}

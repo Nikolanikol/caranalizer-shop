@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
 import Script from "next/script";
+import { getLocale } from "next-intl/server";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -32,13 +33,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Root layout sits above the [lang] segment and doesn't re-render on
+  // client-side locale switches — HtmlLang keeps lang/dir in sync after those.
+  const locale = await getLocale();
+  const dir = locale === "ar" ? "rtl" : "ltr";
+
   return (
-    <html suppressHydrationWarning className={spaceGrotesk.variable}>
+    <html lang={locale} dir={dir} suppressHydrationWarning className={spaceGrotesk.variable}>
       <body>
         {children}
         <Script

@@ -27,9 +27,12 @@ export async function generateMetadata({
     description,
     alternates: {
       canonical: `${BASE}/${lang}/catalog`,
-      languages: Object.fromEntries(
-        LOCALES.map((l) => [l, `${BASE}/${l}/catalog`])
-      ),
+      languages: {
+        ...Object.fromEntries(
+          LOCALES.map((l) => [l, `${BASE}/${l}/catalog`])
+        ),
+        "x-default": `${BASE}/en/catalog`,
+      },
     },
     openGraph: {
       title,
@@ -93,7 +96,7 @@ export default async function CatalogPage({
     .filter((c) => c.parent_id === null)
     .map((c) => ({
       slug: c.slug,
-      name: c.name_ru,
+      name: locale === "ru" ? c.name_ru : (c.name_en ?? c.name_ru),
       count: countMap.get(c.id) ?? 0,
     }))
     .filter((c) => c.count > 0);

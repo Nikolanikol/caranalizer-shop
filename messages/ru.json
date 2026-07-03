@@ -6,7 +6,8 @@
     "howItWorks": "Как мы работаем",
     "faq": "FAQ",
     "contact": "Контакты",
-    "cart": "Корзина"
+    "cart": "Корзина",
+    "skipToContent": "Перейти к содержимому"
   },
   "home": {
     "badge": "Магазин запчастей из Кореи",
@@ -68,7 +69,12 @@
     "clearFilters": "Сбросить",
     "priceRange": "Цена",
     "from": "от",
-    "to": "до"
+    "to": "до",
+    "sortLabel": "Сортировка",
+    "paginationLabel": "Страницы",
+    "prevPage": "Предыдущая страница",
+    "nextPage": "Следующая страница",
+    "pageLabel": "Страница {page}"
   },
   "product": {
     "addToCart": "В корзину",
