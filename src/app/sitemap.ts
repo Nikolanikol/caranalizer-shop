@@ -3,6 +3,7 @@ import {
   getCatalogCategories,
   getCatalogCategoryCounts,
 } from "@/lib/catalog-data";
+import { getModelIndex } from "@/lib/models-data";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
 const LOCALES = ["ru", "en", "ar"] as const;
@@ -51,5 +52,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // DB unavailable — ship static entries rather than failing the sitemap
   }
 
-  return [...staticEntries, ...categoryEntries];
+  let modelEntries: MetadataRoute.Sitemap = [];
+  try {
+    const models = await getModelIndex();
+    modelEntries = models.flatMap((m) =>
+      entry(`/vehicles/${m.brandSlug}/${m.modelSlug}`, "weekly", 0.7)
+    );
+  } catch {
+    // DB unavailable — ship the rest rather than failing the sitemap
+  }
+
+  return [...staticEntries, ...categoryEntries, ...modelEntries];
 }

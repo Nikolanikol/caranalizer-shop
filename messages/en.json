@@ -193,5 +193,14 @@
   },
   "currency": {
     "label": "Currency"
+  },
+  "vehicles": {
+    "metaTitle": "Genuine {brand} {model} Parts — OEM from Korea",
+    "metaDescription": "Buy genuine {brand} {model} parts online: engine, body, chassis and interior OEM parts direct from Korea. Worldwide shipping in 7-14 days.",
+    "h1": "Genuine {brand} {model} Parts",
+    "intro": "Original OEM parts for {brand} {model} — engine, transmission, chassis, body and interior components sourced directly in South Korea. Every part matches the factory specification and ships worldwide within 7-14 days.",
+    "partsCount": "Parts available: {count}",
+    "otherModels": "Other {brand} models",
+    "shopByModel": "Shop parts by model"
   }
 }

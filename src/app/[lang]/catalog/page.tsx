@@ -3,8 +3,10 @@ import { permanentRedirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/container";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { Link } from "@/i18n/navigation";
 import { CatalogClient } from "./CatalogClient";
 import { createServerClient } from "@/lib/supabase";
+import { getModelIndex } from "@/lib/models-data";
 import {
   CATALOG_PAGE_SIZE,
   PRODUCT_COLUMNS,
@@ -78,8 +80,12 @@ export default async function CatalogPage({
 
   const t = await getTranslations({ locale, namespace: "catalog" });
   const tn = await getTranslations({ locale, namespace: "nav" });
+  const tv = await getTranslations({ locale, namespace: "vehicles" });
 
-  const { facets, total } = await getCategoryFacets(locale);
+  const [{ facets, total }, models] = await Promise.all([
+    getCategoryFacets(locale),
+    getModelIndex().catch(() => []),
+  ]);
 
   const totalPages = Math.max(1, Math.ceil(total / CATALOG_PAGE_SIZE));
   const page = Math.min(totalPages, Math.max(1, Number(sp.page ?? "1") || 1));
@@ -126,6 +132,23 @@ export default async function CatalogPage({
           {t("title")}
         </h1>
         <CatalogClient initialData={initialData} />
+
+        {models.length > 0 && (
+          <nav aria-label={tv("shopByModel")} className="mt-14">
+            <h2 className="text-lg font-semibold text-text mb-3">{tv("shopByModel")}</h2>
+            <div className="flex flex-wrap gap-2">
+              {models.map((m) => (
+                <Link
+                  key={`${m.brandSlug}/${m.modelSlug}`}
+                  href={`/vehicles/${m.brandSlug}/${m.modelSlug}`}
+                  className="text-sm px-3 py-1.5 rounded-lg border border-border-subtle text-text-secondary hover:text-text hover:border-primary/30 transition-colors"
+                >
+                  {m.brandName} {m.modelName}
+                </Link>
+              ))}
+            </div>
+          </nav>
+        )}
       </Container>
     </section>
   );
