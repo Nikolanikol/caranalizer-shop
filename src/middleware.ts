@@ -18,6 +18,15 @@ export default function middleware(req: NextRequest) {
     return NextResponse.redirect(url, 308);
   }
 
+  // Legacy /parts/PN-- URLs (slug generation used to append "--" even with
+  // an empty name) → trim trailing dashes with a true 308 before streaming
+  const partsMatch = pathname.match(/^\/((?:ru|en|ar)\/)?parts\/(.+?)-+$/);
+  if (partsMatch) {
+    const url = req.nextUrl.clone();
+    url.pathname = `/${partsMatch[1] ?? ""}parts/${partsMatch[2]}`;
+    return NextResponse.redirect(url, 308);
+  }
+
   return intlMiddleware(req);
 }
 

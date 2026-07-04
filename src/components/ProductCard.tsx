@@ -27,7 +27,7 @@ export function ProductCard({
   const locale = useLocale() as Locale;
   const t = useTranslations("product");
   const name = getProductName(product.name_ru, product.name_en, product.name_ko, product.part_number, locale);
-  const slug = generatePartSlug(product.part_number, product.name_ru, product.id);
+  const slug = generatePartSlug(product.part_number, product.id);
 
   return (
     <div className="group rounded-xl border border-border-subtle bg-elevated hover:border-primary/30 transition-all duration-200 overflow-hidden flex flex-col">

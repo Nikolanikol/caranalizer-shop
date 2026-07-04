@@ -22,7 +22,7 @@ export async function GET(
 
   const { data: products } = await supabase
     .from("parts_staging")
-    .select("id, part_number, name_ru, name_ko")
+    .select("id, part_number")
     .eq("status", "new")
     .eq("in_stock", true)
     .range(offset, offset + PRODUCTS_PER_CHUNK - 1)
@@ -34,7 +34,7 @@ export async function GET(
 
   const urls = products.flatMap((p) => {
     const viewId = p.id + STAGING_ID_OFFSET;
-    const slug = generatePartSlug(p.part_number, p.name_ru ?? p.name_ko, viewId);
+    const slug = generatePartSlug(p.part_number, viewId);
     return LOCALES.map(
       (locale) =>
         `  <url>

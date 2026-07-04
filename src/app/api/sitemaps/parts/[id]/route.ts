@@ -21,7 +21,7 @@ export async function GET(
 
   const { data: products } = await supabase
     .from("parts_products")
-    .select("id, part_number, name_ru")
+    .select("id, part_number")
     .range(offset, offset + PRODUCTS_PER_CHUNK - 1)
     .order("id", { ascending: true });
 
@@ -29,8 +29,18 @@ export async function GET(
     return new Response("Sitemap not found", { status: 404 });
   }
 
-  const urls = products.flatMap((p) => {
-    const slug = generatePartSlug(p.part_number, p.name_ru, p.id);
+  // part_number дублируется в таблице (2-3 источника) — без дедупа
+  // в sitemap попадают одинаковые <loc>
+  const seen = new Set<string>();
+  const unique = products.filter((p) => {
+    const key = p.part_number || `id-${p.id}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  const urls = unique.flatMap((p) => {
+    const slug = generatePartSlug(p.part_number, p.id);
     return LOCALES.map(
       (locale) =>
         `  <url>

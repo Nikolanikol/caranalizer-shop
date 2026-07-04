@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { cache } from "react";
+import { notFound, permanentRedirect } from "next/navigation";
 import { Container } from "@/components/ui/container";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { createServerClient } from "@/lib/supabase";
@@ -15,7 +16,7 @@ const LOCALES = ["ru", "en", "ar"] as const;
 export const dynamicParams = true;
 export const revalidate = false;
 
-async function getProduct(slug: string) {
+const getProduct = cache(async (slug: string) => {
   const { partNumber, productId } = parsePartSlug(slug);
   const supabase = createServerClient();
 
@@ -31,9 +32,11 @@ async function getProduct(slug: string) {
     return null;
   }
 
-  const { data } = await query.single();
+  // part_number встречается в v_catalog_combined по 2-3 раза (разные
+  // источники) — .single() на таких падал и страница уходила в 404
+  const { data } = await query.order("id", { ascending: true }).limit(1).maybeSingle();
   return data;
-}
+});
 
 export async function generateMetadata({
   params,
@@ -62,16 +65,19 @@ export async function generateMetadata({
   };
   const description = descriptions[locale] ?? descriptions.en;
 
-  const canonicalSlug = generatePartSlug(product.part_number, product.name_ru, product.id);
+  const canonicalSlug = generatePartSlug(product.part_number, product.id);
 
   return {
     title,
     description,
     alternates: {
       canonical: `${BASE}/${lang}/parts/${canonicalSlug}`,
-      languages: Object.fromEntries(
-        LOCALES.map((l) => [l, `${BASE}/${l}/parts/${canonicalSlug}`])
-      ),
+      languages: {
+        ...Object.fromEntries(
+          LOCALES.map((l) => [l, `${BASE}/${l}/parts/${canonicalSlug}`])
+        ),
+        "x-default": `${BASE}/en/parts/${canonicalSlug}`,
+      },
     },
     openGraph: {
       title,
@@ -94,6 +100,13 @@ export default async function ProductPage({
 
   const product = await getProduct(slug);
   if (!product) notFound();
+
+  // Старые URL (хвосты "--", устаревшие слаги после смены переводов)
+  // сводим на канонический вариант, иначе Google копит дубликаты
+  const expectedSlug = generatePartSlug(product.part_number, product.id);
+  if (decodeURIComponent(slug) !== expectedSlug) {
+    permanentRedirect(`/${lang}/parts/${expectedSlug}`);
+  }
 
   const name = locale === "ru" ? product.name_ru : product.name_en;
   const supabase = createServerClient();
@@ -132,7 +145,7 @@ export default async function ProductPage({
     if (cat) categoryName = Object.values(cat)[0] as string;
   }
 
-  const canonicalSlug = generatePartSlug(product.part_number, product.name_ru, product.id);
+  const canonicalSlug = generatePartSlug(product.part_number, product.id);
 
   const brandName = normalizeManufacturer(product.manufacturer) || "Hyundai Mobis";
   const productName = name || product.part_number;
