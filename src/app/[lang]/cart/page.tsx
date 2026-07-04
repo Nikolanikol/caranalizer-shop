@@ -6,6 +6,7 @@ import { ShoppingCart, Trash2, Plus, Minus } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import { PriceDisplay } from "@/components/PriceDisplay";
+import { ProductImage } from "@/components/ProductImage";
 import { useCart } from "@/providers/CartProvider";
 import { useCurrency } from "@/providers/CurrencyProvider";
 import type { Locale } from "@/i18n/routing";
@@ -52,18 +53,12 @@ export default function CartPage() {
                 className="flex gap-4 rounded-xl border border-border-subtle bg-elevated p-4"
               >
                 <div className="relative w-20 h-20 rounded-lg bg-surface/30 shrink-0 overflow-hidden">
-                  {item.imageUrl ? (
-                    <img
-                      src={item.imageUrl}
-                      alt={name}
-                      loading="lazy"
-                      className="absolute inset-0 w-full h-full object-contain p-1"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-text-dim text-xs">
-                      No img
-                    </div>
-                  )}
+                  <ProductImage
+                    src={item.imageUrl}
+                    alt={name}
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-contain p-1"
+                  />
                 </div>
 
                 <div className="flex-1 min-w-0">

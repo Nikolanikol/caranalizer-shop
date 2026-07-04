@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PriceDisplay } from "@/components/PriceDisplay";
+import { ProductImage } from "@/components/ProductImage";
 import { generatePartSlug } from "@/lib/slug";
 import { getProductName } from "@/lib/utils";
 import type { Product } from "@/types/product";
@@ -37,18 +38,12 @@ export function ProductCard({
         aria-hidden="true"
         className="relative aspect-square bg-surface/30 overflow-hidden"
       >
-        {product.image_url ? (
-          <img
-            src={product.image_url}
-            alt={name}
-            loading="lazy"
-            className="absolute inset-0 w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full text-text-dim text-sm">
-            No image
-          </div>
-        )}
+        <ProductImage
+          src={product.image_url}
+          alt={name}
+          loading="lazy"
+          className="absolute inset-0 w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
+        />
         {product.is_new && (
           <Badge variant="cta" className="absolute top-2 start-2">
             {t("new")}

@@ -6,6 +6,7 @@ import { ShoppingCart, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PriceDisplay } from "@/components/PriceDisplay";
+import { ProductImage } from "@/components/ProductImage";
 import { useCurrency } from "@/providers/CurrencyProvider";
 import { useCart } from "@/providers/CartProvider";
 import { getProductName, normalizeManufacturer } from "@/lib/utils";
@@ -49,17 +50,11 @@ export function ProductDetail({
   return (
     <div className="mt-6 grid gap-8 lg:grid-cols-2">
       <div className="relative aspect-square rounded-xl bg-elevated border border-border-subtle overflow-hidden">
-        {product.image_url ? (
-          <img
-            src={product.image_url}
-            alt={name}
-            className="absolute inset-0 w-full h-full object-contain p-6"
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full text-text-dim">
-            No image
-          </div>
-        )}
+        <ProductImage
+          src={product.image_url}
+          alt={name}
+          className="absolute inset-0 w-full h-full object-contain p-6"
+        />
         {product.is_new && (
           <Badge variant="cta" className="absolute top-4 start-4 text-sm">
             {labels.new}
