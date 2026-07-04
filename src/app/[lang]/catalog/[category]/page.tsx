@@ -93,7 +93,7 @@ export default async function CategoryPage({
     .from("v_catalog_combined")
     .select(PRODUCT_COLUMNS)
     .eq("category_id", cat.id)
-    .order("name_ru", { ascending: true, nullsFirst: false })
+    .order("name_en", { ascending: true, nullsFirst: false })
     .order("part_number", { ascending: true })
     .range(from, from + CATALOG_PAGE_SIZE - 1);
 

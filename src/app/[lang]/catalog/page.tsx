@@ -94,7 +94,7 @@ export default async function CatalogPage({
   const { data: products } = await createServerClient()
     .from("v_catalog_combined")
     .select(PRODUCT_COLUMNS)
-    .order("name_ru", { ascending: true, nullsFirst: false })
+    .order("name_en", { ascending: true, nullsFirst: false })
     .order("part_number", { ascending: true })
     .range(from, from + CATALOG_PAGE_SIZE - 1);
 

@@ -129,7 +129,7 @@ export async function GET(req: NextRequest) {
     switch (sort) {
       case "price_asc": productQuery = productQuery.order("price_krw", { ascending: true }); break;
       case "price_desc": productQuery = productQuery.order("price_krw", { ascending: false }); break;
-      default: productQuery = productQuery.order("name_ru", { ascending: true, nullsFirst: false }).order("part_number", { ascending: true }); break;
+      default: productQuery = productQuery.order("name_en", { ascending: true, nullsFirst: false }).order("part_number", { ascending: true }); break;
     }
     productQuery = productQuery.range(from, from + pageSize - 1);
 

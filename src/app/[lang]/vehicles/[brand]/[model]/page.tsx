@@ -61,7 +61,7 @@ export default async function ModelPage({
     .from("v_catalog_combined")
     .select(PRODUCT_COLUMNS)
     .in("id", entry.productIds)
-    .order("name_ru", { ascending: true, nullsFirst: false })
+    .order("name_en", { ascending: true, nullsFirst: false })
     .order("part_number", { ascending: true });
 
   const allModels = await getModelIndex();

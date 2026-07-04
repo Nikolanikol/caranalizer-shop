@@ -108,7 +108,9 @@ export default async function ProductPage({
     permanentRedirect(`/${lang}/parts/${expectedSlug}`);
   }
 
-  const name = locale === "ru" ? product.name_ru : product.name_en;
+  // name_ru у большинства товаров пуст (RU-переводы отключены как мусорные) —
+  // getProductName падает на name_en, чтобы хлебные крошки и JSON-LD не пустели
+  const name = getProductName(product.name_ru, product.name_en, product.name_ko, product.part_number, locale);
   const supabase = createServerClient();
 
   const { data: fitmentData } = await supabase
