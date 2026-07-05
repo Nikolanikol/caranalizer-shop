@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import type { CartItem, CartState, CartAction } from "@/types/cart";
+import { trackAddToCart } from "@/lib/analytics";
 
 const STORAGE_KEY = "caranalizer-cart";
 const EMPTY: CartState = { items: [] };
@@ -85,7 +86,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [state, hydrated]);
 
   const addItem = useCallback(
-    (item: Omit<CartItem, "quantity">) => dispatch({ type: "ADD", item }),
+    (item: Omit<CartItem, "quantity">) => {
+      dispatch({ type: "ADD", item });
+      // Единая точка добавления в корзину — ловит и каталог, и карточку
+      trackAddToCart({
+        item_id: item.partNumber,
+        item_name: item.nameEn || item.partNumber,
+        price: item.priceKrw,
+      });
+    },
     []
   );
   const removeItem = useCallback(

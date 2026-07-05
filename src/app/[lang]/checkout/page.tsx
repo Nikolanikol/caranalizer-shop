@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { type Value } from "react-phone-number-input";
 import { Link } from "@/i18n/navigation";
@@ -13,7 +13,17 @@ import { useCart } from "@/providers/CartProvider";
 import { useCurrency } from "@/providers/CurrencyProvider";
 import { CheckCircle, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { trackBeginCheckout, trackPurchase, type GaItem } from "@/lib/analytics";
 import type { Locale } from "@/i18n/routing";
+
+function toGaItems(items: { partNumber: string; nameEn: string; priceKrw: number; quantity: number }[]): GaItem[] {
+  return items.map((i) => ({
+    item_id: i.partNumber,
+    item_name: i.nameEn || i.partNumber,
+    price: i.priceKrw,
+    quantity: i.quantity,
+  }));
+}
 
 export default function CheckoutPage() {
   const t = useTranslations("checkout");
@@ -27,6 +37,16 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [attempted, setAttempted] = useState(false);
+
+  // Корзина гидрируется из localStorage после маунта — ждём появления
+  // товаров и шлём begin_checkout один раз за визит страницы
+  const beginTracked = useRef(false);
+  useEffect(() => {
+    if (!beginTracked.current && items.length > 0) {
+      beginTracked.current = true;
+      trackBeginCheckout(toGaItems(items), totalKrw);
+    }
+  }, [items, totalKrw]);
 
   const errors = {
     phone: attempted && !phone,
@@ -62,6 +82,7 @@ export default function CheckoutPage() {
       });
 
       if (!res.ok) throw new Error("Failed");
+      trackPurchase(toGaItems(items), totalKrw, `web-${Date.now()}`);
       setSuccess(true);
       clearCart();
       toast.success(t("successTitle"));

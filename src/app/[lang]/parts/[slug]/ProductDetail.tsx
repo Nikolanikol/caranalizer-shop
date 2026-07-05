@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 import { ShoppingCart, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { ProductImage } from "@/components/ProductImage";
 import { useCurrency } from "@/providers/CurrencyProvider";
 import { useCart } from "@/providers/CartProvider";
 import { getProductName, normalizeManufacturer } from "@/lib/utils";
+import { trackViewItem } from "@/lib/analytics";
 import type { Product } from "@/types/product";
 import type { Locale } from "@/i18n/routing";
 
@@ -33,6 +34,14 @@ export function ProductDetail({
 
   const name = getProductName(product.name_ru, product.name_en, product.name_ko, product.part_number, locale);
   const manufacturer = normalizeManufacturer(product.manufacturer);
+
+  useEffect(() => {
+    trackViewItem({
+      item_id: product.part_number,
+      item_name: product.name_en || product.part_number,
+      price: product.price_krw,
+    });
+  }, [product.id, product.part_number, product.name_en, product.price_krw]);
 
   function handleAdd() {
     addItem({
