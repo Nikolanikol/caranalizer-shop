@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PriceDisplay } from "@/components/PriceDisplay";
 import { ProductImage } from "@/components/ProductImage";
+import { VehicleCompatibility, type CompatVehicle } from "@/components/VehicleCompatibility";
 import { useCurrency } from "@/providers/CurrencyProvider";
 import { useCart } from "@/providers/CartProvider";
 import { getProductName, normalizeManufacturer } from "@/lib/utils";
@@ -16,14 +17,14 @@ import type { Locale } from "@/i18n/routing";
 
 interface ProductDetailProps {
   product: Product;
-  compatibleModels: { brand: string; model: string }[];
+  compatVehicles: CompatVehicle[];
   categoryName: string;
   labels: Record<string, string>;
 }
 
 export function ProductDetail({
   product,
-  compatibleModels,
+  compatVehicles,
   categoryName,
   labels,
 }: ProductDetailProps) {
@@ -122,19 +123,18 @@ export function ProductDetail({
           )}
         </div>
 
-        {compatibleModels.length > 0 && (
-          <div className="border-t border-border-subtle pt-6">
-            <h3 className="text-sm font-semibold text-text mb-3">
-              {labels.compatibleModels}
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {compatibleModels.map((m, i) => (
-                <Badge key={i} variant="outline">
-                  {m.brand} {m.model}
-                </Badge>
-              ))}
-            </div>
-          </div>
+        {compatVehicles.length > 0 && (
+          <VehicleCompatibility
+            className="border-t border-border-subtle pt-6 text-text"
+            vehicles={compatVehicles}
+            maxVisible={8}
+            labels={{
+              title: labels.compatibleModels,
+              showAll: labels.showAllVehicles,
+              showLess: labels.showLessVehicles,
+              present: labels.presentYear,
+            }}
+          />
         )}
       </div>
     </div>

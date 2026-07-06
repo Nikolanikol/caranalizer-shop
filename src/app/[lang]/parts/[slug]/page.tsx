@@ -8,7 +8,9 @@ import { parsePartSlug, generatePartSlug } from "@/lib/slug";
 import { getTranslations } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { ProductDetail } from "./ProductDetail";
+import { ModelProductsGrid } from "../../vehicles/ModelProductsGrid";
 import { getProductName, normalizeManufacturer } from "@/lib/utils";
+import type { Product } from "@/types/product";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
 const LOCALES = ["ru", "en", "ar"] as const;
@@ -113,27 +115,49 @@ export default async function ProductPage({
   const name = getProductName(product.name_ru, product.name_en, product.name_ko, product.part_number, locale);
   const supabase = createServerClient();
 
-  const { data: fitmentData } = await supabase
-    .from("parts_fitment")
-    .select("vehicle_model_id")
-    .eq("product_id", product.id);
+  // Совместимость из новых таблиц vehicles/part_vehicles (212k связей)
+  const { data: pvData } = await supabase
+    .from("part_vehicles")
+    .select("vehicles(id, name_en, brand, year_from, year_to, open_ended, slug, parts_count)")
+    .eq("part_id", product.id);
 
-  let compatibleModels: { brand: string; model: string }[] = [];
-  if (fitmentData?.length) {
-    const modelIds = fitmentData.map((f) => f.vehicle_model_id);
-    const { data: models } = await supabase
-      .from("parts_vehicle_models")
-      .select("name_en, brand_id, parts_brands(name)")
-      .in("id", modelIds);
+  const compatRows = (pvData ?? [])
+    .map((row) => row.vehicles as unknown as {
+      id: number; name_en: string; brand: string; year_from: string | null;
+      year_to: string | null; open_ended: boolean; slug: string; parts_count: number;
+    } | null)
+    .filter((v): v is NonNullable<typeof v> => !!v);
 
-    if (models) {
-      compatibleModels = models.map((m) => {
-        const brandData = m.parts_brands as unknown as { name: string } | null;
-        return {
-          brand: brandData?.name ?? "",
-          model: m.name_en,
-        };
-      });
+  const compatVehicles = compatRows.map((v) => ({
+    name: v.name_en,
+    brand: v.brand,
+    yearFrom: v.year_from,
+    yearTo: v.year_to,
+    openEnded: v.open_ended,
+    href: `/${lang}/vehicles/${v.brand}/${v.slug}`,
+  }));
+
+  // Похожие запчасти: та же категория + самое популярное из совместимых авто
+  let similarProducts: Record<string, unknown>[] = [];
+  let similarVehicleName = "";
+  if (compatRows.length && product.category_id) {
+    const topVehicle = [...compatRows].sort((a, b) => b.parts_count - a.parts_count)[0];
+    similarVehicleName = topVehicle.name_en;
+    const { data: sameVehicle } = await supabase
+      .from("part_vehicles")
+      .select("part_id")
+      .eq("vehicle_id", topVehicle.id)
+      .neq("part_id", product.id)
+      .limit(400);
+    const ids = (sameVehicle ?? []).map((r) => r.part_id);
+    if (ids.length) {
+      const { data: sim } = await supabase
+        .from("parts_products")
+        .select("id, name_ru, name_en, name_ko, part_number, price_krw, image_url, is_new, weight_kg, manufacturer, category_id, subcategory_id")
+        .in("id", ids)
+        .eq("category_id", product.category_id)
+        .limit(8);
+      similarProducts = sim ?? [];
     }
   }
 
@@ -224,7 +248,7 @@ export default async function ProductPage({
         />
         <ProductDetail
           product={product}
-          compatibleModels={compatibleModels}
+          compatVehicles={compatVehicles}
           categoryName={categoryName}
           labels={{
             partNumber: tp("partNumber"),
@@ -235,8 +259,19 @@ export default async function ProductPage({
             added: tp("added"),
             new: tp("new"),
             priceKrw: tp("priceKrw"),
+            showAllVehicles: tp.raw("showAllVehicles"),
+            showLessVehicles: tp("showLessVehicles"),
+            presentYear: tp("presentYear"),
           }}
         />
+        {similarProducts.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-lg font-semibold text-text mb-4">
+              {tp("moreForVehicle", { model: similarVehicleName })}
+            </h2>
+            <ModelProductsGrid products={similarProducts as unknown as Product[]} />
+          </div>
+        )}
       </Container>
     </section>
   );

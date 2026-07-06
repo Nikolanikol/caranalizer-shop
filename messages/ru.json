@@ -92,7 +92,11 @@
     "added": "Добавлено",
     "partNumber": "Артикул",
     "manufacturer": "Производитель",
-    "compatibleModels": "Совместимые модели",
+    "compatibleModels": "Подходит для",
+    "showAllVehicles": "Показать все {n}",
+    "showLessVehicles": "Свернуть",
+    "presentYear": "н.в.",
+    "moreForVehicle": "Ещё запчасти для {model}",
     "category": "Категория",
     "new": "Новинка",
     "priceKrw": "Цена в Корее"

@@ -62,5 +62,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // DB unavailable — ship the rest rather than failing the sitemap
   }
 
-  return [...staticEntries, ...categoryEntries, ...modelEntries];
+  // Страницы поколений (vehicles): только с достаточным числом деталей,
+  // тонкие страницы стоят в noindex и в sitemap не попадают
+  let generationEntries: MetadataRoute.Sitemap = [];
+  try {
+    const { createServerClient } = await import("@/lib/supabase");
+    const supabase = createServerClient();
+    const vehicles: { brand: string; slug: string }[] = [];
+    for (let offset = 0; ; offset += 1000) {
+      const { data } = await supabase
+        .from("vehicles")
+        .select("brand, slug")
+        .gte("parts_count", 10)
+        .order("id", { ascending: true })
+        .range(offset, offset + 999);
+      if (!data || data.length === 0) break;
+      vehicles.push(...data);
+      if (data.length < 1000) break;
+    }
+    generationEntries = vehicles.flatMap((v) =>
+      entry(`/vehicles/${v.brand}/${v.slug}`, "weekly", 0.7)
+    );
+  } catch {
+    // DB unavailable — ship the rest rather than failing the sitemap
+  }
+
+  return [...staticEntries, ...categoryEntries, ...modelEntries, ...generationEntries];
 }

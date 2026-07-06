@@ -92,7 +92,11 @@
     "added": "تمت الإضافة",
     "partNumber": "رقم القطعة",
     "manufacturer": "الشركة المصنعة",
-    "compatibleModels": "الموديلات المتوافقة",
+    "compatibleModels": "مناسب لـ",
+    "showAllVehicles": "عرض الكل {n}",
+    "showLessVehicles": "عرض أقل",
+    "presentYear": "الآن",
+    "moreForVehicle": "المزيد من قطع الغيار لـ {model}",
     "category": "الفئة",
     "new": "جديد",
     "priceKrw": "السعر في كوريا"

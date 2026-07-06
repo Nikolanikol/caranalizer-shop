@@ -92,7 +92,11 @@
     "added": "Added",
     "partNumber": "Part Number",
     "manufacturer": "Manufacturer",
-    "compatibleModels": "Compatible Models",
+    "compatibleModels": "Fits",
+    "showAllVehicles": "Show all {n}",
+    "showLessVehicles": "Show less",
+    "presentYear": "now",
+    "moreForVehicle": "More parts for {model}",
     "category": "Category",
     "new": "New",
     "priceKrw": "Price in Korea"
