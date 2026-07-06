@@ -11,6 +11,7 @@ import { useCart } from "@/providers/CartProvider";
 
 const NAV_KEYS = [
   { key: "catalog", href: "/catalog" },
+  { key: "check", href: "/check" },
   { key: "about", href: "/about" },
   { key: "howItWorks", href: "/how-it-works" },
   { key: "faq", href: "/faq" },

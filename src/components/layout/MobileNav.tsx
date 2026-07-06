@@ -11,6 +11,7 @@ import { CurrencySwitcher } from "./CurrencySwitcher";
 const NAV_KEYS = [
   { key: "home", href: "/" },
   { key: "catalog", href: "/catalog" },
+  { key: "check", href: "/check" },
   { key: "about", href: "/about" },
   { key: "howItWorks", href: "/how-it-works" },
   { key: "faq", href: "/faq" },

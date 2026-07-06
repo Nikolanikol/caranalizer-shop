@@ -48,7 +48,6 @@ import {
   MessageCircle,
   Truck,
   ArrowRight,
-  ExternalLink,
   Shield,
   Globe,
   DollarSign,
@@ -148,15 +147,13 @@ export default function HomePage() {
               {t("shopNow")}
               <ArrowRight className="w-5 h-5" />
             </Link>
-            <a
-              href="https://t.me/caranalizer_bot"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/check"
               className="inline-flex items-center justify-center gap-2.5 px-10 py-[18px] bg-transparent text-text border-[1.5px] border-border font-[family-name:var(--font-heading)] text-[15px] font-semibold uppercase tracking-[0.05em] rounded-[10px] hover:border-primary hover:text-primary hover:-translate-y-0.5 transition-all duration-300"
             >
               {t("checkVin")}
-              <ExternalLink className="w-5 h-5" />
-            </a>
+              <ArrowRight className="w-5 h-5" />
+            </Link>
           </div>
 
           <div className="flex flex-col sm:flex-row justify-center gap-8 sm:gap-16 mt-16 pt-10 border-t border-border opacity-0 animate-[fadeInUp_0.6s_ease_forwards_1s]">
