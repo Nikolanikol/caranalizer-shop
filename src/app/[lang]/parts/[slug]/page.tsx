@@ -13,7 +13,10 @@ import { getProductName, normalizeManufacturer } from "@/lib/utils";
 import type { Product } from "@/types/product";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
-const LOCALES = ["ru", "en", "ar"] as const;
+// hreflang карточки: только en+ru. /ar/parts продолжает рендериться и открываться
+// (dynamicParams), но в кластер альтернатив не входит — нет name_ar, это дубль /en.
+// Существующие /ar не помечаем noindex: пусть сами отваливаются как дубли.
+const HREFLANG_LOCALES = ["ru", "en"] as const;
 
 export const dynamicParams = true;
 export const revalidate = false;
@@ -76,7 +79,7 @@ export async function generateMetadata({
       canonical: `${BASE}/${lang}/parts/${canonicalSlug}`,
       languages: {
         ...Object.fromEntries(
-          LOCALES.map((l) => [l, `${BASE}/${l}/parts/${canonicalSlug}`])
+          HREFLANG_LOCALES.map((l) => [l, `${BASE}/${l}/parts/${canonicalSlug}`])
         ),
         "x-default": `${BASE}/en/parts/${canonicalSlug}`,
       },

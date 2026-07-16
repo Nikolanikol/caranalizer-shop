@@ -3,8 +3,12 @@ import { createServerClient } from "@/lib/supabase";
 import { generatePartSlug } from "@/lib/slug";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
-const LOCALES = ["ru", "en", "ar"] as const;
+// ar исключён: name_ar нет ни у товаров, ни у staging → /ar/parts рендерит
+// английский, это тонкий дубль /en. Оставляем en+ru (оба — реальные переводы).
+const LOCALES = ["ru", "en"] as const;
 const PRODUCTS_PER_CHUNK = 1000;
+// Должен совпадать с api/sitemaps/index/route.ts, иначе чанки разъедутся.
+const MIN_PRICE_KRW = 50000;
 
 export async function GET(
   _req: NextRequest,
@@ -22,8 +26,9 @@ export async function GET(
   const { data: products } = await supabase
     .from("parts_products")
     .select("id, part_number")
-    .range(offset, offset + PRODUCTS_PER_CHUNK - 1)
-    .order("id", { ascending: true });
+    .gte("price_krw", MIN_PRICE_KRW)
+    .order("id", { ascending: true })
+    .range(offset, offset + PRODUCTS_PER_CHUNK - 1);
 
   if (!products?.length) {
     return new Response("Sitemap not found", { status: 404 });
