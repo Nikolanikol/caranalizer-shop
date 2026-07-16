@@ -1,0 +1,15 @@
+[Unit]
+Description=caranalizer — SEO-автоматика (collect → generate → publish)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Поправь путь к репозиторию под свой сервер:
+WorkingDirectory=/var/www/caranalizer
+ExecStart=/var/www/caranalizer/scripts/seo-cron.sh
+# Можно задать здесь вместо чтения из .env:
+# Environment=SEO_CRON_SECRET=...
+# Environment=SEO_BASE=https://caranalizer.com
+# Environment=ENV_FILE=/var/www/caranalizer/.env
+# Environment=GENERATE_LIMIT=30

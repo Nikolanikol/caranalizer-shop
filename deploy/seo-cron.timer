@@ -1,0 +1,12 @@
+[Unit]
+Description=caranalizer — ежедневный прогон SEO-автоматики (04:30)
+
+[Timer]
+# Раз в сутки в 04:30 по времени сервера (низкий трафик).
+# GSC-данные отстают на 2–3 дня, чаще запускать смысла нет.
+OnCalendar=*-*-* 04:30:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
