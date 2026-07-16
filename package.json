@@ -9,10 +9,12 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.108.2",
     "bing-translate-api": "^4.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "google-auth-library": "^10.9.0",
     "google-translate-api-x": "^10.7.3",
     "lucide-react": "^1.21.0",
     "next": "16.2.9",

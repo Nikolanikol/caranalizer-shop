@@ -43,6 +43,20 @@ const getProduct = cache(async (slug: string) => {
   return data;
 });
 
+// SEO-контент caranalizer из ИЗОЛИРОВАННОЙ таблицы ca_parts_seo (ключ part_number).
+// Отдельная от общих parts_products.seo_* (те — KMotors) → нет дубля на двух доменах.
+// Пусто → карточка работает на прежней логике (фолбэк).
+const getCaSeo = cache(async (partNumber: string | null) => {
+  if (!partNumber) return null;
+  const supabase = createServerClient();
+  const { data } = await supabase
+    .from("ca_parts_seo")
+    .select("seo_title_ru, seo_title_en, seo_desc_ru, seo_desc_en, seo_body_ru, seo_body_en, cross_refs")
+    .eq("part_number", partNumber)
+    .maybeSingle();
+  return data;
+});
+
 export async function generateMetadata({
   params,
 }: {
@@ -61,14 +75,21 @@ export async function generateMetadata({
     en: "buy",
     ar: "شراء",
   };
-  const title = `${name} ${product.part_number}${brand ? ` ${brand}` : ""} — ${titleSuffix[locale] ?? titleSuffix.en} | Caranalizer`;
+  const fallbackTitle = `${name} ${product.part_number}${brand ? ` ${brand}` : ""} — ${titleSuffix[locale] ?? titleSuffix.en} | Caranalizer`;
 
   const descriptions: Record<string, string> = {
     ru: `Купить ${name} ${product.part_number}${brand ? ` ${brand}` : ""} — оригинальная корейская запчасть с доставкой по всему миру за 7–14 дней.`,
     en: `Buy ${name} ${product.part_number}${brand ? ` ${brand}` : ""} — genuine Korean OEM part shipped worldwide in 7–14 days.`,
     ar: `شراء ${name} ${product.part_number}${brand ? ` ${brand}` : ""} — قطعة غيار كورية أصلية مع الشحن العالمي خلال 7-14 يوم.`,
   };
-  const description = descriptions[locale] ?? descriptions.en;
+  const fallbackDescription = descriptions[locale] ?? descriptions.en;
+
+  // Сгенерированные title/desc из ca_parts_seo (ru/en). ar не генерим → фолбэк.
+  const caSeo = await getCaSeo(product.part_number);
+  const caTitle = locale === "ru" ? caSeo?.seo_title_ru : locale === "en" ? caSeo?.seo_title_en : null;
+  const caDesc = locale === "ru" ? caSeo?.seo_desc_ru : locale === "en" ? caSeo?.seo_desc_en : null;
+  const title = caTitle ? `${caTitle} | Caranalizer` : fallbackTitle;
+  const description = caDesc || fallbackDescription;
 
   const canonicalSlug = generatePartSlug(product.part_number, product.id);
 
@@ -174,6 +195,14 @@ export default async function ProductPage({
     if (cat) categoryName = Object.values(cat)[0] as string;
   }
 
+  // Сгенерированный SEO-контент caranalizer (ru/en; для ar берём en как фолбэк).
+  const caSeo = await getCaSeo(product.part_number);
+  const seoBody = locale === "ru" ? caSeo?.seo_body_ru : caSeo?.seo_body_en;
+  const seoDesc = locale === "ru" ? caSeo?.seo_desc_ru : caSeo?.seo_desc_en;
+  const crossRefs = Array.isArray(caSeo?.cross_refs) ? (caSeo!.cross_refs as string[]) : [];
+  const descLabels: Record<string, string> = { ru: "Описание", en: "Description", ar: "الوصف" };
+  const crossLabels: Record<string, string> = { ru: "Кросс-номера (аналоги)", en: "Cross-reference numbers", ar: "أرقام بديلة" };
+
   const canonicalSlug = generatePartSlug(product.part_number, product.id);
 
   const brandName = normalizeManufacturer(product.manufacturer) || "Hyundai Mobis";
@@ -189,7 +218,7 @@ export default async function ProductPage({
     "@context": "https://schema.org",
     "@type": "Product",
     name: productName,
-    description: descriptions[locale] ?? descriptions.en,
+    description: seoDesc || descriptions[locale] || descriptions.en,
     sku: product.part_number,
     mpn: product.part_number,
     ...(categoryName && { category: categoryName }),
@@ -267,6 +296,18 @@ export default async function ProductPage({
             presentYear: tp("presentYear"),
           }}
         />
+        {seoBody && (
+          <div className="mt-10 max-w-3xl">
+            <h2 className="text-lg font-semibold text-text mb-3">{descLabels[locale] ?? descLabels.en}</h2>
+            <p className="text-text-secondary leading-relaxed whitespace-pre-line">{seoBody}</p>
+            {crossRefs.length > 0 && (
+              <p className="mt-4 text-sm text-text-muted">
+                <span className="font-medium text-text">{crossLabels[locale] ?? crossLabels.en}:</span>{" "}
+                {crossRefs.join(", ")}
+              </p>
+            )}
+          </div>
+        )}
         {similarProducts.length > 0 && (
           <div className="mt-12">
             <h2 className="text-lg font-semibold text-text mb-4">
