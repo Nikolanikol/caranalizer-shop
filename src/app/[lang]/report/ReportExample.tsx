@@ -1,635 +1,1180 @@
-// Демонстрационный Carhistory-отчёт: показывает структуру и глубину платного
-// отчёта. Данные вымышленные (VIN и госномер частично скрыты) — это витрина
-// формата, а не запись о реальном автомобиле; плашка об этом обязательна.
+// Демонстрационный отчёт в том же виде, в каком его отдаёт приложение:
+// светлый документ с нумерованными секциями. Цвета здесь заданы явно, а не
+// токенами темы — блок обязан оставаться светлым внутри тёмного сайта.
+// Данные вымышленные, госномер частично скрыт; плашка об этом обязательна.
 import type { GuideLocale } from "@/lib/guides";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Droplets,
-  Car,
-  Gauge,
-  FileText,
-  Wrench,
-  Coins,
-} from "lucide-react";
 
-type Status = "danger" | "warn" | "ok";
+type Mark = "paint" | "remove" | "both";
+
+interface Claim {
+  date: string;
+  /** В какой блок попадает случай: своё ДТП или ДТП другой стороны */
+  own: boolean;
+  /** Какой страховкой покрыт: своя или другой стороны */
+  byOwnInsurance: boolean;
+  badge?: string;
+  total: string;
+  breakdown?: [string, string][];
+  historyBtn?: string;
+}
 
 interface ReportData {
   disclaimer: string;
-  vinLabel: string;
-  vin: string;
-  car: string;
+  title: string;
+  plate: string;
   updatedLabel: string;
   updated: string;
 
-  summaryTitle: string;
-  summary: { label: string; value: string; status: Status }[];
+  s1: string;
+  overview: { label: string; value: string; note?: string; icon: string }[];
+  overviewNote: string;
 
-  specsTitle: string;
-  specs: [string, string][];
+  s2: string;
+  s2sub: string;
+  specsLeft: [string, string][];
+  specsRight: [string, string][];
 
-  usageTitle: string;
-  usage: { label: string; value: string; status: Status }[];
+  s3: string;
+  s3sub: string;
+  special: { label: string; value: string; icon: string }[];
 
-  ownersTitle: string;
+  s4: string;
+  s4note: string;
   ownersCols: string[];
-  owners: string[][];
+  owners: { date: string; event: string; plate: string; purpose: string; end?: boolean }[];
 
-  claimsTitle: string;
-  claimsNote: string;
-  claims: {
-    date: string;
-    type: string;
-    kind?: string;
-    total: string;
-    breakdown?: [string, string][];
-    parts?: string[];
-    partsTitle: string;
-  }[];
+  s5: string;
+  s5sub: string;
+  loss: { label: string; value: string; icon: string }[];
+  s5notes: [string, string][];
 
-  mileageTitle: string;
+  s6: string;
+  s6plateNote: string;
+  gapLabel: string;
+  s6intro: string[];
+  diagramCols: [string, string, string];
+  legend: [string, string, string];
+  areasLeft: { name: string; mark?: Mark }[];
+  areasRight: { name: string; mark?: Mark }[];
+  summary: [string, string][];
+  allHistoryBtn: string;
+  ownCrashTitle: string;
+  otherCrashTitle: string;
+  ownInsurance: string;
+  otherInsurance: string;
+  repairCostLabel: string;
+  claims: Claim[];
+  s6bullets: string[];
+  s6notes: [string, string][];
+
+  s7: string;
   mileageCols: string[];
   mileage: string[][];
-  mileageNote: string;
 
-  valueTitle: string;
-  value: string;
-  valueNote: string;
+  s8: string;
+  valueRange: string;
+  s8note: string;
+
+  noteLabel: string;
 }
 
-const STATUS_STYLES: Record<Status, string> = {
-  danger: "bg-error/10 text-error border-error/20",
-  warn: "bg-cta/10 text-cta border-cta/20",
-  ok: "bg-success/10 text-success border-success/20",
+const ICONS: Record<string, string> = {
+  loss: "M3 13h18M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13v4H5v-4Z",
+  theft: "M4 4l16 16M9 11V8a3 3 0 0 1 6 0v3M6 11h12v9H6z",
+  flood: "M3 17c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2M5 12h14l-1.5-4.5A2 2 0 0 0 15.6 6H8.4a2 2 0 0 0-1.9 1.5L5 12Z",
+  taxi: "M5 17h14M7 17v2M17 17v2M5 13h14l-1.5-4.5A2 2 0 0 0 15.6 7H8.4a2 2 0 0 0-1.9 1.5L5 13Zm4-8h6",
+  damage: "M13 2 4.5 13H11l-1 9 8.5-11H12l1-9Z",
+  damage2: "M12 2 3 7v6c0 5 3.8 8.5 9 9 5.2-.5 9-4 9-9V7l-9-5Z",
+  owner: "M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2 20a6 6 0 0 1 12 0M14 20a6 6 0 0 1 8-5",
+  plate: "M3 7h18v10H3zM7 11h2M11 11h2M15 11h2",
+  gov: "M3 21h18M5 21V10l7-5 7 5v11M9 21v-6h6v6",
+};
+
+const MARK_STYLE: Record<Mark, { bg: string; color: string }> = {
+  paint: { bg: "#fde8ec", color: "#c2185b" },
+  remove: { bg: "#e3f0fb", color: "#1565c0" },
+  both: { bg: "#fdf3d8", color: "#a26b00" },
 };
 
 const DATA: Record<GuideLocale, ReportData> = {
   ru: {
     disclaimer:
-      "Пример отчёта. Данные демонстрационные, VIN и госномер скрыты. В реальном отчёте все поля заполнены по конкретному автомобилю.",
-    vinLabel: "VIN",
-    vin: "KMHS381ADMU•••••",
-    car: "Hyundai Santa Fe · 2021",
-    updatedLabel: "Данные обновлены",
-    updated: "18.07.2026",
+      "Пример отчёта. Данные демонстрационные, госномер частично скрыт — в реальном отчёте все поля заполнены по конкретному автомобилю.",
+    title: "Sorento / 37머5182",
+    plate: "37머5182",
+    updatedLabel: "Последнее изменение",
+    updated: "2026-07-18",
 
-    summaryTitle: "Сводка",
-    summary: [
-      { label: "Тотальная гибель", value: "Нет", status: "ok" },
-      { label: "Угон / розыск", value: "Нет", status: "ok" },
-      { label: "Затопление", value: "Нет", status: "ok" },
-      { label: "Коммерческое использование", value: "Да — такси", status: "danger" },
-      { label: "Ущерб своему авто", value: "2 случая · 3 480 000 ₩", status: "warn" },
-      { label: "Ущерб чужому авто", value: "1 случай · 620 400 ₩", status: "warn" },
-      { label: "Смена владельца", value: "2 раза", status: "warn" },
-      { label: "Смена госномера", value: "1 раз", status: "ok" },
+    s1: "Общие сведения",
+    overview: [
+      { label: "Полная гибель", value: "Нет", icon: "loss" },
+      { label: "Угон авто", value: "Нет", icon: "theft" },
+      { label: "Затопление", value: "1", note: "запись", icon: "flood" },
+      { label: "Особое использование", value: "Да", icon: "taxi" },
+      { label: "Повреждение автомобиля", value: "2", note: "записи (9,756,400 ₩)", icon: "damage" },
+      { label: "Повреждение автомобиля оппонента", value: "1", note: "запись (452,300 ₩)", icon: "damage2" },
+      { label: "Смена владельца", value: "2", note: "записи", icon: "owner" },
+      { label: "Смена номера автомобиля", value: "1", note: "запись", icon: "plate" },
     ],
+    overviewNote: "Отсутствие записей о ДТП не означает, что автомобиль не имеет повреждений",
 
-    specsTitle: "Характеристики по VIN",
-    specs: [
-      ["Марка", "Hyundai"],
-      ["Модель", "Santa Fe (TM)"],
-      ["Объём двигателя", "2 151 см³"],
-      ["Тип топлива", "Дизель"],
+    s2: "Подробные сведения об автомобиле",
+    s2sub: "Общая информация о характеристиках автомобиля",
+    specsLeft: [
+      ["Производитель", "Kia"],
+      ["Модель", "Sorento"],
+      ["Объем двигателя", "2,151см3"],
+      ["Топливо", "дизель"],
       ["Цвет", "Белый"],
+    ],
+    specsRight: [
       ["Модельный год", "2021"],
-      ["Тип кузова", "Внедорожник, 5 дверей"],
-      ["Назначение", "Личное"],
-      ["Дата производства", "14.03.2021"],
-      ["Первая регистрация", "02.04.2021"],
+      ["Тип кузова", "SUV 5 дверей"],
+      ["Использование", "личное"],
+      ["Дата производства", "12.03.2021"],
+      ["Первая регистрация", "06.04.2021"],
     ],
 
-    usageTitle: "Коммерческая эксплуатация",
-    usage: [
-      { label: "Прокат / каршеринг", value: "Нет", status: "ok" },
-      { label: "Работа в такси", value: "Да · 04.2021 — 08.2023", status: "danger" },
-      { label: "Государственная служба", value: "Нет", status: "ok" },
+    s3: "История специального использования",
+    s3sub: "Использование авто в аренде (каршеринге), работа автомобиля в такси и на государственной службе.",
+    special: [
+      { label: "Коммерческое использование", value: "Нет", icon: "theft" },
+      { label: "Работа в такси", value: "да", icon: "taxi" },
+      { label: "Использование в правительстве", value: "Нет", icon: "gov" },
     ],
 
-    ownersTitle: "История владельцев и номеров",
-    ownersCols: ["Дата", "Событие", "Госномер", "Назначение"],
+    s4: "Смена номера автомобиля / владельца",
+    s4note:
+      "Обратите внимание, что информация об истории смены владельца включает все изменения между физическими лицами и организациями",
+    ownersCols: ["Дата регистрации", "Событие", "Гос. номер", "Цель использования автомобиля"],
     owners: [
-      ["11.02.2025", "Смена владельца", "72로 ••••", "Личное"],
-      ["30.08.2023", "Смена владельца и номера", "72로 ••••", "Личное"],
-      ["02.04.2021", "Первичная регистрация", "18바 ••••", "Такси"],
+      { date: "2026-05-22", event: "Конец предоставления информации", plate: "-", purpose: "-", end: true },
+      { date: "2024-11-08", event: "Смена номера", plate: "37머XXXX", purpose: "Личное пользование" },
+      { date: "2024-10-30", event: "Смена владельца", plate: "-", purpose: "Личное пользование" },
+      { date: "2023-02-14", event: "Смена владельца", plate: "51호XXXX", purpose: "Личное пользование" },
+      { date: "2021-04-06", event: "Первоначальная регистрация", plate: "82바XXXX", purpose: "Работа в такси" },
     ],
 
-    claimsTitle: "Страховые случаи",
-    claimsNote:
-      "Указаны выплаты, прошедшие через страховые компании. Ремонт за наличные в страховой истории не отражается — его показывает протокол осмотра.",
+    s5: "Информация о затоплении, уничтожении, краже",
+    s5sub: "Страховые случаи, которые могут оказать особое влияние на качество автомобиля.",
+    loss: [
+      { label: "Полная гибель", value: "Нет", icon: "loss" },
+      { label: "Угон авто", value: "Нет", icon: "theft" },
+      { label: "Затопление", value: "2023-08-11", icon: "flood" },
+    ],
+    s5notes: [
+      [
+        "Полная гибель",
+        "Если стоимость ремонта повреждённого автомобиля превышает стоимость автомобиля или ремонт повреждённого автомобиля невозможен, автомобиль считается погибшим",
+      ],
+      [
+        "Угон авто",
+        "Страховой случай, при котором угнанный автомобиль не был найден в течение 30 дней после сообщения в полицию, и страховка автомобиля возместила ущерб.",
+      ],
+      ["Затопление", "Страховой случай, при котором вода попадает в автомобиль."],
+    ],
+
+    s6: "История страховых случаев",
+    s6plateNote:
+      "37머5182 Невозможно предоставить информацию о наличии ДТП автомобиля, пока автомобиль не застрахован",
+    gapLabel: "Период отсутствия регистрации : 11.2024~12.2024",
+    s6intro: [
+      "В зависимости от источника страховой выплаты и Затрат на ремонт (предварительная оценка) страховые случаи делятся на «оплаченные страховой компанией, с которой вы оформили договор (автострахование)» и «оплаченные страховкой другого транспортного средства (страхование другой стороны)».",
+      "* Если запись о повреждении и ремонте автомобиля одновременно обрабатывается в моей страховке автомобиля и страховке другой стороны по обоюдной вине, она будет отображаться только в разделе «Страхование моего автомобиля» и опущена в разделе «Страхование другой стороны».",
+    ],
+    diagramCols: ["Схема ремонта", "Область ремонта", "Сводная информация"],
+    legend: ["Покраска", "Демонтаж", "Покраска+Демонтаж"],
+    areasLeft: [
+      { name: "Передний бампер", mark: "both" },
+      { name: "Задний бампер" },
+      { name: "Капот", mark: "paint" },
+      { name: "Решетка багажника" },
+      { name: "Передняя дверь (левая)", mark: "paint" },
+      { name: "Передняя дверь (правая)" },
+      { name: "Задняя дверь (левая)" },
+      { name: "Задняя дверь (правая)", mark: "remove" },
+      { name: "Переднее крыло (левая)", mark: "both" },
+      { name: "Переднее крыло (правая)" },
+      { name: "Заднее крыло (левая)" },
+      { name: "Заднее крыло (правая)", mark: "paint" },
+      { name: "Ветровое стекло" },
+    ],
+    areasRight: [
+      { name: "Люк в крыше" },
+      { name: "Петля" },
+      { name: "Раздвижная дверь (левая)" },
+      { name: "Раздвижная дверь (правая)", mark: "remove" },
+      { name: "Заднее стекло" },
+      { name: "Решетка радиатора", mark: "paint" },
+      { name: "Фары(левая)", mark: "remove" },
+      { name: "Фары(правая)" },
+      { name: "Задний комбинированный фонарь (левая)" },
+      { name: "Задний комбинированный фонарь (правая)" },
+      { name: "Боковая ступенька(левая)" },
+      { name: "Боковая ступенька(правая)" },
+      { name: "Центральный наполнитель (левая)" },
+      { name: "Центральный наполнитель(правая)" },
+    ],
+    summary: [
+      ["Покраска", "4"],
+      ["Демонтаж", "3"],
+      ["Замена", "2"],
+      ["Листовая сталь", "1"],
+      ["Ремонт", "2"],
+      ["Прочее", "3"],
+    ],
+    allHistoryBtn: "ВСЯ ИСТОРИЯ",
+    ownCrashTitle: "ДТП с участием моего автомобиля",
+    otherCrashTitle: "ДТП с участием автомобиля другой стороны",
+    ownInsurance: "Страхование моего автомобиля",
+    otherInsurance: "Страхование другой стороны",
+    repairCostLabel: "Затраты на ремонт (предварительная оценка) :",
     claims: [
       {
-        date: "23.11.2024",
-        type: "Ущерб своему автомобилю",
-        kind: "ДТП, водитель — виновник",
-        total: "2 910 000 ₩",
-        breakdown: [
-          ["Запчасти", "1 640 000 ₩"],
-          ["Работы", "610 000 ₩"],
-          ["Покраска", "660 000 ₩"],
-        ],
-        partsTitle: "Что ремонтировалось",
-        parts: [
-          "Переднее левое крыло — замена",
-          "Передний бампер — замена и покраска",
-          "Капот — рихтовка и покраска",
-          "Блок-фара левая — замена",
-          "Лонжерон передний левый — правка",
-        ],
+        date: "2023-08-11",
+        own: true,
+        byOwnInsurance: true,
+        badge: "Ущерб от затопления",
+        total: "8,470,000 ₩",
       },
       {
-        date: "07.06.2022",
-        type: "Ущерб своему автомобилю",
-        kind: "Повреждение на парковке",
-        total: "570 000 ₩",
+        date: "2022-05-27",
+        own: true,
+        byOwnInsurance: false,
+        total: "1,286,400 ₩",
         breakdown: [
-          ["Запчасти", "180 000 ₩"],
-          ["Работы", "140 000 ₩"],
-          ["Покраска", "250 000 ₩"],
+          ["Запчасти", "612,300 ₩"],
+          ["Работа", "298,700 ₩"],
+          ["Покраска", "375,400 ₩"],
         ],
-        partsTitle: "Что ремонтировалось",
-        parts: ["Задняя правая дверь — покраска", "Молдинг двери — замена"],
+        historyBtn: "ИСТОРИЯ РЕМОНТА",
       },
       {
-        date: "19.09.2021",
-        type: "Ущерб чужому автомобилю",
-        kind: "Выплата пострадавшей стороне",
-        total: "620 400 ₩",
-        partsTitle: "Что ремонтировалось",
+        date: "2021-11-19",
+        own: false,
+        byOwnInsurance: true,
+        total: "452,300 ₩",
       },
     ],
+    s6bullets: [
+      "Ввиду метода сбора данных автомобиля информация может быть неполной. Если у вас есть какие-либо сомнения, пожалуйста, проконсультируйтесь с нами.",
+      "Вышеупомянутые «затраты на ремонт (предварительная оценка)» отличаются от фактического страхового возмещения, выплачиваемого страховой компанией в силу затрат на ремонт и оценку (запчасти, оплата труда, покраска), за исключением косвенного ущерба и ущерба по обоюдной вине (ущерб от арендатора автомобиля, ущерб от простоя).",
+      "Вышеупомянутая «информация об истории ремонта» предоставляется только в том случае, если имеются данные о ремонтных работах по страховке аварийного транспортного средства.",
+    ],
+    s6notes: [
+      [
+        "Затраты на ремонт (предварительная оценка)",
+        "В случае повреждения автомобиля в результате ДТП стоимость ремонта автомобиля за исключением косвенного ущерба и ущерба по обоюдной вине (ущерб при транспортировке, ущерб от арендатора автомобиля, ущерб от простоя) из страховых выплат, предоставляемых страховой компанией.",
+      ],
+      [
+        "Неподтвержденная авария",
+        "Происшествие, которое ещё не было подтверждено или не окончательно оформлено и обработано, поскольку соответствующие данные ещё не переданы в Корейский институт развития страхования (отправка раз в месяц, занимает 2-3 месяца).",
+      ],
+      [
+        "Период отсутствия регистрации",
+        "Период времени, за который не может быть предоставлена информация о страховых выплатах на ремонт автомобиля в связи с отсутствием страхования транспортного средства от повреждений.",
+      ],
+      [
+        "Страхование моего автомобиля",
+        "ДТП, покрываемое личной страховкой (за исключением несчастного случая).",
+      ],
+      [
+        "Страхование другой стороны",
+        "ДТП, покрываемое страховкой другого транспортного средства (за исключением несчастного случая).",
+      ],
+      [
+        "ДТП с участием автомобиля другой стороны",
+        "ДТП, в котором ущерб автомобиля другого лица покрывается вашей личной страховкой.",
+      ],
+    ],
 
-    mileageTitle: "История пробега",
+    s7: "История пробега",
     mileageCols: ["Дата", "Пробег", "Источник"],
     mileage: [
-      ["11.02.2025", "148 320 км", "Страховая компания"],
-      ["30.08.2023", "121 640 км", "Площадка продажи авто"],
-      ["16.10.2022", "83 970 км", "Техосмотр"],
-      ["07.06.2022", "61 205 км", "Страховая компания"],
+      ["2024-10-30", "132,480 Km", "Страховая компания"],
+      ["2023-08-11", "98,215 Km", "Страховая компания"],
+      ["2022-09-04", "71,630 Km", "Площадка продажи авто"],
+      ["2021-11-19", "42,905 Km", "Страховая компания"],
     ],
-    mileageNote:
-      "Записи идут по возрастанию — скручивания нет. Разрыв между датами в 1,5 года при +38 000 км типичен для такси.",
 
-    valueTitle: "Оценочная стоимость в Корее",
-    value: "21 400 000 — 24 900 000 ₩",
-    valueNote: "Диапазон страховой оценки на дату отчёта, без учёта доставки и растаможки.",
+    s8: "Оценочная стоимость автомобиля",
+    valueRange: "21,400,000 ~ 24,900,000 ₩",
+    s8note: "Стандартная оценка для целей страхования на дату формирования отчёта.",
+
+    noteLabel: "Примечание",
   },
 
   en: {
     disclaimer:
-      "Sample report. The data is illustrative and the VIN and plate are masked. A real report is filled in for one specific car.",
-    vinLabel: "VIN",
-    vin: "KMHS381ADMU•••••",
-    car: "Hyundai Santa Fe · 2021",
-    updatedLabel: "Data updated",
-    updated: "18.07.2026",
+      "Sample report. The data is illustrative and the plate is partly masked — a real report is filled in for one specific car.",
+    title: "Sorento / 37머5182",
+    plate: "37머5182",
+    updatedLabel: "Last updated",
+    updated: "2026-07-18",
 
-    summaryTitle: "Summary",
-    summary: [
-      { label: "Total loss", value: "No", status: "ok" },
-      { label: "Theft / search", value: "No", status: "ok" },
-      { label: "Flood damage", value: "No", status: "ok" },
-      { label: "Commercial use", value: "Yes — taxi", status: "danger" },
-      { label: "Own vehicle damage", value: "2 claims · ₩3,480,000", status: "warn" },
-      { label: "Third-party damage", value: "1 claim · ₩620,400", status: "warn" },
-      { label: "Ownership changes", value: "2", status: "warn" },
-      { label: "Plate changes", value: "1", status: "ok" },
+    s1: "General information",
+    overview: [
+      { label: "Total loss", value: "No", icon: "loss" },
+      { label: "Vehicle theft", value: "No", icon: "theft" },
+      { label: "Flooding", value: "1", note: "record", icon: "flood" },
+      { label: "Special use", value: "Yes", icon: "taxi" },
+      { label: "Vehicle damage", value: "2", note: "records (₩9,756,400)", icon: "damage" },
+      { label: "Opponent vehicle damage", value: "1", note: "record (₩452,300)", icon: "damage2" },
+      { label: "Ownership change", value: "2", note: "records", icon: "owner" },
+      { label: "License plate change", value: "1", note: "record", icon: "plate" },
     ],
+    overviewNote: "The absence of accident records does not mean the vehicle is undamaged",
 
-    specsTitle: "Specifications by VIN",
-    specs: [
-      ["Make", "Hyundai"],
-      ["Model", "Santa Fe (TM)"],
+    s2: "Vehicle details",
+    s2sub: "General information about the vehicle specifications",
+    specsLeft: [
+      ["Manufacturer", "Kia"],
+      ["Model", "Sorento"],
       ["Engine displacement", "2,151 cc"],
-      ["Fuel", "Diesel"],
+      ["Fuel", "diesel"],
       ["Colour", "White"],
+    ],
+    specsRight: [
       ["Model year", "2021"],
-      ["Body", "SUV, 5 doors"],
-      ["Usage class", "Private"],
-      ["Manufactured", "14.03.2021"],
-      ["First registration", "02.04.2021"],
+      ["Body type", "SUV 5-door"],
+      ["Usage", "personal"],
+      ["Manufacturing date", "12.03.2021"],
+      ["First registration", "06.04.2021"],
     ],
 
-    usageTitle: "Commercial operation",
-    usage: [
-      { label: "Rental / car-sharing", value: "No", status: "ok" },
-      { label: "Taxi service", value: "Yes · 04.2021 — 08.2023", status: "danger" },
-      { label: "Government fleet", value: "No", status: "ok" },
+    s3: "Special usage history",
+    s3sub: "Rental (car-sharing) use, taxi operation and government service.",
+    special: [
+      { label: "Commercial use", value: "No", icon: "theft" },
+      { label: "Taxi operation", value: "yes", icon: "taxi" },
+      { label: "Government use", value: "No", icon: "gov" },
     ],
 
-    ownersTitle: "Ownership and plate history",
-    ownersCols: ["Date", "Event", "Plate", "Usage"],
+    s4: "License plate / ownership changes",
+    s4note:
+      "Note that the ownership history includes all changes between private individuals and organisations",
+    ownersCols: ["Registration date", "Event", "Plate", "Usage purpose"],
     owners: [
-      ["11.02.2025", "Ownership change", "72로 ••••", "Private"],
-      ["30.08.2023", "Ownership and plate change", "72로 ••••", "Private"],
-      ["02.04.2021", "First registration", "18바 ••••", "Taxi"],
+      { date: "2026-05-22", event: "Information provision ended", plate: "-", purpose: "-", end: true },
+      { date: "2024-11-08", event: "Plate change", plate: "37머XXXX", purpose: "Personal use" },
+      { date: "2024-10-30", event: "Ownership change", plate: "-", purpose: "Personal use" },
+      { date: "2023-02-14", event: "Ownership change", plate: "51호XXXX", purpose: "Personal use" },
+      { date: "2021-04-06", event: "Initial registration", plate: "82바XXXX", purpose: "Taxi operation" },
     ],
 
-    claimsTitle: "Insurance claims",
-    claimsNote:
-      "Only claims settled through insurers appear here. Cash repairs never reach this record — the inspection protocol reveals those.",
+    s5: "Flooding, total loss and theft",
+    s5sub: "Insurance events that particularly affect the quality of the vehicle.",
+    loss: [
+      { label: "Total loss", value: "No", icon: "loss" },
+      { label: "Vehicle theft", value: "No", icon: "theft" },
+      { label: "Flooding", value: "2023-08-11", icon: "flood" },
+    ],
+    s5notes: [
+      [
+        "Total loss",
+        "If the repair cost exceeds the value of the vehicle, or repair is impossible, the vehicle is written off as a total loss.",
+      ],
+      [
+        "Vehicle theft",
+        "An insurance event where a stolen vehicle was not recovered within 30 days of the police report and the insurer paid out.",
+      ],
+      ["Flooding", "An insurance event where water entered the vehicle."],
+    ],
+
+    s6: "Insurance claims history",
+    s6plateNote:
+      "37머5182 Accident information cannot be provided for periods when the vehicle was not insured",
+    gapLabel: "Non-coverage period: 11.2024~12.2024",
+    s6intro: [
+      "Depending on the source of the payout and the estimated repair cost, claims are split into those paid by your own insurer (own vehicle insurance) and those paid by the other vehicle's insurer (third-party insurance).",
+      "* If a damage and repair record is processed simultaneously under both your own and the other party's insurance due to shared fault, it appears only under «Own vehicle insurance» and is omitted from «Third-party insurance».",
+    ],
+    diagramCols: ["Repair diagram", "Repair area", "Summary"],
+    legend: ["Paint", "Removal", "Paint + removal"],
+    areasLeft: [
+      { name: "Front bumper", mark: "both" },
+      { name: "Rear bumper" },
+      { name: "Bonnet", mark: "paint" },
+      { name: "Tailgate frame" },
+      { name: "Front door (left)", mark: "paint" },
+      { name: "Front door (right)" },
+      { name: "Rear door (left)" },
+      { name: "Rear door (right)", mark: "remove" },
+      { name: "Front fender (left)", mark: "both" },
+      { name: "Front fender (right)" },
+      { name: "Rear fender (left)" },
+      { name: "Rear fender (right)", mark: "paint" },
+      { name: "Windscreen" },
+    ],
+    areasRight: [
+      { name: "Sunroof" },
+      { name: "Hinge" },
+      { name: "Sliding door (left)" },
+      { name: "Sliding door (right)", mark: "remove" },
+      { name: "Rear window" },
+      { name: "Radiator grille", mark: "paint" },
+      { name: "Headlight (left)", mark: "remove" },
+      { name: "Headlight (right)" },
+      { name: "Rear combination light (left)" },
+      { name: "Rear combination light (right)" },
+      { name: "Side step (left)" },
+      { name: "Side step (right)" },
+      { name: "Centre filler (left)" },
+      { name: "Centre filler (right)" },
+    ],
+    summary: [
+      ["Paint", "4"],
+      ["Removal", "3"],
+      ["Replacement", "2"],
+      ["Sheet metal", "1"],
+      ["Repair", "2"],
+      ["Other", "3"],
+    ],
+    allHistoryBtn: "FULL HISTORY",
+    ownCrashTitle: "Accident involving my vehicle",
+    otherCrashTitle: "Accident involving the other party's vehicle",
+    ownInsurance: "Own vehicle insurance",
+    otherInsurance: "Third-party insurance",
+    repairCostLabel: "Estimated repair cost:",
     claims: [
       {
-        date: "23.11.2024",
-        type: "Own vehicle damage",
-        kind: "At-fault collision",
-        total: "₩2,910,000",
-        breakdown: [
-          ["Parts", "₩1,640,000"],
-          ["Labour", "₩610,000"],
-          ["Paint", "₩660,000"],
-        ],
-        partsTitle: "Work performed",
-        parts: [
-          "Front left fender — replaced",
-          "Front bumper — replaced and painted",
-          "Bonnet — panel work and paint",
-          "Left headlight — replaced",
-          "Front left rail — straightened",
-        ],
+        date: "2023-08-11",
+        own: true,
+        byOwnInsurance: true,
+        badge: "Flood damage",
+        total: "₩8,470,000",
       },
       {
-        date: "07.06.2022",
-        type: "Own vehicle damage",
-        kind: "Parking damage",
-        total: "₩570,000",
+        date: "2022-05-27",
+        own: true,
+        byOwnInsurance: false,
+        total: "₩1,286,400",
         breakdown: [
-          ["Parts", "₩180,000"],
-          ["Labour", "₩140,000"],
-          ["Paint", "₩250,000"],
+          ["Parts", "₩612,300"],
+          ["Labour", "₩298,700"],
+          ["Paint", "₩375,400"],
         ],
-        partsTitle: "Work performed",
-        parts: ["Rear right door — painted", "Door moulding — replaced"],
+        historyBtn: "REPAIR HISTORY",
       },
       {
-        date: "19.09.2021",
-        type: "Third-party damage",
-        kind: "Payout to the other party",
-        total: "₩620,400",
-        partsTitle: "Work performed",
+        date: "2021-11-19",
+        own: false,
+        byOwnInsurance: true,
+        total: "₩452,300",
       },
     ],
+    s6bullets: [
+      "Due to the data collection method the information may be incomplete. If you have any doubts, please consult us.",
+      "The «estimated repair cost» above differs from the actual settlement paid by the insurer: it covers parts, labour and paint, and excludes consequential losses and shared-fault damages (rental loss, downtime).",
+      "The «repair history» above is provided only where repair records exist under the damaged vehicle's insurance.",
+    ],
+    s6notes: [
+      [
+        "Estimated repair cost",
+        "The cost of repairing the vehicle after an accident, excluding consequential and shared-fault losses (transport damage, rental loss, downtime), out of the payout provided by the insurer.",
+      ],
+      [
+        "Unconfirmed accident",
+        "An event not yet confirmed or fully processed because the data has not yet been passed to the Korea Insurance Development Institute (sent monthly, takes 2–3 months).",
+      ],
+      [
+        "Non-coverage period",
+        "A period for which repair payout information cannot be provided because the vehicle had no damage insurance.",
+      ],
+      ["Own vehicle insurance", "An accident covered by your own policy (excluding personal injury)."],
+      [
+        "Third-party insurance",
+        "An accident covered by the other vehicle's policy (excluding personal injury).",
+      ],
+      [
+        "Accident involving the other party's vehicle",
+        "An accident in which damage to another person's vehicle is covered by your own policy.",
+      ],
+    ],
 
-    mileageTitle: "Mileage history",
-    mileageCols: ["Date", "Odometer", "Source"],
+    s7: "Mileage history",
+    mileageCols: ["Date", "Mileage", "Source"],
     mileage: [
-      ["11.02.2025", "148,320 km", "Insurance company"],
-      ["30.08.2023", "121,640 km", "Used-car marketplace"],
-      ["16.10.2022", "83,970 km", "Technical inspection"],
-      ["07.06.2022", "61,205 km", "Insurance company"],
+      ["2024-10-30", "132,480 Km", "Insurance company"],
+      ["2023-08-11", "98,215 Km", "Insurance company"],
+      ["2022-09-04", "71,630 Km", "Used car trading centre"],
+      ["2021-11-19", "42,905 Km", "Insurance company"],
     ],
-    mileageNote:
-      "Readings only increase — no rollback. The +38,000 km over 1.5 years is typical for taxi service.",
 
-    valueTitle: "Estimated value in Korea",
-    value: "₩21,400,000 — ₩24,900,000",
-    valueNote: "Insurance valuation range at the report date, excluding shipping and customs.",
+    s8: "Estimated vehicle value",
+    valueRange: "₩21,400,000 ~ ₩24,900,000",
+    s8note: "Standard valuation for insurance purposes as at the report date.",
+
+    noteLabel: "Note",
   },
 
   ar: {
     disclaimer:
-      "تقرير نموذجي. البيانات توضيحية ورقم VIN واللوحة مخفيان. التقرير الحقيقي يُملأ لسيارة محددة.",
-    vinLabel: "VIN",
-    vin: "KMHS381ADMU•••••",
-    car: "Hyundai Santa Fe · 2021",
-    updatedLabel: "تاريخ تحديث البيانات",
-    updated: "18.07.2026",
+      "تقرير نموذجي. البيانات توضيحية واللوحة مخفية جزئياً — التقرير الحقيقي يُملأ لسيارة محددة.",
+    title: "Sorento / 37머5182",
+    plate: "37머5182",
+    updatedLabel: "آخر تحديث",
+    updated: "2026-07-18",
 
-    summaryTitle: "الملخص",
-    summary: [
-      { label: "خسارة كلية", value: "لا", status: "ok" },
-      { label: "سرقة / بحث", value: "لا", status: "ok" },
-      { label: "غرق", value: "لا", status: "ok" },
-      { label: "استخدام تجاري", value: "نعم — أجرة", status: "danger" },
-      { label: "ضرر بالسيارة نفسها", value: "حالتان · ₩3,480,000", status: "warn" },
-      { label: "ضرر بسيارة أخرى", value: "حالة · ₩620,400", status: "warn" },
-      { label: "تغيير الملكية", value: "مرتان", status: "warn" },
-      { label: "تغيير اللوحة", value: "مرة", status: "ok" },
+    s1: "معلومات عامة",
+    overview: [
+      { label: "خسارة كلية", value: "لا", icon: "loss" },
+      { label: "سرقة السيارة", value: "لا", icon: "theft" },
+      { label: "الغرق", value: "1", note: "سجل", icon: "flood" },
+      { label: "استخدام خاص", value: "نعم", icon: "taxi" },
+      { label: "ضرر بالسيارة", value: "2", note: "سجلان (₩9,756,400)", icon: "damage" },
+      { label: "ضرر بسيارة الطرف الآخر", value: "1", note: "سجل (₩452,300)", icon: "damage2" },
+      { label: "تغيير الملكية", value: "2", note: "سجلان", icon: "owner" },
+      { label: "تغيير اللوحة", value: "1", note: "سجل", icon: "plate" },
     ],
+    overviewNote: "غياب سجلات الحوادث لا يعني أن السيارة خالية من الأضرار",
 
-    specsTitle: "المواصفات حسب VIN",
-    specs: [
-      ["الماركة", "Hyundai"],
-      ["الطراز", "Santa Fe (TM)"],
+    s2: "تفاصيل السيارة",
+    s2sub: "معلومات عامة عن مواصفات السيارة",
+    specsLeft: [
+      ["الشركة المصنعة", "Kia"],
+      ["الطراز", "Sorento"],
       ["سعة المحرك", "2,151 سم³"],
       ["الوقود", "ديزل"],
       ["اللون", "أبيض"],
+    ],
+    specsRight: [
       ["سنة الطراز", "2021"],
-      ["نوع الهيكل", "دفع رباعي، 5 أبواب"],
+      ["نوع الهيكل", "SUV 5 أبواب"],
       ["الاستخدام", "شخصي"],
-      ["تاريخ التصنيع", "14.03.2021"],
-      ["أول تسجيل", "02.04.2021"],
+      ["تاريخ التصنيع", "12.03.2021"],
+      ["أول تسجيل", "06.04.2021"],
     ],
 
-    usageTitle: "التشغيل التجاري",
-    usage: [
-      { label: "تأجير / مشاركة", value: "لا", status: "ok" },
-      { label: "سيارة أجرة", value: "نعم · 04.2021 — 08.2023", status: "danger" },
-      { label: "أسطول حكومي", value: "لا", status: "ok" },
+    s3: "سجل الاستخدام الخاص",
+    s3sub: "الاستخدام في التأجير والمشاركة والعمل كسيارة أجرة وفي الخدمة الحكومية.",
+    special: [
+      { label: "استخدام تجاري", value: "لا", icon: "theft" },
+      { label: "العمل كسيارة أجرة", value: "نعم", icon: "taxi" },
+      { label: "استخدام حكومي", value: "لا", icon: "gov" },
     ],
 
-    ownersTitle: "سجل الملكية واللوحات",
-    ownersCols: ["التاريخ", "الحدث", "اللوحة", "الاستخدام"],
+    s4: "تغيير اللوحة / الملكية",
+    s4note: "يشمل سجل تغيير الملكية جميع التغييرات بين الأفراد والمؤسسات",
+    ownersCols: ["تاريخ التسجيل", "الحدث", "اللوحة", "غرض الاستخدام"],
     owners: [
-      ["11.02.2025", "تغيير الملكية", "72로 ••••", "شخصي"],
-      ["30.08.2023", "تغيير الملكية واللوحة", "72로 ••••", "شخصي"],
-      ["02.04.2021", "التسجيل الأول", "18바 ••••", "أجرة"],
+      { date: "2026-05-22", event: "انتهاء تقديم المعلومات", plate: "-", purpose: "-", end: true },
+      { date: "2024-11-08", event: "تغيير اللوحة", plate: "37머XXXX", purpose: "استخدام شخصي" },
+      { date: "2024-10-30", event: "تغيير الملكية", plate: "-", purpose: "استخدام شخصي" },
+      { date: "2023-02-14", event: "تغيير الملكية", plate: "51호XXXX", purpose: "استخدام شخصي" },
+      { date: "2021-04-06", event: "التسجيل الأول", plate: "82바XXXX", purpose: "سيارة أجرة" },
     ],
 
-    claimsTitle: "مطالبات التأمين",
-    claimsNote:
-      "تظهر هنا المطالبات المسددة عبر شركات التأمين فقط. الإصلاحات النقدية لا تُسجَّل — يكشفها بروتوكول الفحص.",
+    s5: "الغرق والخسارة الكلية والسرقة",
+    s5sub: "حالات التأمين التي تؤثر بشكل خاص على جودة السيارة.",
+    loss: [
+      { label: "خسارة كلية", value: "لا", icon: "loss" },
+      { label: "سرقة السيارة", value: "لا", icon: "theft" },
+      { label: "الغرق", value: "2023-08-11", icon: "flood" },
+    ],
+    s5notes: [
+      [
+        "خسارة كلية",
+        "إذا تجاوزت تكلفة الإصلاح قيمة السيارة أو تعذّر الإصلاح، تُعتبر السيارة خسارة كلية.",
+      ],
+      [
+        "سرقة السيارة",
+        "حالة لم يتم فيها العثور على السيارة المسروقة خلال 30 يوماً من البلاغ ودفع التأمين التعويض.",
+      ],
+      ["الغرق", "حالة تأمينية دخل فيها الماء إلى السيارة."],
+    ],
+
+    s6: "سجل مطالبات التأمين",
+    s6plateNote: "37머5182 لا يمكن تقديم معلومات الحوادث عن الفترات التي لم تكن السيارة مؤمّنة فيها",
+    gapLabel: "فترة عدم التغطية: 11.2024~12.2024",
+    s6intro: [
+      "بحسب مصدر التعويض وتكلفة الإصلاح التقديرية، تنقسم الحالات إلى ما تدفعه شركة تأمينك وما تدفعه شركة تأمين الطرف الآخر.",
+      "* إذا عولج سجل الضرر والإصلاح لدى الطرفين بسبب الخطأ المشترك، فإنه يظهر في قسم «تأمين سيارتي» فقط.",
+    ],
+    diagramCols: ["مخطط الإصلاح", "منطقة الإصلاح", "الملخص"],
+    legend: ["دهان", "فك", "دهان + فك"],
+    areasLeft: [
+      { name: "الصادم الأمامي", mark: "both" },
+      { name: "الصادم الخلفي" },
+      { name: "غطاء المحرك", mark: "paint" },
+      { name: "إطار الباب الخلفي" },
+      { name: "الباب الأمامي (يسار)", mark: "paint" },
+      { name: "الباب الأمامي (يمين)" },
+      { name: "الباب الخلفي (يسار)" },
+      { name: "الباب الخلفي (يمين)", mark: "remove" },
+      { name: "الرفرف الأمامي (يسار)", mark: "both" },
+      { name: "الرفرف الأمامي (يمين)" },
+      { name: "الرفرف الخلفي (يسار)" },
+      { name: "الرفرف الخلفي (يمين)", mark: "paint" },
+      { name: "الزجاج الأمامي" },
+    ],
+    areasRight: [
+      { name: "فتحة السقف" },
+      { name: "المفصلة" },
+      { name: "الباب المنزلق (يسار)" },
+      { name: "الباب المنزلق (يمين)", mark: "remove" },
+      { name: "الزجاج الخلفي" },
+      { name: "شبك الرادياتير", mark: "paint" },
+      { name: "المصباح الأمامي (يسار)", mark: "remove" },
+      { name: "المصباح الأمامي (يمين)" },
+      { name: "المصباح الخلفي (يسار)" },
+      { name: "المصباح الخلفي (يمين)" },
+      { name: "العتبة الجانبية (يسار)" },
+      { name: "العتبة الجانبية (يمين)" },
+      { name: "الحشوة الوسطى (يسار)" },
+      { name: "الحشوة الوسطى (يمين)" },
+    ],
+    summary: [
+      ["دهان", "4"],
+      ["فك", "3"],
+      ["استبدال", "2"],
+      ["صفائح معدنية", "1"],
+      ["إصلاح", "2"],
+      ["أخرى", "3"],
+    ],
+    allHistoryBtn: "السجل الكامل",
+    ownCrashTitle: "حادث بمشاركة سيارتي",
+    otherCrashTitle: "حادث بمشاركة سيارة الطرف الآخر",
+    ownInsurance: "تأمين سيارتي",
+    otherInsurance: "تأمين الطرف الآخر",
+    repairCostLabel: "تكلفة الإصلاح التقديرية:",
     claims: [
       {
-        date: "23.11.2024",
-        type: "ضرر بالسيارة نفسها",
-        kind: "حادث والسائق متسبب",
-        total: "₩2,910,000",
-        breakdown: [
-          ["قطع الغيار", "₩1,640,000"],
-          ["العمالة", "₩610,000"],
-          ["الدهان", "₩660,000"],
-        ],
-        partsTitle: "الأعمال المنفذة",
-        parts: [
-          "الرفرف الأمامي الأيسر — استبدال",
-          "الصادم الأمامي — استبدال ودهان",
-          "غطاء المحرك — سمكرة ودهان",
-          "المصباح الأمامي الأيسر — استبدال",
-          "العارضة الأمامية اليسرى — تقويم",
-        ],
+        date: "2023-08-11",
+        own: true,
+        byOwnInsurance: true,
+        badge: "ضرر الغرق",
+        total: "₩8,470,000",
       },
       {
-        date: "07.06.2022",
-        type: "ضرر بالسيارة نفسها",
-        kind: "ضرر في موقف السيارات",
-        total: "₩570,000",
+        date: "2022-05-27",
+        own: true,
+        byOwnInsurance: false,
+        total: "₩1,286,400",
         breakdown: [
-          ["قطع الغيار", "₩180,000"],
-          ["العمالة", "₩140,000"],
-          ["الدهان", "₩250,000"],
+          ["قطع الغيار", "₩612,300"],
+          ["العمالة", "₩298,700"],
+          ["الدهان", "₩375,400"],
         ],
-        partsTitle: "الأعمال المنفذة",
-        parts: ["الباب الخلفي الأيمن — دهان", "شريط الباب — استبدال"],
+        historyBtn: "سجل الإصلاح",
       },
       {
-        date: "19.09.2021",
-        type: "ضرر بسيارة أخرى",
-        kind: "تعويض للطرف الآخر",
-        total: "₩620,400",
-        partsTitle: "الأعمال المنفذة",
+        date: "2021-11-19",
+        own: false,
+        byOwnInsurance: true,
+        total: "₩452,300",
       },
     ],
+    s6bullets: [
+      "قد تكون المعلومات ناقصة بسبب طريقة جمع البيانات. إذا كان لديك أي شك فاستشرنا.",
+      "«تكلفة الإصلاح التقديرية» تختلف عن التعويض الفعلي: تشمل القطع والعمالة والدهان وتستثني الأضرار غير المباشرة والخطأ المشترك.",
+      "«سجل الإصلاح» يُقدَّم فقط عند توفر بيانات أعمال الإصلاح ضمن تأمين السيارة المتضررة.",
+    ],
+    s6notes: [
+      [
+        "تكلفة الإصلاح التقديرية",
+        "تكلفة إصلاح السيارة بعد الحادث باستثناء الأضرار غير المباشرة والخطأ المشترك من التعويض المقدم من شركة التأمين.",
+      ],
+      [
+        "حادث غير مؤكد",
+        "حادث لم يُؤكد أو يُعالج نهائياً لأن البيانات لم تُرسل بعد إلى المعهد الكوري لتطوير التأمين (شهرياً، ويستغرق 2-3 أشهر).",
+      ],
+      [
+        "فترة عدم التغطية",
+        "فترة لا يمكن تقديم معلومات التعويضات عنها لعدم وجود تأمين ضد الأضرار.",
+      ],
+      ["تأمين سيارتي", "حادث تغطيه وثيقتك الشخصية (باستثناء الإصابات)."],
+      ["تأمين الطرف الآخر", "حادث تغطيه وثيقة السيارة الأخرى (باستثناء الإصابات)."],
+      [
+        "حادث بمشاركة سيارة الطرف الآخر",
+        "حادث يُغطى فيه الضرر اللاحق بسيارة شخص آخر بوثيقتك الشخصية.",
+      ],
+    ],
 
-    mileageTitle: "سجل المسافة",
-    mileageCols: ["التاريخ", "العداد", "المصدر"],
+    s7: "سجل المسافة",
+    mileageCols: ["التاريخ", "المسافة", "المصدر"],
     mileage: [
-      ["11.02.2025", "148,320 كم", "شركة التأمين"],
-      ["30.08.2023", "121,640 كم", "منصة بيع السيارات"],
-      ["16.10.2022", "83,970 كم", "الفحص الفني"],
-      ["07.06.2022", "61,205 كم", "شركة التأمين"],
+      ["2024-10-30", "132,480 كم", "شركة التأمين"],
+      ["2023-08-11", "98,215 كم", "شركة التأمين"],
+      ["2022-09-04", "71,630 كم", "مركز بيع السيارات"],
+      ["2021-11-19", "42,905 كم", "شركة التأمين"],
     ],
-    mileageNote: "القراءات تتزايد فقط — لا تلاعب بالعداد.",
 
-    valueTitle: "القيمة التقديرية في كوريا",
-    value: "₩21,400,000 — ₩24,900,000",
-    valueNote: "نطاق تقييم التأمين بتاريخ التقرير، دون الشحن والجمارك.",
+    s8: "القيمة التقديرية للسيارة",
+    valueRange: "₩21,400,000 ~ ₩24,900,000",
+    s8note: "تقييم قياسي لأغراض التأمين بتاريخ التقرير.",
+
+    noteLabel: "ملاحظة",
   },
 };
 
-function StatusIcon({ status }: { status: Status }) {
-  if (status === "ok") return <CheckCircle2 className="w-4 h-4 shrink-0" />;
-  if (status === "danger") return <AlertTriangle className="w-4 h-4 shrink-0" />;
-  return <AlertTriangle className="w-4 h-4 shrink-0" />;
+/* ────────────────────────── строительные блоки ────────────────────────── */
+
+function SectionBar({ n, text }: { n: number; text: string }) {
+  return (
+    <div className="bg-[#3a3a3a] text-white px-5 py-3 text-[15px]">
+      <span className="font-bold">{n}.</span> <span className="font-normal">{text}</span>
+    </div>
+  );
 }
 
-export function ReportExample({ lang }: { lang: GuideLocale }) {
-  const d = DATA[lang];
+function Icon({ name }: { name: string }) {
+  return (
+    <div className="w-[62px] h-[62px] rounded-full bg-[#f2f4f6] flex items-center justify-center mx-auto mb-2.5">
+      <svg
+        viewBox="0 0 24 24"
+        className="w-8 h-8"
+        fill="none"
+        stroke="#4a90d9"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d={ICONS[name] ?? ICONS.damage} />
+      </svg>
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  note,
+  icon,
+}: {
+  label: string;
+  value: string;
+  note?: string;
+  icon: string;
+}) {
+  return (
+    <div className="border border-[#e3e6ea] px-3 py-5 text-center">
+      <Icon name={icon} />
+      <div className="text-[13px] text-[#333] leading-snug mb-1">{label}</div>
+      <div className="text-[#111]">
+        <span className="text-[17px] font-bold">{value}</span>
+        {note && <span className="text-[13px] ms-1">{note}</span>}
+      </div>
+    </div>
+  );
+}
+
+function SpecTable({ rows }: { rows: [string, string][] }) {
+  return (
+    <table className="w-full border-collapse text-[13px]">
+      <tbody>
+        {rows.map(([k, v]) => (
+          <tr key={k}>
+            <th className="w-[45%] border border-[#e3e6ea] bg-[#f7f8f9] px-3 py-2.5 font-semibold text-[#333] text-center">
+              {k}
+            </th>
+            <td className="border border-[#e3e6ea] px-3 py-2.5 font-bold text-[#111]">{v}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function NoteBox({ label, items }: { label: string; items: [string, string][] }) {
+  return (
+    <div className="mt-6">
+      <span className="inline-block bg-[#3a3a3a] text-white text-[12px] rounded-full px-4 py-1.5">
+        {label}
+      </span>
+      <div className="bg-[#f5f6f7] px-6 py-5 mt-[-14px] pt-8 space-y-4">
+        {items.map(([t, d]) => (
+          <div key={t} className="text-[12px] leading-relaxed">
+            <div className="font-bold text-[#222] mb-1">▪ {t}</div>
+            <p className="text-[#555] ps-3">{d}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AreaTag({ name, mark }: { name: string; mark?: Mark }) {
+  const s = mark ? MARK_STYLE[mark] : null;
+  return (
+    <div className="mb-1.5">
+      <span className="inline-block bg-[#eceff1] text-[#333] text-[11.5px] font-semibold px-1.5 py-0.5 leading-snug">
+        {name}
+      </span>
+      {s && (
+        <span
+          className="inline-block text-[11px] font-semibold px-1.5 py-0.5 ms-1 leading-snug"
+          style={{ backgroundColor: s.bg, color: s.color }}
+        >
+          {mark === "both" ? "◧" : mark === "paint" ? "●" : "◇"}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** Схема кузова: вид сверху и сбоку с подсветкой зон ремонта. */
+function CarDiagram({ legend }: { legend: [string, string, string] }) {
+  return (
+    <div>
+      <svg viewBox="0 0 220 300" className="w-full max-w-[210px] mx-auto" aria-hidden="true">
+        <g stroke="#9aa3ab" strokeWidth="1.2" fill="none">
+          {/* вид сверху */}
+          <rect x="62" y="14" width="96" height="150" rx="26" />
+          <rect x="78" y="34" width="64" height="34" rx="8" />
+          <rect x="78" y="104" width="64" height="34" rx="8" />
+          <line x1="62" y1="86" x2="158" y2="86" />
+          {/* колёса сверху */}
+          <rect x="50" y="42" width="12" height="24" rx="3" />
+          <rect x="158" y="42" width="12" height="24" rx="3" />
+          <rect x="50" y="118" width="12" height="24" rx="3" />
+          <rect x="158" y="118" width="12" height="24" rx="3" />
+          {/* вид сбоку */}
+          <path d="M28 236c0-10 10-16 22-18l16-18c4-5 10-7 16-7h44c7 0 13 3 17 8l14 17c12 2 21 8 21 18v14H28v-14Z" />
+          <line x1="94" y1="193" x2="94" y2="218" />
+          <circle cx="66" cy="250" r="13" />
+          <circle cx="158" cy="250" r="13" />
+        </g>
+        {/* зоны ремонта */}
+        <g opacity="0.55">
+          <rect x="62" y="14" width="96" height="22" rx="10" fill="#f8b6c4" />
+          <rect x="62" y="86" width="48" height="40" fill="#f8b6c4" />
+          <rect x="28" y="222" width="34" height="28" rx="8" fill="#fbe3a1" />
+        </g>
+        <g fill="#e53935">
+          <circle cx="72" cy="24" r="4" />
+          <circle cx="86" cy="104" r="4" />
+        </g>
+        <g fill="#1e88e5">
+          <circle cx="140" cy="24" r="4" />
+          <circle cx="44" cy="236" r="4" />
+        </g>
+      </svg>
+
+      <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-3 text-[10.5px] text-[#555]">
+        {(
+          [
+            ["#f8b6c4", legend[0]],
+            ["#fbe3a1", legend[1]],
+            ["#cfe3f7", legend[2]],
+          ] as const
+        ).map(([c, l]) => (
+          <span key={l} className="inline-flex items-center gap-1">
+            <span className="inline-block w-4 h-3" style={{ backgroundColor: c }} />
+            {l}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Блок одного страхового случая: дата слева, два бокса справа. */
+function ClaimRow({ c, d }: { c: Claim; d: ReportData }) {
+  const detail = (
+    <>
+      {c.badge && (
+        <div className="inline-block bg-[#3a3a3a] text-white text-[11px] rounded-full px-3 py-1 mb-1.5">
+          {c.badge}
+        </div>
+      )}
+      <div className="text-[12.5px] font-bold text-[#222] leading-relaxed">
+        {d.repairCostLabel}
+        <br />
+        {c.total}
+      </div>
+      {c.breakdown && (
+        <div className="text-[12px] font-bold text-[#222] mt-1 leading-relaxed">
+          {c.breakdown.map(([k, v]) => (
+            <div key={k}>
+              - {k} : {v}
+            </div>
+          ))}
+        </div>
+      )}
+      {c.historyBtn && (
+        <span className="inline-block border border-[#bbb] rounded-full text-[10.5px] px-3 py-1 mt-2 text-[#444]">
+          {c.historyBtn} ⌄
+        </span>
+      )}
+    </>
+  );
 
   return (
-    <div className="rounded-2xl border border-border bg-base-darker overflow-hidden">
-      {/* Шапка отчёта */}
-      <div className="px-6 sm:px-8 py-6 border-b border-border-subtle bg-elevated">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Car className="w-5 h-5 text-primary" />
-              <span className="text-xl font-bold font-[family-name:var(--font-heading)] text-text">
-                {d.car}
-              </span>
-            </div>
-            <div className="text-sm text-text-muted font-mono">
-              {d.vinLabel}: {d.vin}
-            </div>
-          </div>
-          <div className="text-xs text-text-dim">
-            {d.updatedLabel}: {d.updated}
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col sm:flex-row items-start gap-4 py-7 border-b border-dashed border-[#d8dce0] last:border-0">
+      <div className="sm:w-[92px] shrink-0 text-[14px] text-[#222] sm:text-end pt-2">{c.date}</div>
 
-      {/* Плашка «это пример» */}
-      <div className="px-6 sm:px-8 py-3 bg-cta/10 border-b border-cta/20 text-xs text-cta leading-relaxed">
-        {d.disclaimer}
-      </div>
-
-      <div className="p-6 sm:p-8 space-y-10">
-        {/* Сводка */}
-        <div>
-          <SectionTitle icon={FileText} text={d.summaryTitle} />
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {d.summary.map((s) => (
-              <div
-                key={s.label}
-                className={`rounded-xl border p-4 ${STATUS_STYLES[s.status]}`}
-              >
-                <div className="flex items-start gap-2">
-                  <StatusIcon status={s.status} />
-                  <div className="min-w-0">
-                    <div className="text-[11px] uppercase tracking-wide opacity-80 leading-tight">
-                      {s.label}
-                    </div>
-                    <div className="text-sm font-semibold mt-1 leading-snug">{s.value}</div>
-                  </div>
-                </div>
+      <div className="flex-1 grid md:grid-cols-[1.6fr_1fr] gap-3 w-full">
+        {/* ДТП с участием моего автомобиля */}
+        <div className="border border-[#e3e6ea]">
+          <div className="bg-[#3a3a3a] text-white text-[12.5px] text-center py-2.5 px-2">
+            {d.ownCrashTitle}
+          </div>
+          <div className="grid grid-cols-2">
+            <div className="border-e border-[#e3e6ea]">
+              <div className="bg-[#f7f8f9] text-[12px] text-center text-[#333] py-2.5 px-2 border-b border-[#e3e6ea] leading-snug">
+                {d.ownInsurance}
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Характеристики + коммерческое использование */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          <div>
-            <SectionTitle icon={Car} text={d.specsTitle} />
-            <dl className="divide-y divide-border-subtle text-sm rounded-xl border border-border-subtle overflow-hidden">
-              {d.specs.map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-3 px-4 py-2.5 bg-elevated/40">
-                  <dt className="text-text-muted">{k}</dt>
-                  <dd className="font-medium text-text text-end">{v}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-
-          <div>
-            <SectionTitle icon={AlertTriangle} text={d.usageTitle} />
-            <div className="space-y-3">
-              {d.usage.map((u) => (
-                <div
-                  key={u.label}
-                  className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm ${STATUS_STYLES[u.status]}`}
-                >
-                  <span className="opacity-90">{u.label}</span>
-                  <span className="font-semibold text-end">{u.value}</span>
-                </div>
-              ))}
+              <div className="px-3 py-4 text-center min-h-[74px]">
+                {c.own && c.byOwnInsurance ? detail : null}
+              </div>
             </div>
-
-            <div className="mt-6">
-              <SectionTitle icon={Coins} text={d.valueTitle} />
-              <div className="rounded-xl border border-border-subtle bg-elevated/40 px-4 py-4">
-                <div className="text-lg font-bold font-[family-name:var(--font-heading)] text-primary">
-                  {d.value}
-                </div>
-                <p className="text-xs text-text-muted mt-1.5 leading-relaxed">{d.valueNote}</p>
+            <div>
+              <div className="bg-[#f7f8f9] text-[12px] text-center text-[#333] py-2.5 px-2 border-b border-[#e3e6ea] leading-snug">
+                {d.otherInsurance}
+              </div>
+              <div className="px-3 py-4 text-center min-h-[74px]">
+                {c.own && !c.byOwnInsurance ? detail : null}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Владельцы и номера */}
-        <div>
-          <SectionTitle icon={FileText} text={d.ownersTitle} />
-          <div className="overflow-x-auto rounded-xl border border-border-subtle">
-            <table className="w-full text-sm min-w-[520px]">
-              <thead>
-                <tr className="bg-elevated text-text-muted text-xs uppercase tracking-wide">
-                  {d.ownersCols.map((c) => (
-                    <th key={c} className="px-4 py-2.5 text-start font-medium">
-                      {c}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-subtle">
-                {d.owners.map((row, i) => (
-                  <tr key={i} className="bg-elevated/30">
-                    {row.map((cell, j) => (
-                      <td
-                        key={j}
-                        className={`px-4 py-2.5 ${j === 0 ? "text-text-muted whitespace-nowrap" : "text-text"}`}
-                      >
-                        {cell}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* ДТП с участием автомобиля другой стороны */}
+        <div className="border border-[#e3e6ea]">
+          <div className="bg-[#8a8f94] text-white text-[12.5px] text-center py-2.5 px-2 leading-snug">
+            {d.otherCrashTitle}
           </div>
-        </div>
-
-        {/* Страховые случаи */}
-        <div>
-          <SectionTitle icon={Wrench} text={d.claimsTitle} />
-          <div className="space-y-4">
-            {d.claims.map((c, i) => (
-              <div key={i} className="rounded-xl border border-border-subtle overflow-hidden">
-                <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 bg-elevated border-b border-border-subtle">
-                  <div>
-                    <div className="text-sm font-semibold text-text">{c.type}</div>
-                    {c.kind && <div className="text-xs text-text-muted mt-0.5">{c.kind}</div>}
-                  </div>
-                  <div className="text-end">
-                    <div className="text-xs text-text-dim">{c.date}</div>
-                    <div className="text-base font-bold text-cta font-[family-name:var(--font-heading)]">
-                      {c.total}
-                    </div>
-                  </div>
-                </div>
-
-                {(c.breakdown || c.parts) && (
-                  <div className="px-5 py-4 bg-elevated/30 grid sm:grid-cols-2 gap-5">
-                    {c.breakdown && (
-                      <dl className="space-y-1.5 text-sm">
-                        {c.breakdown.map(([k, v]) => (
-                          <div key={k} className="flex justify-between gap-3">
-                            <dt className="text-text-muted">{k}</dt>
-                            <dd className="text-text font-medium">{v}</dd>
-                          </div>
-                        ))}
-                      </dl>
-                    )}
-                    {c.parts && (
-                      <div>
-                        <div className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">
-                          {c.partsTitle}
-                        </div>
-                        <ul className="space-y-1.5 text-sm text-text-secondary">
-                          {c.parts.map((p) => (
-                            <li key={p} className="flex gap-2">
-                              <span className="text-cta">•</span>
-                              <span>{p}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+          <div className="bg-[#f7f8f9] text-[12px] text-center font-semibold text-[#333] py-2.5 px-2 border-b border-[#e3e6ea]">
+            {d.ownInsurance}
           </div>
-          <p className="text-xs text-text-muted mt-3 leading-relaxed">{d.claimsNote}</p>
-        </div>
-
-        {/* Пробег */}
-        <div>
-          <SectionTitle icon={Gauge} text={d.mileageTitle} />
-          <div className="overflow-x-auto rounded-xl border border-border-subtle">
-            <table className="w-full text-sm min-w-[420px]">
-              <thead>
-                <tr className="bg-elevated text-text-muted text-xs uppercase tracking-wide">
-                  {d.mileageCols.map((c) => (
-                    <th key={c} className="px-4 py-2.5 text-start font-medium">
-                      {c}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-subtle">
-                {d.mileage.map((row, i) => (
-                  <tr key={i} className="bg-elevated/30">
-                    <td className="px-4 py-2.5 text-text-muted whitespace-nowrap">{row[0]}</td>
-                    <td className="px-4 py-2.5 text-text font-semibold">{row[1]}</td>
-                    <td className="px-4 py-2.5 text-text-secondary">{row[2]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="text-xs text-text-muted mt-3 leading-relaxed">{d.mileageNote}</p>
+          <div className="px-3 py-4 text-center min-h-[52px]">{!c.own ? detail : null}</div>
         </div>
       </div>
     </div>
   );
 }
 
-function SectionTitle({
-  icon: Icon,
-  text,
-}: {
-  icon: typeof FileText;
-  text: string;
-}) {
+/* ────────────────────────────── сам отчёт ────────────────────────────── */
+
+export function ReportExample({ lang }: { lang: GuideLocale }) {
+  const d = DATA[lang];
+
   return (
-    <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-text mb-4">
-      <Icon className="w-4 h-4 text-primary" />
-      {text}
-    </h3>
+    <div
+      className="bg-white text-[#222] rounded-xl overflow-hidden shadow-2xl"
+      dir={lang === "ar" ? "rtl" : "ltr"}
+    >
+      {/* Плашка «это пример» — вне бланка отчёта */}
+      <div className="bg-[#fff4e0] border-b border-[#f0d9ae] px-5 py-3 text-[12px] text-[#8a5a00] leading-relaxed">
+        {d.disclaimer}
+      </div>
+
+      <div className="px-4 sm:px-7 py-8">
+        {/* Заголовок бланка */}
+        <div className="text-center mb-8">
+          <div className="text-[19px] font-bold text-[#111]">{d.title}</div>
+          <div className="text-[13px] font-semibold text-[#333] mt-1.5">
+            {d.updatedLabel} : {d.updated}
+          </div>
+        </div>
+
+        {/* 1. Общие сведения */}
+        <SectionBar n={1} text={d.s1} />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mt-6">
+          {d.overview.map((o) => (
+            <StatCard key={o.label} {...o} />
+          ))}
+        </div>
+        <p className="text-center text-[14px] text-[#333] my-7">{d.overviewNote}</p>
+
+        {/* 2. Подробные сведения */}
+        <SectionBar n={2} text={d.s2} />
+        <p className="text-[12px] text-[#666] mt-5 mb-3">{d.s2sub}</p>
+        <div className="grid md:grid-cols-2 gap-x-5 gap-y-0">
+          <SpecTable rows={d.specsLeft} />
+          <SpecTable rows={d.specsRight} />
+        </div>
+
+        {/* 3. Специальное использование */}
+        <div className="mt-9">
+          <SectionBar n={3} text={d.s3} />
+        </div>
+        <p className="text-[12px] text-[#666] mt-5 mb-5">{d.s3sub}</p>
+        <div className="grid grid-cols-3 gap-2.5">
+          {d.special.map((s) => (
+            <div key={s.label} className="text-center px-2">
+              <Icon name={s.icon} />
+              <div className="text-[13px] text-[#333] leading-snug mb-1">{s.label}</div>
+              <div className="text-[17px] font-bold text-[#111]">{s.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* 4. Смена номера / владельца */}
+        <div className="mt-9">
+          <SectionBar n={4} text={d.s4} />
+        </div>
+        <p className="text-[12px] text-[#666] mt-5 mb-3">{d.s4note}</p>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-[13px] min-w-[540px]">
+            <thead>
+              <tr className="bg-[#f7f8f9]">
+                {d.ownersCols.map((c) => (
+                  <th
+                    key={c}
+                    className="border border-[#e3e6ea] px-3 py-2.5 font-normal text-[#333] text-center"
+                  >
+                    {c}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {d.owners.map((r) => (
+                <tr key={r.date}>
+                  <td className="border border-[#e3e6ea] px-3 py-2.5 text-center font-bold">
+                    {r.date}
+                  </td>
+                  <td
+                    className={`border border-[#e3e6ea] px-3 py-2.5 text-center font-bold ${
+                      r.end ? "text-[#e02020]" : "text-[#111]"
+                    }`}
+                  >
+                    {r.event}
+                  </td>
+                  <td className="border border-[#e3e6ea] px-3 py-2.5 text-center font-bold">
+                    {r.plate}
+                  </td>
+                  <td className="border border-[#e3e6ea] px-3 py-2.5 text-center font-bold">
+                    {r.purpose}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* 5. Затопление / гибель / кража */}
+        <div className="mt-9">
+          <SectionBar n={5} text={d.s5} />
+        </div>
+        <p className="text-[12px] text-[#666] mt-5 mb-5">{d.s5sub}</p>
+        <div className="grid grid-cols-3 gap-2.5">
+          {d.loss.map((s) => (
+            <div key={s.label} className="text-center px-2">
+              <Icon name={s.icon} />
+              <div className="text-[13px] text-[#333] leading-snug mb-1">{s.label}</div>
+              <div className="text-[16px] font-bold text-[#111]">{s.value}</div>
+            </div>
+          ))}
+        </div>
+        <NoteBox label={d.noteLabel} items={d.s5notes} />
+
+        {/* 6. История страховых случаев */}
+        <div className="mt-9">
+          <SectionBar n={6} text={d.s6} />
+        </div>
+        <p className="text-center text-[13px] text-[#333] mt-6 mb-4">{d.s6plateNote}</p>
+        <div className="bg-[#f5f6f7] text-center text-[13px] text-[#333] py-3 px-4">
+          {d.gapLabel}
+        </div>
+        {d.s6intro.map((p, i) => (
+          <p key={i} className="text-[12px] text-[#555] leading-relaxed mt-4">
+            {p}
+          </p>
+        ))}
+
+        {/* Схема ремонта */}
+        <div className="border border-[#e3e6ea] mt-6">
+          <div className="grid grid-cols-3 bg-[#f7f8f9] border-b border-[#e3e6ea]">
+            {d.diagramCols.map((c) => (
+              <div key={c} className="text-center text-[12.5px] font-semibold text-[#333] py-3 px-2">
+                {c}
+              </div>
+            ))}
+          </div>
+          <div className="grid md:grid-cols-3 gap-4 p-4">
+            <CarDiagram legend={d.legend} />
+            <div className="grid grid-cols-2 gap-x-3 md:col-span-1">
+              <div>
+                {d.areasLeft.map((a) => (
+                  <AreaTag key={a.name} {...a} />
+                ))}
+              </div>
+              <div>
+                {d.areasRight.map((a) => (
+                  <AreaTag key={a.name} {...a} />
+                ))}
+              </div>
+            </div>
+            <div className="text-center self-start">
+              {d.summary.map(([k, v]) => (
+                <div key={k} className="text-[14px] text-[#333] mb-2">
+                  {k} <span className="text-[#999]">···</span> {v}
+                </div>
+              ))}
+              <span className="inline-block border border-[#bbb] rounded-full text-[10.5px] px-3 py-1 mt-2 text-[#444]">
+                {d.allHistoryBtn}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Страховые случаи */}
+        <div className="mt-2">
+          {d.claims.map((c) => (
+            <ClaimRow key={c.date} c={c} d={d} />
+          ))}
+        </div>
+
+        <ul className="mt-6 space-y-2">
+          {d.s6bullets.map((b, i) => (
+            <li key={i} className="text-[12px] text-[#555] leading-relaxed flex gap-2">
+              <span>-</span>
+              <span>{b}</span>
+            </li>
+          ))}
+        </ul>
+
+        <NoteBox label={d.noteLabel} items={d.s6notes} />
+
+        {/* 7. История пробега */}
+        <div className="mt-9">
+          <SectionBar n={7} text={d.s7} />
+        </div>
+        <div className="overflow-x-auto mt-6">
+          <table className="w-full border-collapse text-[13px] min-w-[420px]">
+            <thead>
+              <tr className="bg-[#f7f8f9]">
+                {d.mileageCols.map((c) => (
+                  <th
+                    key={c}
+                    className="border border-[#e3e6ea] px-3 py-2.5 font-normal text-[#333] text-center"
+                  >
+                    {c}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {d.mileage.map((r) => (
+                <tr key={r[0]}>
+                  {r.map((cell, i) => (
+                    <td
+                      key={i}
+                      className={`border border-[#e3e6ea] px-3 py-2.5 text-center ${
+                        i === 1 ? "font-bold text-[#111]" : "text-[#333]"
+                      }`}
+                    >
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* 8. Оценочная стоимость */}
+        <div className="mt-9">
+          <SectionBar n={8} text={d.s8} />
+        </div>
+        <div className="text-center py-7">
+          <div className="text-[20px] font-bold text-[#111]">{d.valueRange}</div>
+          <p className="text-[12px] text-[#666] mt-2">{d.s8note}</p>
+        </div>
+      </div>
+    </div>
   );
 }
-
-/** Флаг «есть ли затопление» и т.п. — для превью-карточек вне отчёта. */
-export const REPORT_SECTION_COUNT = 8;
