@@ -8,7 +8,13 @@ interface CheckLeadPayload {
   messenger: string; // whatsapp | telegram
   tgUsername?: string;
   comment?: string;
+  source?: string; // check (бесплатная проверка) | report (полный отчёт по VIN)
 }
+
+const SOURCES: Record<string, { page: string; title: string }> = {
+  check: { page: "check", title: "🔎 CARANALIZER — бесплатная проверка" },
+  report: { page: "report", title: "📄 CARANALIZER — заявка на полный отчёт по VIN" },
+};
 
 const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/i;
 const LISTING_RE = /^(https?:\/\/)?([a-z0-9-]+\.)*(encar\.com|kbchachacha\.com|kcar\.com)\//i;
@@ -17,6 +23,8 @@ export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as CheckLeadPayload;
     const { name, phone, link, messenger, tgUsername, comment } = body;
+    // source приходит от клиента — берём только из белого списка
+    const src = SOURCES[body.source ?? "check"] ?? SOURCES.check;
 
     if (!name?.trim() || !phone?.trim() || !link?.trim()) {
       return NextResponse.json({ error: "Name, phone and link required" }, { status: 400 });
@@ -39,7 +47,7 @@ export async function POST(req: NextRequest) {
         ? `Telegram: ${tgUsername.trim()}`
         : `WhatsApp: ${phone}`;
 
-    const text = `🔎 CARANALIZER — бесплатная проверка
+    const text = `${src.title}
 
 👤 Имя: ${name}
 📞 Телефон: ${phone}
@@ -74,7 +82,7 @@ export async function POST(req: NextRequest) {
           .join("\n"),
         messenger,
         tg_username: messenger === "telegram" ? tgUsername?.trim() || null : null,
-        source_page: "check",
+        source_page: src.page,
         site: "caranalizer",
       });
     } catch (err) {

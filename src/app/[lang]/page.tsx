@@ -211,7 +211,7 @@ export default function HomePage() {
             {(
               [
                 { icon: ShieldCheck, n: 1, href: "#free-check", external: false },
-                { icon: FileSearch, n: 2, href: "/check", external: false },
+                { icon: FileSearch, n: 2, href: "/report", external: false },
                 {
                   icon: Car,
                   n: 3,

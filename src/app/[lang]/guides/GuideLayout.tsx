@@ -27,14 +27,18 @@ export function GuideLayout({
   lang,
   content,
   bannerVariant = "parts",
+  showReportCta = false,
 }: {
   slug: string;
   lang: GuideLocale;
   content: GuideContent;
   /** Какой баннер K-Axis показать в середине статьи */
   bannerVariant?: KmotorsBannerVariant;
+  /** Добавить блок с переходом на платный отчёт по VIN */
+  showReportCta?: boolean;
 }) {
   const t = useTranslations("guides");
+  const tc = useTranslations("check");
   const meta = GUIDES.find((g) => g.slug === slug)!;
   const related = GUIDES.filter((g) => g.slug !== slug).slice(0, 3);
   const kmUrl = `https://www.kmotors.shop/ru/parts?utm_source=caranalizer&utm_medium=guide&utm_campaign=${slug}`;
@@ -150,6 +154,32 @@ export function GuideLayout({
           </div>
         </Container>
       </section>
+
+      {/* Переход на платный отчёт по VIN */}
+      {showReportCta && (
+        <section className="py-4">
+          <Container className="max-w-3xl">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 bg-elevated border border-border rounded-2xl p-7">
+              <div className="text-center sm:text-start">
+                <div className="text-xs uppercase tracking-wide text-primary font-semibold mb-1.5">
+                  {tc("reportLabel")}
+                </div>
+                <h2 className="text-lg font-bold font-[family-name:var(--font-heading)] text-text mb-1">
+                  {tc("reportTitle")}
+                </h2>
+                <p className="text-sm text-text-muted max-w-md">{tc("reportDesc")}</p>
+              </div>
+              <Link
+                href="/report"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-hover transition-colors whitespace-nowrap"
+              >
+                {tc("reportCta")}
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </Container>
+        </section>
+      )}
 
       {/* FAQ */}
       {content.faq.length > 0 && (

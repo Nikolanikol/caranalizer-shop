@@ -9,6 +9,7 @@ import { MobileNav } from "./MobileNav";
 // «Проверка авто» намеренно не в списке — на неё ведёт жёлтая CTA-кнопка,
 // дублировать пунктом меню нельзя. «О нас» живёт в футере.
 const NAV_KEYS = [
+  { key: "report", href: "/report" },
   { key: "guides", href: "/guides" },
   { key: "howItWorks", href: "/how-it-works" },
   { key: "faq", href: "/faq" },

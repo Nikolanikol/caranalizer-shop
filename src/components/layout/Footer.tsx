@@ -5,6 +5,7 @@ import { Send, ExternalLink } from "lucide-react";
 
 const NAV_LINKS = [
   { key: "check", href: "/check" },
+  { key: "report", href: "/report" },
   { key: "guides", href: "/guides" },
   { key: "howItWorks", href: "/how-it-works" },
   { key: "faq", href: "/faq" },

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/container";
+import { Link } from "@/i18n/navigation";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { CheckLeadForm } from "./CheckLeadForm";
 import { Search, Link2, FileText, AlertTriangle, Wrench, Gauge, User, ArrowRight } from "lucide-react";
@@ -315,6 +316,30 @@ export default function CheckPage({ params }: { params: Promise<{ lang: string }
                 </a>
               </div>
             ))}
+          </div>
+        </Container>
+      </section>
+
+      {/* Апселл: полный отчёт по VIN */}
+      <section className="py-8">
+        <Container>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 bg-elevated border border-border rounded-2xl p-8">
+            <div>
+              <div className="text-xs uppercase tracking-wide text-primary font-semibold mb-2">
+                {t("reportLabel")}
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold font-[family-name:var(--font-heading)] text-text mb-2">
+                {t("reportTitle")}
+              </h2>
+              <p className="text-sm text-text-secondary max-w-xl">{t("reportDesc")}</p>
+            </div>
+            <Link
+              href="/report"
+              className="inline-flex items-center gap-2 px-7 py-3.5 bg-primary text-white font-semibold rounded-lg hover:bg-primary-hover transition-colors whitespace-nowrap"
+            >
+              {t("reportCta")}
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </Container>
       </section>

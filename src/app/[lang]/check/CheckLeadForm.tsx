@@ -14,7 +14,12 @@ import type { Value } from "react-phone-number-input";
 const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/i;
 const LISTING_RE = /^(https?:\/\/)?([a-z0-9-]+\.)*(encar\.com|kbchachacha\.com|kcar\.com)\//i;
 
-export function CheckLeadForm() {
+export function CheckLeadForm({
+  source = "check",
+}: {
+  /** Куда пометить лид: бесплатная проверка или заявка на полный отчёт */
+  source?: "check" | "report";
+} = {}) {
   const t = useTranslations("check");
 
   const [link, setLink] = useState("");
@@ -46,10 +51,11 @@ export function CheckLeadForm() {
           messenger,
           tgUsername,
           comment,
+          source,
         }),
       });
       if (res.ok) {
-        trackLead("check");
+        trackLead(source);
         setSuccess(true);
       }
     } catch {

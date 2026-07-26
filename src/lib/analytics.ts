@@ -21,8 +21,8 @@ function track(event: string, params: Record<string, unknown>) {
   window.gtag("event", event, params);
 }
 
-/** Успешно отправленная форма (бесплатная проверка, контакты). */
-export function trackLead(source: "check" | "contact") {
+/** Успешно отправленная форма (бесплатная проверка, отчёт по VIN, контакты). */
+export function trackLead(source: "check" | "report" | "contact") {
   track("generate_lead", { lead_source: source });
 }
 
