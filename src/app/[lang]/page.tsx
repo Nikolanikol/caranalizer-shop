@@ -46,17 +46,17 @@ export async function generateMetadata({
   };
 }
 import {
-  Search,
-  FileText,
-  MessageCircle,
   ArrowRight,
   ShieldAlert,
+  ShieldCheck,
   Gauge,
   Wrench,
   FileSearch,
+  Car,
   BookOpen,
   ExternalLink,
 } from "lucide-react";
+import { CheckLeadForm } from "./check/CheckLeadForm";
 
 const HOME_GUIDE_SLUGS = [
   "kbchachacha-na-russkom",
@@ -67,14 +67,9 @@ const HOME_GUIDE_SLUGS = [
 export default function HomePage() {
   const t = useTranslations("home");
   const tg = useTranslations("guides");
+  const tc = useTranslations("check");
   const locale = useLocale() as GuideLocale;
   const guideTeasers = GUIDES.filter((g) => HOME_GUIDE_SLUGS.includes(g.slug));
-
-  const steps = [
-    { icon: Search, num: "01", title: t("step1Title"), desc: t("step1Desc") },
-    { icon: FileText, num: "02", title: t("step2Title"), desc: t("step2Desc") },
-    { icon: MessageCircle, num: "03", title: t("step3Title"), desc: t("step3Desc") },
-  ];
 
   const features = [
     { icon: ShieldAlert, title: t("feature1Title"), desc: t("feature1Desc") },
@@ -148,13 +143,13 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center opacity-0 animate-[fadeInUp_0.6s_ease_forwards_0.8s]">
-            <Link
-              href="/check"
+            <a
+              href="#free-check"
               className="inline-flex items-center justify-center gap-2.5 px-10 py-[18px] bg-primary text-white font-[family-name:var(--font-heading)] text-[15px] font-semibold uppercase tracking-[0.05em] rounded-[10px] shadow-[0_0_25px_rgba(59,130,246,0.3)] hover:bg-primary-hover hover:shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden"
             >
               {t("ctaCheck")}
               <ArrowRight className="w-5 h-5" />
-            </Link>
+            </a>
             <Link
               href="/how-it-works"
               className="inline-flex items-center justify-center gap-2.5 px-10 py-[18px] bg-transparent text-text border-[1.5px] border-border font-[family-name:var(--font-heading)] text-[15px] font-semibold uppercase tracking-[0.05em] rounded-[10px] hover:border-primary hover:text-primary hover:-translate-y-0.5 transition-all duration-300"
@@ -185,38 +180,91 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ===== How It Works (3 steps) ===== */}
-      <section className="relative py-24 bg-base-darker border-y border-border">
+      {/* ===== Free check form (лид-форма на первом скролле) ===== */}
+      <section id="free-check" className="relative py-20 bg-base-darker border-y border-border scroll-mt-16">
+        <Container>
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-8">
+              <h2 className="font-[family-name:var(--font-heading)] text-[clamp(24px,3vw,36px)] font-bold tracking-tight uppercase mb-3">
+                {tc("formTitle")}
+              </h2>
+              <p className="text-text-muted">{tc("formSub")}</p>
+            </div>
+            <CheckLeadForm />
+          </div>
+        </Container>
+      </section>
+
+      {/* ===== Services (витрина: проверка → покупка → запчасти) ===== */}
+      <section className="relative py-24">
         <Container>
           <ScrollReveal>
             <h2 className="font-[family-name:var(--font-heading)] text-[clamp(28px,4vw,48px)] font-bold tracking-tight uppercase mb-4">
-              {t("stepsTitle")}
+              {t("servicesTitle")}
             </h2>
             <p className="text-lg text-text-muted max-w-[600px] mb-14">
-              {t("stepsSubtitle")}
+              {t("servicesSubtitle")}
             </p>
           </ScrollReveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {steps.map((step, i) => {
-              const Icon = step.icon;
-              return (
-                <ScrollReveal key={step.num} delay={i * 0.1}>
-                  <div className="group bg-elevated border border-border rounded-2xl p-10 text-center transition-all duration-300 hover:border-surface hover:-translate-y-1 relative overflow-hidden h-full">
-                    <div className="absolute top-0 inset-x-0 h-[3px] bg-gradient-to-r from-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <div className="font-[family-name:var(--font-heading)] text-7xl font-bold text-transparent [-webkit-text-stroke:1px_var(--color-surface)] leading-none mb-6 group-hover:[-webkit-text-stroke-color:var(--color-primary)] transition-all duration-300">
-                      {step.num}
-                    </div>
-                    <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center bg-base rounded-[10px] border border-border">
-                      <Icon className="w-7 h-7 text-primary" />
-                    </div>
-                    <h3 className="font-[family-name:var(--font-heading)] text-xl font-semibold mb-3">
-                      {step.title}
-                    </h3>
-                    <p className="text-[15px] text-text-muted leading-relaxed">
-                      {step.desc}
-                    </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {(
+              [
+                { icon: ShieldCheck, n: 1, href: "#free-check", external: false },
+                { icon: FileSearch, n: 2, href: "/check", external: false },
+                {
+                  icon: Car,
+                  n: 3,
+                  href: "https://www.kmotors.shop/ru/catalog?utm_source=caranalizer&utm_medium=services&utm_campaign=cars",
+                  external: true,
+                },
+                {
+                  icon: Wrench,
+                  n: 4,
+                  href: "https://www.kmotors.shop/ru/parts?utm_source=caranalizer&utm_medium=services&utm_campaign=parts",
+                  external: true,
+                },
+              ] as const
+            ).map((svc, i) => {
+              const Icon = svc.icon;
+              const body = (
+                <>
+                  <div className="w-12 h-12 mb-5 flex items-center justify-center bg-primary/10 rounded-lg">
+                    <Icon className="w-6 h-6 text-primary" />
                   </div>
+                  <h3 className="font-[family-name:var(--font-heading)] text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
+                    {t(`svc${svc.n}Title`)}
+                  </h3>
+                  <p className="text-sm text-text-muted leading-relaxed flex-1">
+                    {t(`svc${svc.n}Desc`)}
+                  </p>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary mt-5">
+                    {t(`svc${svc.n}Btn`)}
+                    {svc.external ? (
+                      <ExternalLink className="w-4 h-4" />
+                    ) : (
+                      <ArrowRight className="w-4 h-4" />
+                    )}
+                  </span>
+                </>
+              );
+              const cls =
+                "group flex flex-col h-full bg-base-darker border border-border rounded-2xl p-8 transition-all duration-300 hover:border-primary hover:-translate-y-1";
+              return (
+                <ScrollReveal key={svc.n} delay={i * 0.1}>
+                  {svc.external ? (
+                    <a href={svc.href} target="_blank" rel="noopener noreferrer" className={cls}>
+                      {body}
+                    </a>
+                  ) : svc.href.startsWith("#") ? (
+                    <a href={svc.href} className={cls}>
+                      {body}
+                    </a>
+                  ) : (
+                    <Link href={svc.href} className={cls}>
+                      {body}
+                    </Link>
+                  )}
                 </ScrollReveal>
               );
             })}

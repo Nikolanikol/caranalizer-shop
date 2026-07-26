@@ -9,7 +9,7 @@ import { LanguageSwitcher } from "./LanguageSwitcher";
 
 const NAV_KEYS = [
   { key: "home", href: "/" },
-  { key: "check", href: "/check" },
+  { key: "freeCheck", href: "/check" },
   { key: "guides", href: "/guides" },
   { key: "howItWorks", href: "/how-it-works" },
   { key: "faq", href: "/faq" },

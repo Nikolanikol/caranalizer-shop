@@ -7,6 +7,12 @@
       "runtimeArgs": ["run", "dev"],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "caranalizer-review",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start", "--", "-p", "3799"],
+      "port": 3799
     }
   ]
 }

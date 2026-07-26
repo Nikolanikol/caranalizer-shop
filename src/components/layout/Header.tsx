@@ -6,12 +6,12 @@ import { Container } from "@/components/ui/container";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { MobileNav } from "./MobileNav";
 
+// «Проверка авто» намеренно не в списке — на неё ведёт жёлтая CTA-кнопка,
+// дублировать пунктом меню нельзя. «О нас» живёт в футере.
 const NAV_KEYS = [
-  { key: "check", href: "/check" },
   { key: "guides", href: "/guides" },
   { key: "howItWorks", href: "/how-it-works" },
   { key: "faq", href: "/faq" },
-  { key: "about", href: "/about" },
   { key: "contact", href: "/contact" },
 ] as const;
 
