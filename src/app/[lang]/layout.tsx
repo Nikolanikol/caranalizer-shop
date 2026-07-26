@@ -5,8 +5,6 @@ import { getMessages, getTranslations } from "next-intl/server";
 import { routing, type Locale } from "@/i18n/routing";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { CartProvider } from "@/providers/CartProvider";
-import { CurrencyProvider } from "@/providers/CurrencyProvider";
 import { HtmlLang } from "@/components/HtmlLang";
 import { CookieBanner } from "@/components/CookieBanner";
 import { Toaster } from "sonner";
@@ -30,7 +28,7 @@ export async function generateMetadata({
         ru: `${BASE}/ru`,
         en: `${BASE}/en`,
         ar: `${BASE}/ar`,
-        "x-default": `${BASE}/en`,
+        "x-default": `${BASE}/ru`,
       },
       canonical: `${BASE}/${lang}`,
     },
@@ -64,16 +62,12 @@ export default async function LangLayout({
         {tn("skipToContent")}
       </a>
       <NextIntlClientProvider messages={messages}>
-        <CartProvider>
-          <CurrencyProvider>
-            <Header />
-            <main id="main-content" className="flex-1">{children}</main>
-            <Footer />
-            <CookieBanner />
-            <MessengerButtons />
-            <Toaster theme="dark" position="top-center" richColors />
-          </CurrencyProvider>
-        </CartProvider>
+        <Header />
+        <main id="main-content" className="flex-1">{children}</main>
+        <Footer />
+        <CookieBanner />
+        <MessengerButtons />
+        <Toaster theme="dark" position="top-center" richColors />
       </NextIntlClientProvider>
     </div>
   );

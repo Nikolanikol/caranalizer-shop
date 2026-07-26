@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Server config error" }, { status: 500 });
     }
 
-    const text = `📬 Обратная связь — Caranalizer.com
+    const text = `📬 [CARANALIZER] Обратная связь
 
 👤 Имя: ${name}
 📞 Телефон: ${phone}${message ? `\n💬 Сообщение: ${message}` : ""}`;
@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
         phone,
         message: message ?? null,
         source_page: "contact",
+        site: "caranalizer",
       });
     } catch (err) {
       console.error("leads insert failed:", err);

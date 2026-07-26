@@ -4,27 +4,39 @@ import { routing } from "./i18n/routing";
 
 const intlMiddleware = createMiddleware(routing);
 
-export default function middleware(req: NextRequest) {
-  const { pathname, searchParams } = req.nextUrl;
+// Магазин переехал на K-Axis: товарные разделы отдают постоянный 301,
+// чтобы накопленный поисковый сигнал перетёк на kmotors.shop.
+// ВАЖНО: цели редиректов — чистые URL без UTM: /{lang}/parts на KMotors
+// ставит noindex при любом query-параметре.
+const KMOTORS = "https://www.kmotors.shop";
 
-  // Legacy /:lang/catalog?cat=slug URLs → /:lang/catalog/slug (true 308 here,
-  // before streaming starts — the page-level redirect can only meta-refresh)
-  const match = pathname.match(/^\/(ru|en|ar)\/catalog\/?$/);
-  const cat = searchParams.get("cat");
-  if (match && cat && /^[a-z0-9-]+$/.test(cat)) {
-    const url = req.nextUrl.clone();
-    url.pathname = `/${match[1]}/catalog/${cat}`;
-    url.searchParams.delete("cat");
-    return NextResponse.redirect(url, 308);
+export default function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  // /:lang?/parts/slug → тот же slug на KMotors (форматы идентичны:
+  // part_number или id-N; legacy "PN--name"/"PN--" KMotors нормализует сам)
+  const parts = pathname.match(/^\/(?:(ru|en|ar)\/)?parts\/(.+)$/);
+  if (parts) {
+    const lang = parts[1] ?? "ru";
+    const slug = parts[2].replace(/-+$/, "");
+    return NextResponse.redirect(`${KMOTORS}/${lang}/parts/${slug}`, 301);
   }
 
-  // Legacy /parts/PN-- URLs (slug generation used to append "--" even with
-  // an empty name) → trim trailing dashes with a true 308 before streaming
-  const partsMatch = pathname.match(/^\/((?:ru|en|ar)\/)?parts\/(.+?)-+$/);
-  if (partsMatch) {
+  // Каталог и страницы моделей → каталог запчастей KMotors (пер-категорийных
+  // и пер-модельных URL у KMotors нет)
+  const listing = pathname.match(/^\/(?:(ru|en|ar)\/)?(?:catalog|vehicles)(?:\/.*)?$/);
+  if (listing) {
+    const lang = listing[1] ?? "ru";
+    return NextResponse.redirect(`${KMOTORS}/${lang}/parts`, 301);
+  }
+
+  // Корзина/чекаут упразднены → на главную соответствующего языка
+  const shop = pathname.match(/^\/(?:(ru|en|ar)\/)?(?:cart|checkout)\/?$/);
+  if (shop) {
     const url = req.nextUrl.clone();
-    url.pathname = `/${partsMatch[1] ?? ""}parts/${partsMatch[2]}`;
-    return NextResponse.redirect(url, 308);
+    url.pathname = `/${shop[1] ?? "ru"}`;
+    url.search = "";
+    return NextResponse.redirect(url, 301);
   }
 
   return intlMiddleware(req);

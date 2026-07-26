@@ -2,14 +2,16 @@ import type { Metadata } from "next";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/container";
-import { Link } from "@/i18n/navigation";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { CheckLeadForm } from "./CheckLeadForm";
 import { Search, Link2, FileText, AlertTriangle, Wrench, Gauge, User, ArrowRight } from "lucide-react";
 import type { Locale } from "@/i18n/routing";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
 const LOCALES = ["ru", "en", "ar"] as const;
 const BOT = "https://t.me/koreancarss_bot";
+const KMOTORS_CHECK =
+  "https://www.kmotors.shop/ru/catalog?utm_source=caranalizer&utm_medium=check";
 
 export async function generateMetadata({
   params,
@@ -110,7 +112,7 @@ export default function CheckPage({ params }: { params: Promise<{ lang: string }
             </h1>
             <p className="text-base sm:text-lg text-text-secondary max-w-2xl mx-auto mb-8">{t("sub")}</p>
             <div className="flex flex-wrap gap-3 justify-center">
-              <a href={BOT} target="_blank" rel="noopener noreferrer"
+              <a href="#free-check"
                 className="inline-flex items-center justify-center gap-2 px-8 py-[15px] bg-primary text-white font-[family-name:var(--font-heading)] text-[15px] font-semibold uppercase tracking-[0.04em] rounded-[10px] hover:bg-primary-hover transition-colors">
                 {t("ctaTry")}
               </a>
@@ -127,6 +129,19 @@ export default function CheckPage({ params }: { params: Promise<{ lang: string }
                 </div>
               ))}
             </div>
+          </div>
+        </Container>
+      </section>
+
+      {/* Free check form */}
+      <section id="free-check" className="py-16 sm:py-20 scroll-mt-16">
+        <Container>
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold font-[family-name:var(--font-heading)] mb-3">{t("formTitle")}</h2>
+              <p className="text-text-secondary">{t("formSub")}</p>
+            </div>
+            <CheckLeadForm />
           </div>
         </Container>
       </section>
@@ -313,11 +328,11 @@ export default function CheckPage({ params }: { params: Promise<{ lang: string }
               <h2 className="text-xl sm:text-2xl font-bold font-[family-name:var(--font-heading)] text-text mb-2">{t("funnelTitle")}</h2>
               <p className="text-sm text-text-secondary max-w-xl">{t("funnelDesc")}</p>
             </div>
-            <Link href="/catalog"
+            <a href={KMOTORS_CHECK} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-7 py-3.5 bg-primary text-white font-semibold rounded-lg hover:bg-primary-hover transition-colors whitespace-nowrap">
               {t("funnelCta")}
               <ArrowRight className="w-4 h-4" />
-            </Link>
+            </a>
           </div>
         </Container>
       </section>

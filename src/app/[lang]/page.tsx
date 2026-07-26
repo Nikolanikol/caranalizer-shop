@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
-import { useTranslations } from "next-intl";
-import { getTranslations } from "next-intl/server";
+import { useTranslations, useLocale } from "next-intl";
 import { Container } from "@/components/ui/container";
 import { Link } from "@/i18n/navigation";
 import { VinCheckCTA } from "@/components/VinCheckCTA";
 import { ScrollReveal } from "@/components/ScrollReveal";
-import type { Locale } from "@/i18n/routing";
+import { GUIDES, type GuideLocale } from "@/lib/guides";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
 const LOCALES = ["ru", "en", "ar"] as const;
+const KMOTORS_PARTS =
+  "https://www.kmotors.shop/ru/parts?utm_source=caranalizer&utm_medium=home";
+const KMOTORS_CALC =
+  "https://www.kmotors.shop/ru/calculator?utm_source=caranalizer&utm_medium=home";
 
 export async function generateMetadata({
   params,
@@ -18,14 +21,14 @@ export async function generateMetadata({
   const { lang } = await params;
 
   const titles: Record<string, string> = {
-    ru: "Запчасти Hyundai, Kia, Genesis из Кореи — 48 000+ деталей | Caranalizer",
-    en: "Genuine Korean Car Parts — 48,000+ Hyundai, Kia, Genesis Parts | Caranalizer",
-    ar: "قطع غيار هيونداي وكيا وجينيسيس من كوريا — 48,000+ قطعة | Caranalizer",
+    ru: "Проверка авто из Кореи — бесплатный отчёт по Encar, KBChachacha | Caranalizer",
+    en: "Korean Car Check — Free Encar & KBChachacha Report | Caranalizer",
+    ar: "فحص السيارات من كوريا — تقرير مجاني Encar وKBChachacha | Caranalizer",
   };
   const descriptions: Record<string, string> = {
-    ru: "Оригинальные запчасти Hyundai, Kia, Genesis с прямой поставкой из Кореи. 48 000+ деталей в каталоге. Доставка по всему миру за 7–14 дней.",
-    en: "Genuine OEM parts for Hyundai, Kia, Genesis shipped directly from Korea. 48,000+ parts in catalog. Worldwide delivery in 7–14 days.",
-    ar: "قطع غيار OEM أصلية لهيونداي وكيا وجينيسيس مشحونة مباشرة من كوريا. أكثر من 48,000 قطعة. توصيل عالمي خلال 7-14 يوم.",
+    ru: "Пришлите ссылку на объявление Encar, KBChachacha или Kcar — бесплатная проверка истории на русском: ДТП, страховые выплаты, пробег, комплектация по VIN.",
+    en: "Send an Encar, KBChachacha or Kcar listing link — free history check: accidents, insurance payouts, mileage, factory specs by VIN.",
+    ar: "أرسل رابط إعلان من Encar أو KBChachacha أو Kcar — فحص مجاني للتاريخ: الحوادث، مدفوعات التأمين، المسافة، المواصفات حسب VIN.",
   };
 
   return {
@@ -44,31 +47,39 @@ export async function generateMetadata({
 }
 import {
   Search,
-  ShoppingCart,
+  FileText,
   MessageCircle,
-  Truck,
   ArrowRight,
-  Shield,
-  Globe,
-  DollarSign,
+  ShieldAlert,
+  Gauge,
+  Wrench,
   FileSearch,
+  BookOpen,
+  ExternalLink,
 } from "lucide-react";
+
+const HOME_GUIDE_SLUGS = [
+  "kbchachacha-na-russkom",
+  "encar-proverka-vin",
+  "avto-iz-korei-v-kazahstan",
+];
 
 export default function HomePage() {
   const t = useTranslations("home");
-  const th = useTranslations("howItWorks");
+  const tg = useTranslations("guides");
+  const locale = useLocale() as GuideLocale;
+  const guideTeasers = GUIDES.filter((g) => HOME_GUIDE_SLUGS.includes(g.slug));
 
   const steps = [
-    { icon: Search, num: "01", title: th("step1Title"), desc: th("step1Desc") },
-    { icon: ShoppingCart, num: "02", title: th("step2Title"), desc: th("step2Desc") },
-    { icon: MessageCircle, num: "03", title: th("step3Title"), desc: th("step3Desc") },
-    { icon: Truck, num: "04", title: th("step4Title"), desc: th("step4Desc") },
+    { icon: Search, num: "01", title: t("step1Title"), desc: t("step1Desc") },
+    { icon: FileText, num: "02", title: t("step2Title"), desc: t("step2Desc") },
+    { icon: MessageCircle, num: "03", title: t("step3Title"), desc: t("step3Desc") },
   ];
 
   const features = [
-    { icon: Shield, title: t("feature1Title"), desc: t("feature1Desc") },
-    { icon: Globe, title: t("feature2Title"), desc: t("feature2Desc") },
-    { icon: DollarSign, title: t("feature3Title"), desc: t("feature3Desc") },
+    { icon: ShieldAlert, title: t("feature1Title"), desc: t("feature1Desc") },
+    { icon: Gauge, title: t("feature2Title"), desc: t("feature2Desc") },
+    { icon: Wrench, title: t("feature3Title"), desc: t("feature3Desc") },
     { icon: FileSearch, title: t("feature4Title"), desc: t("feature4Desc") },
   ];
 
@@ -79,13 +90,10 @@ export default function HomePage() {
       name: "Caranalizer",
       url: "https://caranalizer.com",
       logo: "https://caranalizer.com/icon.png",
-      sameAs: [
-        "https://t.me/axiskorea",
-        "https://wa.me/821058654344",
-      ],
+      sameAs: ["https://t.me/axiskorea", "https://wa.me/821058654344"],
       contactPoint: {
         "@type": "ContactPoint",
-        contactType: "sales",
+        contactType: "customer support",
         availableLanguage: ["Russian", "English", "Arabic"],
       },
     },
@@ -141,17 +149,17 @@ export default function HomePage() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center opacity-0 animate-[fadeInUp_0.6s_ease_forwards_0.8s]">
             <Link
-              href="/catalog"
+              href="/check"
               className="inline-flex items-center justify-center gap-2.5 px-10 py-[18px] bg-primary text-white font-[family-name:var(--font-heading)] text-[15px] font-semibold uppercase tracking-[0.05em] rounded-[10px] shadow-[0_0_25px_rgba(59,130,246,0.3)] hover:bg-primary-hover hover:shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden"
             >
-              {t("shopNow")}
+              {t("ctaCheck")}
               <ArrowRight className="w-5 h-5" />
             </Link>
             <Link
-              href="/check"
+              href="/how-it-works"
               className="inline-flex items-center justify-center gap-2.5 px-10 py-[18px] bg-transparent text-text border-[1.5px] border-border font-[family-name:var(--font-heading)] text-[15px] font-semibold uppercase tracking-[0.05em] rounded-[10px] hover:border-primary hover:text-primary hover:-translate-y-0.5 transition-all duration-300"
             >
-              {t("checkVin")}
+              {t("ctaHow")}
               <ArrowRight className="w-5 h-5" />
             </Link>
           </div>
@@ -177,7 +185,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ===== How It Works ===== */}
+      {/* ===== How It Works (3 steps) ===== */}
       <section className="relative py-24 bg-base-darker border-y border-border">
         <Container>
           <ScrollReveal>
@@ -189,7 +197,7 @@ export default function HomePage() {
             </p>
           </ScrollReveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {steps.map((step, i) => {
               const Icon = step.icon;
               return (
@@ -216,7 +224,7 @@ export default function HomePage() {
         </Container>
       </section>
 
-      {/* ===== Features ===== */}
+      {/* ===== What you learn ===== */}
       <section className="relative py-24">
         <Container>
           <ScrollReveal>
@@ -253,36 +261,89 @@ export default function HomePage() {
         </Container>
       </section>
 
-      {/* ===== VIN Check Banner ===== */}
+      {/* ===== Free Check Banner ===== */}
       <ScrollReveal>
         <VinCheckCTA />
       </ScrollReveal>
 
-      {/* ===== Bottom CTA ===== */}
+      {/* ===== Guide teasers ===== */}
+      <section className="py-24 bg-base-darker border-y border-border">
+        <Container>
+          <ScrollReveal>
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-14">
+              <div>
+                <h2 className="font-[family-name:var(--font-heading)] text-[clamp(28px,4vw,48px)] font-bold tracking-tight uppercase mb-4">
+                  {t("guidesTitle")}
+                </h2>
+                <p className="text-lg text-text-muted max-w-[600px]">
+                  {t("guidesSubtitle")}
+                </p>
+              </div>
+              <Link
+                href="/guides"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline whitespace-nowrap"
+              >
+                {t("guidesAll")}
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </ScrollReveal>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {guideTeasers.map((g, i) => (
+              <ScrollReveal key={g.slug} delay={i * 0.1}>
+                <Link
+                  href={`/guides/${g.slug}`}
+                  className="group flex flex-col h-full bg-elevated border border-border rounded-2xl p-8 transition-all duration-300 hover:border-primary hover:-translate-y-1"
+                >
+                  <BookOpen className="w-6 h-6 text-primary mb-5" />
+                  <h3 className="font-[family-name:var(--font-heading)] text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
+                    {g.title[locale]}
+                  </h3>
+                  <p className="text-sm text-text-muted leading-relaxed flex-1">
+                    {g.teaser[locale]}
+                  </p>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary mt-5">
+                    {tg("readMore")}
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
+                </Link>
+              </ScrollReveal>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      {/* ===== K-Axis CTA ===== */}
       <section className="py-24 bg-[linear-gradient(180deg,var(--color-base-darker)_0%,var(--color-elevated)_100%)] border-t border-border text-center">
         <Container>
           <ScrollReveal>
-            <div className="max-w-[600px] mx-auto">
+            <div className="max-w-[640px] mx-auto">
               <h2 className="font-[family-name:var(--font-heading)] text-[clamp(28px,4vw,48px)] font-bold uppercase tracking-tight mb-4">
-                {t("ctaTitle")}
+                {t("kmTitle")}
               </h2>
               <p className="text-lg text-text-muted mb-10 leading-relaxed">
-                {t("ctaSubtitle")}
+                {t("kmSubtitle")}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
-                  href="/catalog"
+                <a
+                  href={KMOTORS_PARTS}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2.5 px-10 py-[18px] bg-primary text-white font-[family-name:var(--font-heading)] text-[15px] font-semibold uppercase tracking-[0.05em] rounded-[10px] shadow-[0_0_25px_rgba(59,130,246,0.3)] hover:bg-primary-hover hover:shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:-translate-y-0.5 transition-all duration-300"
                 >
-                  {t("shopNow")}
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-                <Link
-                  href="/contact"
+                  {t("kmCtaParts")}
+                  <ExternalLink className="w-5 h-5" />
+                </a>
+                <a
+                  href={KMOTORS_CALC}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2.5 px-10 py-[18px] bg-transparent text-text border-[1.5px] border-border font-[family-name:var(--font-heading)] text-[15px] font-semibold uppercase tracking-[0.05em] rounded-[10px] hover:border-primary hover:text-primary hover:-translate-y-0.5 transition-all duration-300"
                 >
-                  {t("ctaContact")}
-                </Link>
+                  {t("kmCtaCalc")}
+                  <ExternalLink className="w-5 h-5" />
+                </a>
               </div>
             </div>
           </ScrollReveal>

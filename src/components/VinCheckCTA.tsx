@@ -1,7 +1,8 @@
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, ShieldCheck } from "lucide-react";
+import { ArrowRight, ShieldCheck } from "lucide-react";
 
 export function VinCheckCTA() {
   const t = useTranslations("home");
@@ -23,16 +24,12 @@ export function VinCheckCTA() {
             </p>
           </div>
 
-          <a
-            href="https://t.me/caranalizer_bot"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <Link href="/check">
             <Button variant="cta" size="lg" className="gap-2 whitespace-nowrap">
-              Telegram Bot
-              <ExternalLink className="h-4 w-4" />
+              {t("ctaCheck")}
+              <ArrowRight className="h-4 w-4" />
             </Button>
-          </a>
+          </Link>
         </div>
       </Container>
     </section>

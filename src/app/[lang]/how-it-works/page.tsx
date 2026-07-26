@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { useTranslations, useLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/container";
-import { Search, ShoppingCart, MessageCircle, Truck } from "lucide-react";
+import { Search, FileText, MessageCircle, Truck } from "lucide-react";
 import { DeliveryMap } from "@/components/DeliveryMap";
-import { ShippingCalculator } from "@/components/ShippingCalculator";
 import type { Locale } from "@/i18n/routing";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
@@ -18,14 +17,14 @@ export async function generateMetadata({
   const { lang } = await params;
 
   const titles: Record<string, string> = {
-    ru: "Как это работает — заказ запчастей из Кореи | Caranalizer",
-    en: "How It Works — Order Korean Car Parts | Caranalizer",
-    ar: "كيف يعمل — طلب قطع غيار السيارات الكورية | Caranalizer",
+    ru: "Как мы работаем — проверка и покупка авто из Кореи | Caranalizer",
+    en: "How It Works — Korean Car Check & Purchase | Caranalizer",
+    ar: "كيف نعمل — فحص وشراء السيارات من كوريا | Caranalizer",
   };
   const descriptions: Record<string, string> = {
-    ru: "4 простых шага: найдите запчасть, оформите заказ, получите подтверждение и дождитесь доставки из Кореи.",
-    en: "4 simple steps: find the part, place your order, get confirmation, and receive delivery from Korea.",
-    ar: "4 خطوات بسيطة: ابحث عن القطعة، أرسل الطلب، احصل على التأكيد، واستلم التوصيل من كوريا.",
+    ru: "4 шага: заявка на проверку, бесплатный мини-отчёт, полная проверка и подбор, покупка и доставка через K-Axis.",
+    en: "4 steps: check request, free mini-report, full check and sourcing, purchase and delivery via K-Axis.",
+    ar: "4 خطوات: طلب الفحص، تقرير مصغر مجاني، فحص كامل واختيار، شراء وتوصيل عبر K-Axis.",
   };
 
   const title = titles[lang];
@@ -46,7 +45,7 @@ export async function generateMetadata({
   };
 }
 
-const STEP_ICONS = [Search, ShoppingCart, MessageCircle, Truck];
+const STEP_ICONS = [Search, FileText, MessageCircle, Truck];
 
 export default function HowItWorksPage() {
   const t = useTranslations("howItWorks");
@@ -98,15 +97,6 @@ export default function HowItWorksPage() {
         </Container>
       </section>
 
-      <section className="py-12 border-t border-border-subtle">
-        <Container className="max-w-5xl">
-          <h2 className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase mb-2">
-            {t("shippingCalcTitle")}
-          </h2>
-          <div className="w-10 h-0.5 bg-primary mb-8" />
-          <ShippingCalculator />
-        </Container>
-      </section>
     </>
   );
 }

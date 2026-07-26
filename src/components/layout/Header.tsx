@@ -2,26 +2,22 @@
 
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
-import { ShoppingCart } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { LanguageSwitcher } from "./LanguageSwitcher";
-import { CurrencySwitcher } from "./CurrencySwitcher";
 import { MobileNav } from "./MobileNav";
-import { useCart } from "@/providers/CartProvider";
 
 const NAV_KEYS = [
-  { key: "catalog", href: "/catalog" },
   { key: "check", href: "/check" },
-  { key: "about", href: "/about" },
+  { key: "guides", href: "/guides" },
   { key: "howItWorks", href: "/how-it-works" },
   { key: "faq", href: "/faq" },
+  { key: "about", href: "/about" },
   { key: "contact", href: "/contact" },
 ] as const;
 
 export function Header() {
   const t = useTranslations("nav");
   const pathname = usePathname();
-  const { totalItems } = useCart();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border-subtle bg-base/80 backdrop-blur-xl">
@@ -53,20 +49,13 @@ export function Header() {
         <div className="flex items-center gap-3">
           <div className="hidden lg:flex items-center gap-3">
             <LanguageSwitcher />
-            <CurrencySwitcher />
           </div>
 
           <Link
-            href="/cart"
-            className="relative p-2 text-text-secondary hover:text-text transition-colors"
-            aria-label={t("cart")}
+            href="/check"
+            className="hidden sm:inline-flex items-center rounded-lg bg-cta px-4 py-2 text-sm font-semibold text-base-darker hover:opacity-90 transition-opacity"
           >
-            <ShoppingCart className="h-5 w-5" />
-            {totalItems > 0 && (
-              <span className="absolute -top-0.5 -end-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-cta text-[10px] font-bold text-base-darker px-1">
-                {totalItems > 99 ? "99+" : totalItems}
-              </span>
-            )}
+            {t("freeCheck")}
           </Link>
 
           <MobileNav />

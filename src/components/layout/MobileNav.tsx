@@ -6,15 +6,14 @@ import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { X, Menu } from "lucide-react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
-import { CurrencySwitcher } from "./CurrencySwitcher";
 
 const NAV_KEYS = [
   { key: "home", href: "/" },
-  { key: "catalog", href: "/catalog" },
   { key: "check", href: "/check" },
-  { key: "about", href: "/about" },
+  { key: "guides", href: "/guides" },
   { key: "howItWorks", href: "/how-it-works" },
   { key: "faq", href: "/faq" },
+  { key: "about", href: "/about" },
   { key: "contact", href: "/contact" },
 ] as const;
 
@@ -82,7 +81,6 @@ export function MobileNav() {
 
               <div className="border-t border-border p-4 flex items-center justify-between">
                 <LanguageSwitcher />
-                <CurrencySwitcher />
               </div>
             </nav>
           </div>,
