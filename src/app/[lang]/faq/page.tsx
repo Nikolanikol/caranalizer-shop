@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
+import { Container } from "@/components/ui/container";
+import { KmotorsBanner } from "@/components/KmotorsBanner";
 import { FaqClient } from "./FaqClient";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
@@ -15,14 +17,14 @@ export async function generateMetadata({
   const t = await getTranslations({ locale: lang as Locale, namespace: "faq" });
 
   const titles: Record<string, string> = {
-    ru: "Часто задаваемые вопросы о запчастях из Кореи | Caranalizer",
-    en: "FAQ — Korean Car Parts & Shipping | Caranalizer",
-    ar: "الأسئلة الشائعة — قطع غيار السيارات الكورية | Caranalizer",
+    ru: "Частые вопросы о проверке авто из Кореи | Caranalizer",
+    en: "FAQ — Korean Car Check | Caranalizer",
+    ar: "الأسئلة الشائعة — فحص السيارات الكورية | Caranalizer",
   };
   const descriptions: Record<string, string> = {
-    ru: "Ответы на частые вопросы о доставке, оригинальности и оплате запчастей Hyundai, Kia, Genesis из Кореи.",
-    en: "Answers to common questions about shipping, authenticity, and payment for Hyundai, Kia, Genesis parts from Korea.",
-    ar: "إجابات على الأسئلة الشائعة حول الشحن والأصالة والدفع لقطع غيار هيونداي وكيا وجينيسيس من كوريا.",
+    ru: "Ответы на частые вопросы о бесплатной проверке авто из Кореи: какие сайты проверяем, сроки отчёта, покупка и доставка через K-Axis.",
+    en: "Answers to common questions about the free Korean car check: covered marketplaces, report timing, purchase and delivery via K-Axis.",
+    ar: "إجابات على الأسئلة الشائعة حول الفحص المجاني للسيارات الكورية والشراء والتوصيل عبر K-Axis.",
   };
 
   const title = titles[lang] ?? t("title");
@@ -76,6 +78,12 @@ export default async function FaqPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
       />
       <FaqClient />
+      <section className="pb-16">
+        <Container className="max-w-3xl space-y-4">
+          <KmotorsBanner variant="parts" placement="faq" />
+          <KmotorsBanner variant="calc" placement="faq" compact />
+        </Container>
+      </section>
     </>
   );
 }

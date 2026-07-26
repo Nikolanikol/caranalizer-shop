@@ -259,5 +259,16 @@
     "ctaKmTitle": "Buying & delivery — K-Axis",
     "ctaKmText": "Car sourcing at Korean auctions, customs and genuine parts.",
     "ctaKmBtn": "Visit K-Axis"
+  },
+  "kmBanner": {
+    "partsTitle": "Genuine Hyundai, Kia, Genesis parts",
+    "partsText": "Shipped directly from Korea — 140,000+ parts by VIN and part number.",
+    "partsBtn": "Parts catalog",
+    "carsTitle": "Turnkey car sourcing from Korea",
+    "carsText": "Korean auctions and marketplaces, purchase, paperwork, shipping and customs.",
+    "carsBtn": "Browse cars",
+    "calcTitle": "Calculate customs before you buy",
+    "calcText": "Current rates for Kazakhstan, Russia and Uzbekistan.",
+    "calcBtn": "Open calculator"
   }
 }

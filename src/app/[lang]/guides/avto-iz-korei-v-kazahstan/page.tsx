@@ -149,5 +149,5 @@ const CONTENT: Record<GuideLocale, GuideContent> = {
 
 export default function Page() {
   const locale = useLocale() as GuideLocale;
-  return <GuideLayout slug={SLUG} lang={locale} content={CONTENT[locale]} />;
+  return <GuideLayout slug={SLUG} lang={locale} content={CONTENT[locale]} bannerVariant="calc" />;
 }

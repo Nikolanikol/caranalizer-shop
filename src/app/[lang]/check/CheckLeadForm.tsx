@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PhoneInput } from "@/components/ui/PhoneInput";
 import { MessengerSelector } from "@/components/ui/MessengerSelector";
 import { trackLead } from "@/lib/analytics";
+import { KmotorsBanner } from "@/components/KmotorsBanner";
 import { CheckCircle } from "lucide-react";
 import type { Value } from "react-phone-number-input";
 
@@ -58,11 +59,17 @@ export function CheckLeadForm() {
   }
 
   if (success) {
+    // Самый горячий момент воронки: контакт оставлен, человек ждёт отчёт —
+    // показываем витрину K-Axis
     return (
-      <div className="flex flex-col items-center gap-3 py-12 text-center bg-elevated border border-border-subtle rounded-2xl">
-        <CheckCircle className="h-12 w-12 text-success" />
-        <p className="text-lg font-semibold">{t("successTitle")}</p>
-        <p className="text-sm text-text-secondary max-w-sm">{t("successText")}</p>
+      <div className="space-y-5">
+        <div className="flex flex-col items-center gap-3 py-12 text-center bg-elevated border border-border-subtle rounded-2xl">
+          <CheckCircle className="h-12 w-12 text-success" />
+          <p className="text-lg font-semibold">{t("successTitle")}</p>
+          <p className="text-sm text-text-secondary max-w-sm">{t("successText")}</p>
+        </div>
+        <KmotorsBanner variant="cars" placement="check-success" />
+        <KmotorsBanner variant="calc" placement="check-success" compact />
       </div>
     );
   }

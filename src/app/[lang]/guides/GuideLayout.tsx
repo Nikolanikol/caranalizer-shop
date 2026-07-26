@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Container } from "@/components/ui/container";
 import { Link } from "@/i18n/navigation";
 import { GUIDES, type GuideLocale } from "@/lib/guides";
+import { KmotorsBanner, type KmotorsBannerVariant } from "@/components/KmotorsBanner";
 import { ArrowRight, BookOpen, ExternalLink, ShieldCheck } from "lucide-react";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
@@ -25,10 +26,13 @@ export function GuideLayout({
   slug,
   lang,
   content,
+  bannerVariant = "parts",
 }: {
   slug: string;
   lang: GuideLocale;
   content: GuideContent;
+  /** Какой баннер K-Axis показать в середине статьи */
+  bannerVariant?: KmotorsBannerVariant;
 }) {
   const t = useTranslations("guides");
   const meta = GUIDES.find((g) => g.slug === slug)!;
@@ -91,24 +95,32 @@ export function GuideLayout({
       <section className="py-12">
         <Container className="max-w-3xl">
           {content.sections.map((s, i) => (
-            <div key={i} className="mb-10">
-              <h2 className="text-xl sm:text-2xl font-bold font-[family-name:var(--font-heading)] mb-4">
-                {s.h}
-              </h2>
-              {s.p?.map((p, j) => (
-                <p key={j} className="text-[15px] text-text-secondary leading-relaxed mb-3">
-                  {p}
-                </p>
-              ))}
-              {s.list && (
-                <ul className="space-y-2 mt-3">
-                  {s.list.map((item, j) => (
-                    <li key={j} className="flex gap-3 text-[15px] text-text-secondary leading-relaxed">
-                      <span className="text-primary mt-0.5">•</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
+            <div key={i}>
+              <div className="mb-10">
+                <h2 className="text-xl sm:text-2xl font-bold font-[family-name:var(--font-heading)] mb-4">
+                  {s.h}
+                </h2>
+                {s.p?.map((p, j) => (
+                  <p key={j} className="text-[15px] text-text-secondary leading-relaxed mb-3">
+                    {p}
+                  </p>
+                ))}
+                {s.list && (
+                  <ul className="space-y-2 mt-3">
+                    {s.list.map((item, j) => (
+                      <li key={j} className="flex gap-3 text-[15px] text-text-secondary leading-relaxed">
+                        <span className="text-primary mt-0.5">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              {/* Баннер K-Axis в середине статьи (после второй секции) */}
+              {i === Math.min(1, content.sections.length - 1) && (
+                <div className="mb-10">
+                  <KmotorsBanner variant={bannerVariant} placement={`guide-${slug}`} compact />
+                </div>
               )}
             </div>
           ))}

@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/container";
 import { Search, FileText, MessageCircle, Truck } from "lucide-react";
 import { DeliveryMap } from "@/components/DeliveryMap";
+import { KmotorsBanner } from "@/components/KmotorsBanner";
 import type { Locale } from "@/i18n/routing";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
@@ -97,6 +98,12 @@ export default function HowItWorksPage() {
         </Container>
       </section>
 
+      <section className="py-12 border-t border-border-subtle">
+        <Container className="max-w-5xl space-y-4">
+          <KmotorsBanner variant="cars" placement="how-it-works" />
+          <KmotorsBanner variant="parts" placement="how-it-works" compact />
+        </Container>
+      </section>
     </>
   );
 }
