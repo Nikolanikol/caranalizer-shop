@@ -52,7 +52,7 @@ interface ReportData {
   s6plateNote: string;
   gapLabel: string;
   s6intro: string[];
-  diagramCols: [string, string, string];
+  diagramCols: [string, string];
   legend: [string, string, string];
   areasLeft: { name: string; mark?: Mark }[];
   areasRight: { name: string; mark?: Mark }[];
@@ -70,10 +70,6 @@ interface ReportData {
   s7: string;
   mileageCols: string[];
   mileage: string[][];
-
-  s8: string;
-  valueRange: string;
-  s8note: string;
 
   noteLabel: string;
 }
@@ -182,7 +178,7 @@ const DATA: Record<GuideLocale, ReportData> = {
       "В зависимости от источника страховой выплаты и Затрат на ремонт (предварительная оценка) страховые случаи делятся на «оплаченные страховой компанией, с которой вы оформили договор (автострахование)» и «оплаченные страховкой другого транспортного средства (страхование другой стороны)».",
       "* Если запись о повреждении и ремонте автомобиля одновременно обрабатывается в моей страховке автомобиля и страховке другой стороны по обоюдной вине, она будет отображаться только в разделе «Страхование моего автомобиля» и опущена в разделе «Страхование другой стороны».",
     ],
-    diagramCols: ["Схема ремонта", "Область ремонта", "Сводная информация"],
+    diagramCols: ["Область ремонта", "Сводная информация"],
     legend: ["Покраска", "Демонтаж", "Покраска+Демонтаж"],
     areasLeft: [
       { name: "Передний бампер", mark: "both" },
@@ -297,9 +293,6 @@ const DATA: Record<GuideLocale, ReportData> = {
       ["2021-11-19", "42,905 Km", "Страховая компания"],
     ],
 
-    s8: "Оценочная стоимость автомобиля",
-    valueRange: "21,400,000 ~ 24,900,000 ₩",
-    s8note: "Стандартная оценка для целей страхования на дату формирования отчёта.",
 
     noteLabel: "Примечание",
   },
@@ -389,7 +382,7 @@ const DATA: Record<GuideLocale, ReportData> = {
       "Depending on the source of the payout and the estimated repair cost, claims are split into those paid by your own insurer (own vehicle insurance) and those paid by the other vehicle's insurer (third-party insurance).",
       "* If a damage and repair record is processed simultaneously under both your own and the other party's insurance due to shared fault, it appears only under «Own vehicle insurance» and is omitted from «Third-party insurance».",
     ],
-    diagramCols: ["Repair diagram", "Repair area", "Summary"],
+    diagramCols: ["Repair area", "Summary"],
     legend: ["Paint", "Removal", "Paint + removal"],
     areasLeft: [
       { name: "Front bumper", mark: "both" },
@@ -501,9 +494,6 @@ const DATA: Record<GuideLocale, ReportData> = {
       ["2021-11-19", "42,905 Km", "Insurance company"],
     ],
 
-    s8: "Estimated vehicle value",
-    valueRange: "₩21,400,000 ~ ₩24,900,000",
-    s8note: "Standard valuation for insurance purposes as at the report date.",
 
     noteLabel: "Note",
   },
@@ -591,7 +581,7 @@ const DATA: Record<GuideLocale, ReportData> = {
       "بحسب مصدر التعويض وتكلفة الإصلاح التقديرية، تنقسم الحالات إلى ما تدفعه شركة تأمينك وما تدفعه شركة تأمين الطرف الآخر.",
       "* إذا عولج سجل الضرر والإصلاح لدى الطرفين بسبب الخطأ المشترك، فإنه يظهر في قسم «تأمين سيارتي» فقط.",
     ],
-    diagramCols: ["مخطط الإصلاح", "منطقة الإصلاح", "الملخص"],
+    diagramCols: ["منطقة الإصلاح", "الملخص"],
     legend: ["دهان", "فك", "دهان + فك"],
     areasLeft: [
       { name: "الصادم الأمامي", mark: "both" },
@@ -700,9 +690,6 @@ const DATA: Record<GuideLocale, ReportData> = {
       ["2021-11-19", "42,905 كم", "شركة التأمين"],
     ],
 
-    s8: "القيمة التقديرية للسيارة",
-    valueRange: "₩21,400,000 ~ ₩24,900,000",
-    s8note: "تقييم قياسي لأغراض التأمين بتاريخ التقرير.",
 
     noteLabel: "ملاحظة",
   },
@@ -809,62 +796,6 @@ function AreaTag({ name, mark }: { name: string; mark?: Mark }) {
           {mark === "both" ? "◧" : mark === "paint" ? "●" : "◇"}
         </span>
       )}
-    </div>
-  );
-}
-
-/** Схема кузова: вид сверху и сбоку с подсветкой зон ремонта. */
-function CarDiagram({ legend }: { legend: [string, string, string] }) {
-  return (
-    <div>
-      <svg viewBox="0 0 220 300" className="w-full max-w-[210px] mx-auto" aria-hidden="true">
-        <g stroke="#9aa3ab" strokeWidth="1.2" fill="none">
-          {/* вид сверху */}
-          <rect x="62" y="14" width="96" height="150" rx="26" />
-          <rect x="78" y="34" width="64" height="34" rx="8" />
-          <rect x="78" y="104" width="64" height="34" rx="8" />
-          <line x1="62" y1="86" x2="158" y2="86" />
-          {/* колёса сверху */}
-          <rect x="50" y="42" width="12" height="24" rx="3" />
-          <rect x="158" y="42" width="12" height="24" rx="3" />
-          <rect x="50" y="118" width="12" height="24" rx="3" />
-          <rect x="158" y="118" width="12" height="24" rx="3" />
-          {/* вид сбоку */}
-          <path d="M28 236c0-10 10-16 22-18l16-18c4-5 10-7 16-7h44c7 0 13 3 17 8l14 17c12 2 21 8 21 18v14H28v-14Z" />
-          <line x1="94" y1="193" x2="94" y2="218" />
-          <circle cx="66" cy="250" r="13" />
-          <circle cx="158" cy="250" r="13" />
-        </g>
-        {/* зоны ремонта */}
-        <g opacity="0.55">
-          <rect x="62" y="14" width="96" height="22" rx="10" fill="#f8b6c4" />
-          <rect x="62" y="86" width="48" height="40" fill="#f8b6c4" />
-          <rect x="28" y="222" width="34" height="28" rx="8" fill="#fbe3a1" />
-        </g>
-        <g fill="#e53935">
-          <circle cx="72" cy="24" r="4" />
-          <circle cx="86" cy="104" r="4" />
-        </g>
-        <g fill="#1e88e5">
-          <circle cx="140" cy="24" r="4" />
-          <circle cx="44" cy="236" r="4" />
-        </g>
-      </svg>
-
-      <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-3 text-[10.5px] text-[#555]">
-        {(
-          [
-            ["#f8b6c4", legend[0]],
-            ["#fbe3a1", legend[1]],
-            ["#cfe3f7", legend[2]],
-          ] as const
-        ).map(([c, l]) => (
-          <span key={l} className="inline-flex items-center gap-1">
-            <span className="inline-block w-4 h-3" style={{ backgroundColor: c }} />
-            {l}
-          </span>
-        ))}
-      </div>
     </div>
   );
 }
@@ -1075,26 +1006,44 @@ export function ReportExample({ lang }: { lang: GuideLocale }) {
           </p>
         ))}
 
-        {/* Схема ремонта */}
+        {/* Область ремонта и сводка */}
         <div className="border border-[#e3e6ea] mt-6">
-          <div className="grid grid-cols-3 bg-[#f7f8f9] border-b border-[#e3e6ea]">
+          <div className="grid grid-cols-[2fr_1fr] bg-[#f7f8f9] border-b border-[#e3e6ea]">
             {d.diagramCols.map((c) => (
               <div key={c} className="text-center text-[12.5px] font-semibold text-[#333] py-3 px-2">
                 {c}
               </div>
             ))}
           </div>
-          <div className="grid md:grid-cols-3 gap-4 p-4">
-            <CarDiagram legend={d.legend} />
-            <div className="grid grid-cols-2 gap-x-3 md:col-span-1">
-              <div>
-                {d.areasLeft.map((a) => (
-                  <AreaTag key={a.name} {...a} />
-                ))}
+          <div className="grid grid-cols-[2fr_1fr] gap-4 p-4">
+            <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3">
+                <div>
+                  {d.areasLeft.map((a) => (
+                    <AreaTag key={a.name} {...a} />
+                  ))}
+                </div>
+                <div>
+                  {d.areasRight.map((a) => (
+                    <AreaTag key={a.name} {...a} />
+                  ))}
+                </div>
               </div>
-              <div>
-                {d.areasRight.map((a) => (
-                  <AreaTag key={a.name} {...a} />
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-4 pt-3 border-t border-[#eceff1] text-[10.5px] text-[#555]">
+                {(
+                  [
+                    ["paint", d.legend[0]],
+                    ["remove", d.legend[1]],
+                    ["both", d.legend[2]],
+                  ] as [Mark, string][]
+                ).map(([m, l]) => (
+                  <span key={l} className="inline-flex items-center gap-1.5">
+                    <span
+                      className="inline-block w-4 h-3.5"
+                      style={{ backgroundColor: MARK_STYLE[m].bg }}
+                    />
+                    {l}
+                  </span>
                 ))}
               </div>
             </div>
@@ -1166,14 +1115,6 @@ export function ReportExample({ lang }: { lang: GuideLocale }) {
           </table>
         </div>
 
-        {/* 8. Оценочная стоимость */}
-        <div className="mt-9">
-          <SectionBar n={8} text={d.s8} />
-        </div>
-        <div className="text-center py-7">
-          <div className="text-[20px] font-bold text-[#111]">{d.valueRange}</div>
-          <p className="text-[12px] text-[#666] mt-2">{d.s8note}</p>
-        </div>
       </div>
     </div>
   );
