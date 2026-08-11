@@ -282,6 +282,11 @@
     "calcText": "Current rates for Kazakhstan, Russia and Uzbekistan.",
     "calcBtn": "Open calculator"
   },
+  "kmTopBar": {
+    "text": "Turnkey cars from Korea",
+    "brand": "— K-Axis showroom",
+    "cta": "Browse catalog"
+  },
   "report": {
     "metaTitle": "Korean Car VIN Check — Full Carhistory Report | Caranalizer",
     "metaDesc": "Official Korean vehicle history report: insurance payouts with amounts, exactly what was repaired, mileage by source, taxi and rental use, ownership changes. See a sample report.",

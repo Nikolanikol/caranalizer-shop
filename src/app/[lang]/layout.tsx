@@ -9,6 +9,7 @@ import { HtmlLang } from "@/components/HtmlLang";
 import { CookieBanner } from "@/components/CookieBanner";
 import { Toaster } from "sonner";
 import { MessengerButtons } from "@/components/MessengerButtons";
+import { KmotorsTopBar } from "@/components/KmotorsTopBar";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
 
@@ -62,6 +63,7 @@ export default async function LangLayout({
         {tn("skipToContent")}
       </a>
       <NextIntlClientProvider messages={messages}>
+        <KmotorsTopBar />
         <Header />
         <main id="main-content" className="flex-1">{children}</main>
         <Footer />
