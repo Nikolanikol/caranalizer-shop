@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
+import { messengerLines } from "@/lib/messenger-links";
 
 interface CheckLeadPayload {
   name: string;
@@ -42,17 +43,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Server config error" }, { status: 500 });
     }
 
-    const contactLine =
-      messenger === "telegram" && tgUsername?.trim()
-        ? `Telegram: ${tgUsername.trim()}`
-        : `WhatsApp: ${phone}`;
+    const contactLines = messengerLines({ phone, messenger, tgUsername });
 
     const text = `${src.title}
 
 👤 Имя: ${name}
 📞 Телефон: ${phone}
-💬 ${contactLine}
-🔗 ${isVin ? "VIN" : "Объявление"}: ${trimmedLink}${comment?.trim() ? `\n📝 Комментарий: ${comment.trim()}` : ""}`;
+${contactLines.join("\n")}
+${isVin ? `🚗 VIN: ${trimmedLink.toUpperCase()}` : `🌐 Объявление: ${trimmedLink}`}${comment?.trim() ? `\n📝 Комментарий: ${comment.trim()}` : ""}`;
 
     const chatIds = [chatId, workChatId].filter(Boolean) as string[];
     const tgResults = await Promise.allSettled(

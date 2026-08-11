@@ -5,20 +5,23 @@ import { useTranslations } from "next-intl";
 import { Container } from "@/components/ui/container";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PhoneInput } from "@/components/ui/PhoneInput";
 import { CheckCircle } from "lucide-react";
+import type { Value } from "react-phone-number-input";
 
 export function ContactClient() {
   const t = useTranslations("contact");
 
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  // E.164 из PhoneInput — из него на сервере строятся ссылки wa.me / t.me
+  const [phone, setPhone] = useState<Value>();
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !phone.trim()) return;
+    if (!name.trim() || !phone) return;
     setSubmitting(true);
 
     try {
@@ -30,7 +33,7 @@ export function ContactClient() {
       if (res.ok) {
         setSuccess(true);
         setName("");
-        setPhone("");
+        setPhone(undefined);
         setMessage("");
       }
     } catch {} finally {
@@ -67,13 +70,7 @@ export function ContactClient() {
               <label className="block text-sm text-text-muted mb-1.5">
                 {t("phone")}
               </label>
-              <Input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder={t("phonePlaceholder")}
-                required
-              />
+              <PhoneInput value={phone} onChange={setPhone} required />
             </div>
             <div>
               <label className="block text-sm text-text-muted mb-1.5">

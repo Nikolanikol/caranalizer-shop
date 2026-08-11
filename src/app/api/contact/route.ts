@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
+import { messengerLines } from "@/lib/messenger-links";
 
 interface ContactPayload {
   name: string;
@@ -23,10 +24,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Server config error" }, { status: 500 });
     }
 
+    const contactLines = messengerLines({ phone });
+
     const text = `📬 [CARANALIZER] Обратная связь
 
 👤 Имя: ${name}
-📞 Телефон: ${phone}${message ? `\n💬 Сообщение: ${message}` : ""}`;
+📞 Телефон: ${phone}${contactLines.length ? `\n${contactLines.join("\n")}` : ""}${
+      message ? `\n💬 Сообщение: ${message}` : ""
+    }`;
 
     const chatIds = [chatId, workChatId].filter(Boolean) as string[];
     const tgResults = await Promise.allSettled(
