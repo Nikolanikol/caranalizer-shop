@@ -1,71 +1,55 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
+import { submitLead } from "@/lib/leads";
 import { messengerLines } from "@/lib/messenger-links";
 
+/**
+ * Обратная связь. Роут только разбирает тело и проверяет обязательные поля —
+ * отправка и запись живут в `lib/leads`, одни на все три формы сайта.
+ */
+
 interface ContactPayload {
-  name: string;
-  phone: string;
+  name?: string;
+  phone?: string;
   message?: string;
 }
 
 export async function POST(req: NextRequest) {
+  let body: ContactPayload;
   try {
-    const body = (await req.json()) as ContactPayload;
-    const { name, phone, message } = body;
+    body = (await req.json()) as ContactPayload;
+  } catch {
+    return NextResponse.json({ success: false, error: "Некорректный запрос" }, { status: 400 });
+  }
 
-    if (!name?.trim() || !phone?.trim()) {
-      return NextResponse.json({ error: "Name and phone required" }, { status: 400 });
+  const name = body.name?.trim();
+  const phone = body.phone?.trim();
+  const message = body.message?.trim();
+
+  if (!name || !phone) {
+    return NextResponse.json({ success: false, error: "Заполните имя и телефон" }, { status: 400 });
+  }
+
+  try {
+    const { ok } = await submitLead({
+      source: "contact",
+      title: "📬 CARANALIZER — обратная связь",
+      name,
+      phone,
+      message: message || null,
+      lines: [
+        `👤 Имя: ${name}`,
+        `📞 Телефон: ${phone}`,
+        ...messengerLines({ phone }),
+        message && `💬 Сообщение: ${message}`,
+      ],
+    });
+
+    if (!ok) {
+      return NextResponse.json({ success: false, error: "Не удалось отправить заявку" }, { status: 502 });
     }
-
-    const botToken = process.env.TELEGRAM_BOT_TOKEN?.trim();
-    const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
-    const workChatId = process.env.TELEGRAM_WORK_CHAT_ID?.trim();
-    if (!botToken || !chatId) {
-      return NextResponse.json({ error: "Server config error" }, { status: 500 });
-    }
-
-    const contactLines = messengerLines({ phone });
-
-    const text = `📬 [CARANALIZER] Обратная связь
-
-👤 Имя: ${name}
-📞 Телефон: ${phone}${contactLines.length ? `\n${contactLines.join("\n")}` : ""}${
-      message ? `\n💬 Сообщение: ${message}` : ""
-    }`;
-
-    const chatIds = [chatId, workChatId].filter(Boolean) as string[];
-    const tgResults = await Promise.allSettled(
-      chatIds.map((id) =>
-        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chat_id: id, text }),
-        }).then((r) => r.json())
-      )
-    );
-
-    const primaryResult = tgResults[0];
-    const primaryOk = primaryResult.status === "fulfilled" && primaryResult.value?.ok;
-    if (!primaryOk) {
-      console.error("Telegram primary chat error:", primaryResult);
-      return NextResponse.json({ error: "Failed to send" }, { status: 500 });
-    }
-
-    try {
-      await createServerClient().from("leads").insert({
-        name,
-        phone,
-        message: message ?? null,
-        source_page: "contact",
-        site: "caranalizer",
-      });
-    } catch (err) {
-      console.error("leads insert failed:", err);
-    }
-
     return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error("[/api/contact]", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  } catch (error) {
+    console.error("[/api/contact]", error);
+    return NextResponse.json({ success: false, error: "Ошибка сервера" }, { status: 500 });
   }
 }
