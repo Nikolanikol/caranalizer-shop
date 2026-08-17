@@ -3,7 +3,7 @@ import { Link } from '@/i18n/navigation';
 import { Filter, RotateCcw } from 'lucide-react';
 // Сборщики адресов берём из urls, а не из catalog: тот помечен `server-only`
 // и тянет за собой весь двухмегабайтный каталог, а здесь нужны только пути.
-import { SHOP_CATALOG, brandUrl, catalogUrl, categoryUrl, modelUrl } from '@/lib/shop/urls';
+import { SHOP_BASE, brandUrl, catalogUrl, categoryUrl, modelUrl } from '@/lib/shop/urls';
 import type { Facet } from '@/lib/shop/catalog';
 import type { PartCategory } from '@/types/part';
 import type { Segment } from './catalog-view';
@@ -85,7 +85,7 @@ export function FilterSidebar({
         ? brandUrl(category!, brand.slug)
         : category
           ? categoryUrl(category)
-          : SHOP_CATALOG);
+          : SHOP_BASE);
 
   // Без категории пути под марку не существует, поэтому она остаётся параметром —
   // но параметром на текущем адресе, а не на корне раздела.

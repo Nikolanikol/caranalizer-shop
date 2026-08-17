@@ -226,4 +226,4 @@ export async function getSimilarParts(part: AutoPart, limit = 4): Promise<AutoPa
 
 // Сборщики адресов переехали в lib/urls.ts: этот файл серверный, а корзине они
 // тоже нужны. Реэкспорт — чтобы существующие импорты из '@/lib/catalog' продолжали работать.
-export { SHOP_BASE, SHOP_CATALOG, partUrl, categoryUrl, brandUrl, modelUrl, catalogUrl } from './urls';
+export { SHOP_BASE, partUrl, categoryUrl, brandUrl, modelUrl, catalogUrl } from './urls';

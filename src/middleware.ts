@@ -2,6 +2,7 @@ import createMiddleware from "next-intl/middleware";
 import { NextRequest, NextResponse } from "next/server";
 import { routing } from "./i18n/routing";
 import { VIN_PATHS } from "./lib/seo";
+import { SHOP_BASE, SHOP_LOCALE } from "./lib/shop/urls";
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -64,6 +65,16 @@ export default function middleware(req: NextRequest) {
     const url = req.nextUrl.clone();
     url.pathname = `/${shop[1] ?? "ru"}`;
     url.search = "";
+    return NextResponse.redirect(url, 301);
+  }
+
+  // Прежний полный каталог: витрина получила фильтр, сортировку и пагинацию, после чего
+  // /zapchasti/katalog стал её точной копией — те же 967 позиций, две страницы за одни
+  // и те же запросы. Параметры сохраняем: фильтр и поиск на витрине те же самые.
+  const katalog = pathname.match(/^\/(?:(ru|en|ar)\/)?zapchasti\/katalog\/?$/);
+  if (katalog) {
+    const url = req.nextUrl.clone();
+    url.pathname = `/${katalog[1] ?? SHOP_LOCALE}${SHOP_BASE}`;
     return NextResponse.redirect(url, 301);
   }
 

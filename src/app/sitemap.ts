@@ -1,7 +1,6 @@
 import { MetadataRoute } from "next";
 import {
   CATEGORIES,
-  SHOP_CATALOG,
   brandUrl,
   categoryUrl,
   getAllParts,
@@ -84,7 +83,6 @@ async function shopPages(): Promise<MetadataRoute.Sitemap> {
 
   return [
     shopEntry("/zapchasti", "weekly", 0.9),
-    shopEntry(SHOP_CATALOG, "daily", 0.9),
     shopEntry("/zapchasti/kak-zakazat", "monthly", 0.5),
     shopEntry("/zapchasti/dostavka-i-oplata", "monthly", 0.5),
     shopEntry("/zapchasti/garantiya-i-vozvrat", "monthly", 0.5),

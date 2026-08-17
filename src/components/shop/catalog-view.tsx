@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from '@/i18n/navigation';
 import { PackageSearch } from 'lucide-react';
 import {
-  SHOP_CATALOG,
+  SHOP_BASE,
   brandUrl,
   catalogUrl,
   categoryUrl,
@@ -88,7 +88,7 @@ export async function CatalogView({
         ? brandUrl(category!, brand.slug)
         : category
           ? categoryUrl(category)
-          : SHOP_CATALOG);
+          : SHOP_BASE);
 
   const result = await findParts({
     category,

@@ -5,7 +5,7 @@ import { Search } from 'lucide-react';
 // Роутер из next-intl, а не из next/navigation: иначе переход уедет на /zapchasti
 // без языка и доедет до места только лишним редиректом.
 import { useRouter } from '@/i18n/navigation';
-import { SHOP_CATALOG } from '@/lib/shop/urls';
+import { SHOP_BASE } from '@/lib/shop/urls';
 
 /**
  * Поиск по каталогу — стоит рядом с товарами, а не в шапке сайта.
@@ -26,7 +26,7 @@ export function SearchForm({
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
     const query = term.trim();
-    router.push(query ? `${SHOP_CATALOG}?search=${encodeURIComponent(query)}` : SHOP_CATALOG);
+    router.push(query ? `${SHOP_BASE}?search=${encodeURIComponent(query)}` : SHOP_BASE);
   };
 
   return (

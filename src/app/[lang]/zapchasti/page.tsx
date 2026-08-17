@@ -2,7 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
-import { SHOP_CATALOG, brandUrl, getBrands } from '@/lib/shop/catalog';
+import { brandUrl, getBrands, getTopModels, modelUrl } from '@/lib/shop/catalog';
 import { SHOP_BASE, shopUrl } from '@/lib/shop/urls';
 import { SITE_URL } from '@/lib/site';
 import { CatalogView, type CatalogSearchParams } from '@/components/shop/catalog-view';
@@ -18,9 +18,9 @@ import { CatalogView, type CatalogSearchParams } from '@/components/shop/catalog
  * поступлениями. Отдельного блока «Последние поступления» больше нет: он стал первой
  * страницей списка.
  *
- * ВАЖНО: с этого момента витрина и /zapchasti/katalog показывают одно и то же. Каталог
- * стал лишним и должен уехать редиректом сюда — пока этого не сделано, две страницы
- * конкурируют за одни и те же запросы (см. AGENTS.md).
+ * Страницы /zapchasti/katalog больше нет: она стала точной копией витрины — те же 967
+ * позиций, две страницы за одни и те же запросы. Её адрес отдаёт 301 сюда, а блок
+ * «Чаще всего спрашивают» переехал под сетку.
  *
  * Фильтр теперь работает на месте, а не уводит в каталог: марка остаётся параметром
  * запроса, потому что категории на витрине нет и пути под марку не существует. Это
@@ -39,8 +39,12 @@ export default async function ShopHomePage({
 }: {
   searchParams: Promise<CatalogSearchParams>;
 }) {
-  const [params, brands] = await Promise.all([searchParams, getBrands()]);
+  const [params, brands, models] = await Promise.all([searchParams, getBrands(), getTopModels(12)]);
   const total = brands.reduce((sum, brand) => sum + brand.count, 0);
+
+  // Навигацию по частым моделям показываем только на чистой витрине: поверх результатов
+  // поиска она сбивает — человек уже нашёл, что искал.
+  const isFiltered = Boolean(params.search || params.brand || params.side || params.position);
 
   return (
     <div className="flex-1 w-full">
@@ -50,15 +54,31 @@ export default async function ShopHomePage({
         searchParams={params}
         heading="Оригинальная оптика из Кореи"
         intro={`${total} позиций для ${brands.length} марок: задние фонари и противотуманные фары. Каждая деталь сфотографирована по отдельности — вы видите именно то, что приедет.`}
+        extra={
+          isFiltered ? null : (
+            <section className="mt-12 pt-8 border-t border-border-subtle space-y-4">
+              <h2 className="text-lg font-bold text-text tracking-tight">Чаще всего спрашивают</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+                {models.map((item) => (
+                  <Link
+                    key={`${item.category}/${item.brandSlug}/${item.slug}`}
+                    href={modelUrl(item.category, item.brandSlug, item.slug)}
+                    className="flex items-center justify-between gap-3 px-3 py-2.5 rounded bg-elevated border border-border-subtle text-sm text-text-secondary hover:text-cta hover:border-cta/40 transition-colors"
+                  >
+                    <span className="truncate">{item.name}</span>
+                    <span className="text-[10px] tabular-nums text-text-dim shrink-0">{item.count}</span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )
+        }
       />
 
       <section className="border-y border-border-subtle bg-base-darker py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-lg font-bold text-text tracking-tight">Марки автомобилей</h2>
-            <Link href={SHOP_CATALOG} className="text-sm font-bold text-cta hover:underline">
-              Все марки
-            </Link>
           </div>
 
           <div className="flex flex-wrap gap-2">
