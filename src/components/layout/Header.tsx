@@ -4,11 +4,14 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { Container } from "@/components/ui/container";
 import { SHOP_BASE, SHOP_LOCALE } from "@/lib/shop/urls";
+import { CartButton } from "@/components/shop/cart-button";
 import { MobileNav } from "./MobileNav";
 
-// «Проверка авто» намеренно не в списке — на неё ведёт жёлтая CTA-кнопка,
-// дублировать пунктом меню нельзя. «О нас» живёт в футере.
+// «Проверка авто» теперь обычный пункт меню, а не жёлтая CTA-кнопка справа: услуга
+// одна из двух, и выделять её кнопкой в шапке значит утверждать, что вторая
+// (свои б/у запчасти) второстепенна. «О нас» живёт в футере.
 const NAV_KEYS = [
+  { key: "check", href: "/proverka-avto-po-vin" },
   { key: "guides", href: "/guides" },
   { key: "howItWorks", href: "/how-it-works" },
   { key: "faq", href: "/faq" },
@@ -58,13 +61,7 @@ export function Header() {
           на ней. В шапке он предлагал языки для страниц, которых на них не существует.
         */}
         <div className="flex items-center gap-3">
-          <Link
-            href="/proverka-avto-po-vin"
-            className="hidden sm:inline-flex items-center rounded-lg bg-cta px-4 py-2 text-sm font-semibold text-base-darker hover:opacity-90 transition-opacity"
-          >
-            {t("freeCheck")}
-          </Link>
-
+          <CartButton />
           <MobileNav />
         </div>
       </Container>

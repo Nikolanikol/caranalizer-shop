@@ -10,6 +10,8 @@ import { CookieBanner } from "@/components/CookieBanner";
 import { Toaster } from "sonner";
 import { MessengerButtons } from "@/components/MessengerButtons";
 import { KmotorsTopBar } from "@/components/KmotorsTopBar";
+import { CartProvider } from "@/components/shop/cart-context";
+import { CartDrawer } from "@/components/shop/cart-drawer";
 
 /**
  * Собираем заранее только русские страницы.
@@ -61,12 +63,24 @@ export default async function LangLayout({
         {tn("skipToContent")}
       </a>
       <NextIntlClientProvider messages={messages}>
-        <KmotorsTopBar />
-        <Header />
-        <main id="main-content" className="flex-1">{children}</main>
-        <Footer />
-        <CookieBanner />
-        <MessengerButtons />
+        {/*
+          Корзина поднята сюда из layout раздела запчастей: её кнопка переехала в шапку,
+          а шапка лежит выше по дереву — контекст течёт вниз, и из раздела она была
+          недоступна. Цена подъёма — чтение localStorage на всех страницах, включая
+          проверку по VIN; взамен отложенные детали доступны с любой страницы.
+
+          CartDrawer сидит на z-[60] и потому не конфликтует с cookie-баннером
+          и кнопками мессенджеров: на z-50 оба, и они рендерятся позже.
+        */}
+        <CartProvider>
+          <KmotorsTopBar />
+          <Header />
+          <main id="main-content" className="flex-1">{children}</main>
+          <Footer />
+          <CookieBanner />
+          <MessengerButtons />
+          <CartDrawer />
+        </CartProvider>
         <Toaster theme="dark" position="top-center" richColors />
       </NextIntlClientProvider>
     </div>

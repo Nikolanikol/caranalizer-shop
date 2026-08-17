@@ -1,13 +1,14 @@
 import { notFound } from "next/navigation";
-import { CartProvider } from "@/components/shop/cart-context";
-import { CartDrawer } from "@/components/shop/cart-drawer";
 import { ShopBar } from "@/components/shop/shop-bar";
 import { SHOP_LOCALE } from "@/lib/shop/urls";
 
 /**
- * Раздел запчастей. Здесь и только здесь живёт корзина: провайдер и выдвижная панель
- * подняты не в корневой layout намеренно — иначе состояние корзины и её localStorage
- * грузились бы на страницах проверки VIN, которым магазин не нужен.
+ * Раздел запчастей.
+ *
+ * Корзины здесь больше нет: её кнопка переехала в шапку сайта, а шапка лежит выше
+ * по дереву, поэтому провайдер и выдвижная панель поднялись в `[lang]/layout.tsx`.
+ * Плата за это — чтение localStorage на всех страницах; взамен отложенные детали
+ * доступны с любой страницы, а не только изнутри раздела.
  *
  * Раздел одноязычный. Каталог, названия деталей и состояние приходят от донора
  * по-русски, переводов нет, и отдавать англоязычному посетителю русскую витрину —
@@ -25,10 +26,9 @@ export default async function ShopLayout({
   if (lang !== SHOP_LOCALE) notFound();
 
   return (
-    <CartProvider>
+    <>
       <ShopBar />
       {children}
-      <CartDrawer />
-    </CartProvider>
+    </>
   );
 }
