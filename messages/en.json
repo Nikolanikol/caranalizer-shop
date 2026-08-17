@@ -316,6 +316,8 @@
     "w8d": "Make, model, engine, body, colour and the manufacturing date that decides customs eligibility.",
     "exampleTitle": "Sample report",
     "exampleSub": "This is what a finished report looks like: a demo car with a troubled history — former taxi, two claims and heavy mileage",
+    "exampleShow": "Show sample report",
+    "exampleHide": "Hide sample report",
     "compareTitle": "Free check or full report",
     "compareSub": "Start free — once a car makes your shortlist, get the full report before paying a deposit",
     "colFeature": "Data",

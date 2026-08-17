@@ -6,7 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { KmotorsBanner } from "@/components/KmotorsBanner";
 import { CheckLeadForm } from "../check/CheckLeadForm";
-import { ReportExample } from "./ReportExample";
+import { ReportExampleAccordion } from "./ReportExampleAccordion";
 import type { GuideLocale } from "@/lib/guides";
 import type { Locale } from "@/i18n/routing";
 import {
@@ -160,7 +160,7 @@ export default function ReportPage() {
             <p className="text-text-secondary max-w-2xl mx-auto">{t("exampleSub")}</p>
           </div>
           <div className="max-w-4xl mx-auto">
-            <ReportExample lang={locale} />
+            <ReportExampleAccordion lang={locale} />
           </div>
         </Container>
       </section>
