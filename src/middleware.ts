@@ -36,13 +36,18 @@ const VIN_ROUTE = VIN_PATHS.ru;
 export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // /:lang?/parts/slug → тот же slug на KMotors (форматы идентичны:
-  // part_number или id-N; legacy "PN--name"/"PN--" KMotors нормализует сам)
-  const parts = pathname.match(/^\/(?:(ru|en|ar)\/)?parts\/(.+)$/);
+  // /:lang?/parts[/slug] → тот же адрес на KMotors. Форматы слага идентичны:
+  // part_number или id-N; legacy "PN--name"/"PN--" KMotors нормализует сам.
+  //
+  // Слаг необязателен: /parts и /ru/parts — индексная страница прежнего каталога,
+  // и у KMotors ровно такой адрес есть. Без этого они отдавали 404, то есть
+  // накопленный по ним сигнал просто терялся вместо перехода на вторую площадку.
+  const parts = pathname.match(/^\/(?:(ru|en|ar)\/)?parts(?:\/(.*))?$/);
   if (parts) {
     const lang = parts[1] ?? "ru";
-    const slug = parts[2].replace(/-+$/, "");
-    return NextResponse.redirect(`${KMOTORS}/${lang}/parts/${slug}`, 301);
+    const slug = (parts[2] ?? "").replace(/-+$/, "");
+    const target = slug ? `${KMOTORS}/${lang}/parts/${slug}` : `${KMOTORS}/${lang}/parts`;
+    return NextResponse.redirect(target, 301);
   }
 
   // Каталог и страницы моделей → каталог запчастей KMotors (пер-категорийных
