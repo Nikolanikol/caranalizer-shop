@@ -17,7 +17,7 @@ export async function generateMetadata({
   const { lang } = await params;
   const t = await getTranslations({ locale: lang as Locale, namespace: "guides" });
   const title = `${t("title")} | Caranalizer`;
-  const description = t("sub");
+  const description = t("metaDesc");
 
   return {
     title,

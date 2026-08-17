@@ -18,12 +18,12 @@ export async function generateMetadata({
   const { lang } = await params;
 
   const titles: Record<string, string> = {
-    ru: "Как мы работаем — проверка и покупка авто из Кореи | Caranalizer",
+    ru: "Как мы работаем — проверка авто из Кореи | Caranalizer",
     en: "How It Works — Korean Car Check & Purchase | Caranalizer",
     ar: "كيف نعمل — فحص وشراء السيارات من كوريا | Caranalizer",
   };
   const descriptions: Record<string, string> = {
-    ru: "4 шага: заявка на проверку, бесплатный мини-отчёт, полная проверка и подбор, покупка и доставка через K-Axis.",
+    ru: "Четыре шага: заявка, бесплатный мини-отчёт по объявлению или VIN, полный отчёт Carhistory, покупка и доставка автомобиля через K-Axis.",
     en: "4 steps: check request, free mini-report, full check and sourcing, purchase and delivery via K-Axis.",
     ar: "4 خطوات: طلب الفحص، تقرير مصغر مجاني، فحص كامل واختيار، شراء وتوصيل عبر K-Axis.",
   };

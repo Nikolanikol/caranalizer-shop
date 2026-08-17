@@ -14,12 +14,12 @@ export async function generateMetadata({
   const t = await getTranslations({ locale: lang as Locale, namespace: "contact" });
 
   const titles: Record<string, string> = {
-    ru: "Связаться с нами — заказ запчастей из Кореи | Caranalizer",
+    ru: "Контакты — проверка авто и б/у запчасти из Кореи",
     en: "Contact Us — Order Korean Car Parts | Caranalizer",
     ar: "اتصل بنا — طلب قطع غيار السيارات الكورية | Caranalizer",
   };
   const descriptions: Record<string, string> = {
-    ru: "Свяжитесь с нами для заказа оригинальных запчастей Hyundai, Kia, Genesis из Кореи. Быстрый ответ, помощь в подборе деталей.",
+    ru: "Свяжитесь с нами: проверка автомобиля по VIN, подбор б/у оптики с корейских разборов, расчёт доставки. Отвечаем в Telegram и WhatsApp.",
     en: "Contact us to order genuine Hyundai, Kia, Genesis parts from Korea. Fast response, expert help finding the right part.",
     ar: "تواصل معنا لطلب قطع غيار هيونداي وكيا وجينيسيس الأصلية من كوريا. رد سريع ومساعدة في اختيار القطعة المناسبة.",
   };

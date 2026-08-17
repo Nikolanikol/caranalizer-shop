@@ -273,7 +273,11 @@ export function GuideLayout({
 export function guideMetadata(slug: string, lang: string) {
   const meta = GUIDES.find((g) => g.slug === slug)!;
   const l = (["ru", "en", "ar"].includes(lang) ? lang : "ru") as GuideLocale;
-  const title = `${meta.title[l]} | Caranalizer`;
+  // Приставка бренда только если заголовок остаётся в пределах 60 знаков: дальше
+  // Google обрезает выдачу, а у статей заголовок сам по себе длинный и ключевой —
+  // терять из него слова ради названия сайта, которое видно в домене, невыгодно.
+  const withBrand = `${meta.title[l]} | Caranalizer`;
+  const title = withBrand.length <= 60 ? withBrand : meta.title[l];
   const description = meta.teaser[l];
   const path = `/guides/${slug}`;
   return {

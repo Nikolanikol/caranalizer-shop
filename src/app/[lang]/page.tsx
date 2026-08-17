@@ -22,7 +22,7 @@ export async function generateMetadata({
   const { lang } = await params;
 
   const titles: Record<string, string> = {
-    ru: "Проверка авто из Кореи — бесплатный отчёт по Encar, KBChachacha | Caranalizer",
+    ru: "Бесплатная проверка авто из Кореи — Encar, KBChachacha",
     en: "Korean Car Check — Free Encar & KBChachacha Report | Caranalizer",
     ar: "فحص السيارات من كوريا — تقرير مجاني Encar وKBChachacha | Caranalizer",
   };
