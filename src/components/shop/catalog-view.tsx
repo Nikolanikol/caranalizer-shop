@@ -30,6 +30,7 @@ import { ShopFrame, ShopHeader } from './shop-shell';
 
 const SORTS: { value: SortBy; label: string }[] = [
   { value: 'popular', label: 'По умолчанию' },
+  { value: 'newest', label: 'Сначала новые' },
   { value: 'price_asc', label: 'Сначала дешёвые' },
   { value: 'price_desc', label: 'Сначала дорогие' },
 ];
@@ -58,6 +59,7 @@ export async function CatalogView({
   intro,
   basePath,
   extra,
+  defaultSort = 'popular',
 }: {
   category?: PartCategory;
   brand?: Segment;
@@ -69,8 +71,13 @@ export async function CatalogView({
   basePath?: string;
   /** Дополнительный блок под сеткой — навигация по маркам и моделям на /katalog. */
   extra?: React.ReactNode;
+  /**
+   * Порядок, если посетитель ничего не выбрал. Витрина открывается свежими
+   * поступлениями: это её смысл, и раньше она показывала их отдельным блоком.
+   */
+  defaultSort?: SortBy;
 }) {
-  const sort = (SORTS.find((item) => item.value === searchParams.sort)?.value ?? 'popular') as SortBy;
+  const sort = (SORTS.find((item) => item.value === searchParams.sort)?.value ?? defaultSort) as SortBy;
 
   // Путь текущей подборки. Всё, что мельче марки и модели, остаётся параметрами запроса.
   const base =
@@ -108,7 +115,7 @@ export async function CatalogView({
     side: searchParams.side,
     position: searchParams.position,
     search: searchParams.search,
-    sort: sort === 'popular' ? '' : sort,
+    sort: sort === defaultSort ? '' : sort,
   };
 
   return (
@@ -151,7 +158,12 @@ export async function CatalogView({
                 )}
               </p>
 
-              <div className="flex items-center gap-2">
+              {/*
+                flex-wrap обязателен: четыре варианта с русскими подписями не влезают
+                в 375 пикселей, и без переноса ряд был шире экрана на 27 px — от этого
+                вбок ехала вся страница, а «Сначала дорогие» обрезалось на краю.
+              */}
+              <div className="flex flex-wrap items-center gap-2">
                 {SORTS.map((item) => (
                   <Link
                     key={item.value}
@@ -160,7 +172,7 @@ export async function CatalogView({
                       ...query,
                       brand: brand ? undefined : searchParams.brand,
                       model: brand ? undefined : searchParams.model,
-                      sort: item.value === 'popular' ? '' : item.value,
+                      sort: item.value === defaultSort ? '' : item.value,
                     })}
                     className={`px-3 py-2 rounded text-[10px] font-bold uppercase tracking-widest transition-colors ${
                       sort === item.value

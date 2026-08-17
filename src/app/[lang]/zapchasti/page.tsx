@@ -2,29 +2,30 @@ import React from 'react';
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
-import { SHOP_CATALOG, brandUrl, getBrands, getLatestParts, partUrl } from '@/lib/shop/catalog';
-import { shopUrl } from '@/lib/shop/urls';
+import { SHOP_CATALOG, brandUrl, getBrands } from '@/lib/shop/catalog';
+import { SHOP_BASE, shopUrl } from '@/lib/shop/urls';
 import { SITE_URL } from '@/lib/site';
-import { ProductCard } from '@/components/shop/product-card';
-import { SearchForm } from '@/components/shop/search-form';
-import { FilterPanel } from '@/components/shop/filter-panel';
-import { FilterSidebar } from '@/components/shop/filter-sidebar';
-import { ShopFrame, ShopHeader } from '@/components/shop/shop-shell';
+import { CatalogView, type CatalogSearchParams } from '@/components/shop/catalog-view';
 
 /**
- * Витрина раздела.
+ * Витрина раздела — полный список с фильтром, сортировкой и пагинацией.
  *
- * Геометрия сверху донизу та же, что у каталога и категорий: `ShopHeader` и `ShopFrame` —
- * общие компоненты. Раньше витрина была центрированным лендингом, и при переходе на
- * категорию заголовок улетал влево и уменьшался, пилюли перелетали через экран вправо,
- * а поиск смещался в правую колонку. Вертикальный сдвиг читается как навигация,
- * горизонтальный — как поломка, поэтому горизонтальных различий здесь быть не должно.
+ * Раньше здесь было девять последних поступлений и ссылка «Весь каталог». На телефоне
+ * это читалось как «всё, что есть»: фильтр свёрнут в кнопку, за девятью карточками —
+ * ничего. Пагинация решает именно это: снизу видно, что позиций 967, а не девять.
  *
- * Лендингом витрина при этом остаётся: весь каталог живёт на /zapchasti/katalog, а здесь
- * последние поступления и навигация. Положить сюда полный список нельзя — две страницы
- * совпали бы на 95% (967 позиций против 915 на /zapchasti/zadnie-fonari) и начали бы
- * конкурировать за одни и те же запросы. Маркетинговые блоки уехали под сетку: в первом
- * экране им место дороже, чем пользы.
+ * Порядок по умолчанию — `newest`, поэтому витрина по-прежнему открывается свежими
+ * поступлениями. Отдельного блока «Последние поступления» больше нет: он стал первой
+ * страницей списка.
+ *
+ * ВАЖНО: с этого момента витрина и /zapchasti/katalog показывают одно и то же. Каталог
+ * стал лишним и должен уехать редиректом сюда — пока этого не сделано, две страницы
+ * конкурируют за одни и те же запросы (см. AGENTS.md).
+ *
+ * Фильтр теперь работает на месте, а не уводит в каталог: марка остаётся параметром
+ * запроса, потому что категории на витрине нет и пути под марку не существует. Это
+ * описанное исключение из lib/shop/urls.ts, и витрина канонизируется сама на себя,
+ * поэтому страницы с фильтрами и номерами в индекс отдельно не уходят.
  */
 export const metadata: Metadata = {
   title: 'Запчасти из Южной Кореи — оригинальная оптика',
@@ -33,55 +34,23 @@ export const metadata: Metadata = {
   alternates: { canonical: shopUrl('/zapchasti', SITE_URL) },
 };
 
-export default async function ShopHomePage() {
-  const [latest, brands] = await Promise.all([getLatestParts(9), getBrands()]);
+export default async function ShopHomePage({
+  searchParams,
+}: {
+  searchParams: Promise<CatalogSearchParams>;
+}) {
+  const [params, brands] = await Promise.all([searchParams, getBrands()]);
   const total = brands.reduce((sum, brand) => sum + brand.count, 0);
 
   return (
     <div className="flex-1 w-full">
-      <ShopHeader
+      <CatalogView
+        basePath={SHOP_BASE}
+        defaultSort="newest"
+        searchParams={params}
         heading="Оригинальная оптика из Кореи"
         intro={`${total} позиций для ${brands.length} марок: задние фонари и противотуманные фары. Каждая деталь сфотографирована по отдельности — вы видите именно то, что приедет.`}
       />
-
-      <ShopFrame
-        sidebar={
-          /*
-            Фильтр здесь работает навигацией: `basePath` — каталог, поэтому любой выбор
-            уводит на /zapchasti/katalog, где есть и сортировка, и пагинация. Фильтровать
-            «Последние поступления» на месте было бы хуже: их девять, и выборка по марке
-            почти всегда оказывалась бы пустой.
-
-            Категории на витрине нет, поэтому марка остаётся параметром запроса, а не
-            сегментом пути — это описанное исключение из lib/shop/urls.ts.
-          */
-          <FilterPanel activeCount={0}>
-            <FilterSidebar query={{}} brands={brands} models={[]} basePath={SHOP_CATALOG} />
-          </FilterPanel>
-        }
-      >
-        {/* Поиск на том же месте и той же ширины, что на страницах каталога */}
-        <div className="mb-6">
-          <SearchForm />
-        </div>
-
-        {/* Разделитель повторяет строку «Найдено / сортировка» из каталога */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-6 border-b border-border-subtle">
-          <p className="text-xs font-bold text-text-muted uppercase tracking-widest">Последние поступления</p>
-          <Link
-            href={SHOP_CATALOG}
-            className="px-3 py-2 rounded text-[10px] font-bold uppercase tracking-widest text-text-muted hover:text-text transition-colors"
-          >
-            Весь каталог
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-          {latest.map((part) => (
-            <ProductCard key={partUrl(part)} part={part} />
-          ))}
-        </div>
-      </ShopFrame>
 
       <section className="border-y border-border-subtle bg-base-darker py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-4">
@@ -109,8 +78,7 @@ export default async function ShopHomePage() {
 
       {/*
         Маркетинг витрины. Стоял в первом экране крупным центрированным героем — оттуда
-        он и создавал разъезд геометрии при переходе на категорию. Содержание сохранено:
-        прямой выкуп с разборов и объяснение, что заявка — не оплата.
+        он и создавал разъезд геометрии при переходе на категорию.
       */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="max-w-3xl space-y-3">

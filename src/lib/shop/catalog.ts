@@ -38,7 +38,7 @@ export function isCategory(value: string): value is PartCategory {
   return value in CATEGORIES;
 }
 
-export type SortBy = 'popular' | 'price_asc' | 'price_desc';
+export type SortBy = 'popular' | 'newest' | 'price_asc' | 'price_desc';
 
 export interface CatalogQuery {
   category?: PartCategory;
@@ -66,14 +66,6 @@ export interface CatalogPage {
 
 export async function getAllParts(): Promise<AutoPart[]> {
   return CATALOG;
-}
-
-/**
- * Последние поступления — по дате публикации у донора (`listedAt`), а не по порядку в файле.
- * Дата настоящая: она зашита в путь к фотографиям и посчитана нормализатором.
- */
-export async function getLatestParts(limit = 8): Promise<AutoPart[]> {
-  return [...CATALOG].sort((a, b) => b.listedAt.localeCompare(a.listedAt)).slice(0, limit);
 }
 
 /** Модели с наибольшим числом позиций — для навигационных блоков на главной и в каталоге. */
@@ -165,6 +157,8 @@ function applyFilters(query: CatalogQuery): AutoPart[] {
 
   if (query.sort === 'price_asc') return [...items].sort((a, b) => a.priceKrw - b.priceKrw);
   if (query.sort === 'price_desc') return [...items].sort((a, b) => b.priceKrw - a.priceKrw);
+  // Дата настоящая: она зашита в путь к фотографиям и посчитана нормализатором.
+  if (query.sort === 'newest') return [...items].sort((a, b) => b.listedAt.localeCompare(a.listedAt));
   return items;
 }
 
