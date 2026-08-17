@@ -27,7 +27,7 @@ export function CartDrawer() {
   const [telegram, setTelegram] = useState('');
   const [address, setAddress] = useState('');
   const [vin, setVin] = useState('');
-  const [payment, setPayment] = useState<'sbp' | 'card_rf' | 'invoice_ur'>('sbp');
+  const [payment, setPayment] = useState<'qwikpay' | 'invoice_ur' | 'paypal'>('qwikpay');
   const [consent, setConsent] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -283,9 +283,11 @@ export function CartDrawer() {
                   </legend>
                   {(
                     [
-                      { value: 'sbp', label: 'СБП / QR-код', icon: QrCode },
-                      { value: 'card_rf', label: 'Карта РФ (МИР)', icon: CreditCard },
-                      { value: 'invoice_ur', label: 'Безналичный (юрлица)', icon: Building2 },
+                      // Способы должны совпадать с PAYMENT_LABELS в api/checkout и с текстом
+                      // на /zapchasti/dostavka-i-oplata: это одна и та же оферта в трёх местах.
+                      { value: 'qwikpay', label: 'QwikPay / Золотая Корона', icon: QrCode },
+                      { value: 'invoice_ur', label: 'Инвойс на юрлицо', icon: Building2 },
+                      { value: 'paypal', label: 'PayPal', icon: CreditCard },
                     ] as const
                   ).map(({ value, label, icon: Icon }) => (
                     <label

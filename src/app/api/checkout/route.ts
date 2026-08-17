@@ -35,10 +35,11 @@ function num(value: unknown): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+// Должны совпадать с вариантами в cart-drawer и с текстом на /zapchasti/dostavka-i-oplata.
 const PAYMENT_LABELS: Record<string, string> = {
-  sbp: 'СБП / QR',
-  card_rf: 'Карта РФ',
-  invoice_ur: 'Безналичный (юрлицо)',
+  qwikpay: 'QwikPay / Золотая Корона',
+  invoice_ur: 'Инвойс на юрлицо',
+  paypal: 'PayPal',
 };
 
 function escapeHtml(value: unknown): string {
