@@ -9,8 +9,7 @@ import { SHOP_BASE, SHOP_LOCALE } from "@/lib/shop/urls";
 
 const NAV_KEYS = [
   { key: "home", href: "/" },
-  { key: "freeCheck", href: "/check" },
-  { key: "report", href: "/report" },
+  { key: "check", href: "/proverka-avto-po-vin" },
   { key: "guides", href: "/guides" },
   { key: "howItWorks", href: "/how-it-works" },
   { key: "faq", href: "/faq" },

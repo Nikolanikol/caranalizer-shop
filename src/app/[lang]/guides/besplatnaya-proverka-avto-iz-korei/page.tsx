@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { useLocale, useTranslations } from "next-intl";
 import { Container } from "@/components/ui/container";
 import { GuideLayout, guideMetadata, type GuideContent } from "../GuideLayout";
-import { CheckLeadForm } from "../../check/CheckLeadForm";
+import { CheckLeadForm } from "../../proverka-avto-po-vin/CheckLeadForm";
 import type { GuideLocale } from "@/lib/guides";
 
 const SLUG = "besplatnaya-proverka-avto-iz-korei";

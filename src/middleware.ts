@@ -14,6 +14,17 @@ const KMOTORS = "https://www.kmotors.shop";
 /** Единственный путь, который существует под en/ar — страница проверки по VIN. */
 const FOREIGN_KEEP = VIN_PATHS.en;
 
+/**
+ * Внутреннее имя маршрута страницы проверки — папка в app/[lang].
+ *
+ * Иноязычный слаг (`/koreancar-vin-check`) переписываем на него, а не отдаём вторым
+ * маршрутом: путь у локалей разный, страница одна. `pathnames` из next-intl тут не
+ * подошёл: объявление хотя бы одного локализованного пути делает типы `Link` строгими,
+ * и тогда пришлось бы перечислить все маршруты, включая динамические адреса магазина,
+ * которые собираются строками в lib/shop/urls.ts.
+ */
+const VIN_ROUTE = VIN_PATHS.ru;
+
 export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
@@ -43,6 +54,16 @@ export default function middleware(req: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
+  // Старые адреса страниц проверки: /check и /report склеены в одну страницу.
+  const merged = pathname.match(/^\/(?:(ru|en|ar)\/)?(?:check|report)\/?$/);
+  if (merged) {
+    const locale = (merged[1] ?? "ru") as "ru" | "en" | "ar";
+    const url = req.nextUrl.clone();
+    url.pathname = `/${locale}${VIN_PATHS[locale]}`;
+    url.search = "";
+    return NextResponse.redirect(url, 301);
+  }
+
   // Сайт одноязычный, и многоязычна ровно одна страница — проверка по VIN. Всё
   // остальное под en/ar не существует: уводим на ту единственную страницу, которая
   // на этом языке есть. 404 здесь был бы честнее по букве, но бесполезнее для
@@ -58,6 +79,15 @@ export default function middleware(req: NextRequest) {
       url.search = "";
       return NextResponse.redirect(url, 301);
     }
+  }
+
+  // /en/koreancar-vin-check → внутренний /en/proverka-avto-po-vin. Адрес в браузере
+  // не меняется: посетитель остаётся на своём слаге, отдаём ему ту же страницу.
+  const vin = pathname.match(/^\/(en|ar)(\/.*)?$/);
+  if (vin && vin[2] === FOREIGN_KEEP) {
+    const url = req.nextUrl.clone();
+    url.pathname = `/${vin[1]}${VIN_ROUTE}`;
+    return NextResponse.rewrite(url);
   }
 
   return intlMiddleware(req);

@@ -19,15 +19,13 @@ export const MAIN_LOCALE = "ru";
  * Пути страницы проверки по локали — единственное место, где они заданы: отсюда их
  * берут карта сайта, редиректы в middleware и метаданные страницы.
  *
- * Пока это `/check`. После склейки `/check` и `/report` в одну страницу здесь встанут
- * `/proverka-avto-po-vin` для русского и `/koreancar-vin-check` для остальных —
- * транслит русскому посетителю понятен, англоязычному нет. Менять только здесь
- * и в `pathnames` конфига next-intl.
+ * Транслит русскому посетителю понятен, англоязычному нет — поэтому у локалей разные
+ * слаги. Те же строки заданы в `pathnames` конфига next-intl: менять в обоих местах.
  */
 export const VIN_PATHS = {
-  ru: "/check",
-  en: "/check",
-  ar: "/check",
+  ru: "/proverka-avto-po-vin",
+  en: "/koreancar-vin-check",
+  ar: "/koreancar-vin-check",
 } as const;
 
 export type VinLocale = keyof typeof VIN_PATHS;

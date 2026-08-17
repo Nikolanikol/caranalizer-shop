@@ -159,7 +159,7 @@ export function GuideLayout({
               <p className="text-sm text-text-muted">{t("ctaCheckText")}</p>
             </div>
             <Link
-              href="/check"
+              href="/proverka-avto-po-vin"
               className="inline-flex items-center gap-2 px-6 py-3 bg-cta text-base-darker font-semibold rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap"
             >
               {t("ctaCheckBtn")}
@@ -184,7 +184,7 @@ export function GuideLayout({
                 <p className="text-sm text-text-muted max-w-md">{tc("reportDesc")}</p>
               </div>
               <Link
-                href="/report"
+                href="/proverka-avto-po-vin"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-hover transition-colors whitespace-nowrap"
               >
                 {tc("reportCta")}

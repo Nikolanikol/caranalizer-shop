@@ -11,13 +11,14 @@
  * потому что это единственная точка входа для иноязычного посетителя, и прятать её
  * в углу шапки, где её никто не найдёт, смысла нет.
  *
- * Пути переставляет `useRouter` из `@/i18n/navigation`: у страницы проверки свой адрес
- * в каждой локали, и сборкой правильного занимается next-intl, а не этот компонент.
+ * Адрес каждой версии собираем из `VIN_PATHS`: у локалей разные слаги, и переход
+ * делается обычной навигацией, а не через `router` из next-intl — тот увёл бы
+ * на русский путь, откуда middleware сделал бы лишний 301.
  */
 
 import { useLocale, useTranslations } from "next-intl";
-import { usePathname, useRouter } from "@/i18n/navigation";
 import { type Locale } from "@/i18n/routing";
+import { VIN_PATHS } from "@/lib/seo";
 import { Globe } from "lucide-react";
 
 /** Язык называем на нём самом: «Русский» понятнее носителю, чем «Russian». */
@@ -30,8 +31,6 @@ const LANGUAGES: { locale: Locale; native: string; code: string }[] = [
 export function LanguageSwitcher() {
   const t = useTranslations("check");
   const current = useLocale() as Locale;
-  const pathname = usePathname();
-  const router = useRouter();
 
   return (
     <div className="rounded-2xl border border-border-subtle bg-elevated/60 p-5 sm:p-6">
@@ -54,7 +53,11 @@ export function LanguageSwitcher() {
               lang={locale}
               dir={locale === "ar" ? "rtl" : "ltr"}
               aria-current={active ? "true" : undefined}
-              onClick={() => !active && router.replace(pathname, { locale })}
+              onClick={() => {
+                // Адрес собираем сами: у локалей разные слаги, и `router.replace`
+                // увёл бы на русский путь, откуда middleware сделал бы лишний 301.
+                if (!active) window.location.href = `/${locale}${VIN_PATHS[locale]}`;
+              }}
               className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3.5 text-start transition-colors ${
                 active
                   ? "border-primary bg-primary/10 text-text cursor-default"

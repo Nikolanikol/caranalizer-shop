@@ -9,7 +9,6 @@ import { MobileNav } from "./MobileNav";
 // «Проверка авто» намеренно не в списке — на неё ведёт жёлтая CTA-кнопка,
 // дублировать пунктом меню нельзя. «О нас» живёт в футере.
 const NAV_KEYS = [
-  { key: "report", href: "/report" },
   { key: "guides", href: "/guides" },
   { key: "howItWorks", href: "/how-it-works" },
   { key: "faq", href: "/faq" },
@@ -60,7 +59,7 @@ export function Header() {
         */}
         <div className="flex items-center gap-3">
           <Link
-            href="/check"
+            href="/proverka-avto-po-vin"
             className="hidden sm:inline-flex items-center rounded-lg bg-cta px-4 py-2 text-sm font-semibold text-base-darker hover:opacity-90 transition-opacity"
           >
             {t("freeCheck")}

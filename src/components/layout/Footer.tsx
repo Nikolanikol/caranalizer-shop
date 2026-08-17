@@ -7,8 +7,7 @@ import { kmotorsUrl } from "@/lib/kmotors";
 import { Send, ExternalLink, Wrench } from "lucide-react";
 
 const NAV_LINKS = [
-  { key: "check", href: "/check" },
-  { key: "report", href: "/report" },
+  { key: "check", href: "/proverka-avto-po-vin" },
   { key: "guides", href: "/guides" },
   { key: "howItWorks", href: "/how-it-works" },
   { key: "faq", href: "/faq" },

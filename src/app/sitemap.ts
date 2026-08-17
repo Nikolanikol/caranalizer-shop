@@ -21,7 +21,6 @@ import type { PartCategory } from "@/types/part";
  */
 const STATIC_PAGES: { path: string; freq: "daily" | "weekly" | "monthly"; priority: number }[] = [
   { path: "", freq: "weekly", priority: 1.0 },
-  { path: "/report", freq: "weekly", priority: 0.9 },
   { path: "/guides", freq: "weekly", priority: 0.8 },
   { path: "/guides/kbchachacha-na-russkom", freq: "monthly", priority: 0.8 },
   { path: "/guides/encar-proverka-vin", freq: "monthly", priority: 0.8 },

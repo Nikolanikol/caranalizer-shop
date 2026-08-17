@@ -2,13 +2,15 @@ import type { Metadata } from "next";
 import { useTranslations, useLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/container";
-import { Link } from "@/i18n/navigation";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { KmotorsBanner } from "@/components/KmotorsBanner";
-import { CheckLeadForm } from "../check/CheckLeadForm";
+import { CheckLeadForm } from "./CheckLeadForm";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { ReportExampleAccordion } from "./ReportExampleAccordion";
 import type { GuideLocale } from "@/lib/guides";
 import type { Locale } from "@/i18n/routing";
+import { VIN_PATHS, vinAlternates, type VinLocale } from "@/lib/seo";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 import {
   Gauge,
   Coins,
@@ -23,8 +25,6 @@ import {
   Minus,
 } from "lucide-react";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
-const LOCALES = ["ru", "en", "ar"] as const;
 
 export async function generateMetadata({
   params,
@@ -39,22 +39,18 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: {
-      canonical: `${BASE}/${lang}/report`,
-      languages: {
-        ...Object.fromEntries(LOCALES.map((l) => [l, `${BASE}/${l}/report`])),
-        "x-default": `${BASE}/ru/report`,
-      },
-    },
-    openGraph: { title, description, url: `${BASE}/${lang}/report` },
+    alternates: vinAlternates(lang),
+    openGraph: { title, description, url: vinAlternates(lang).canonical },
   };
 }
 
 const WHAT_ICONS = [Gauge, Coins, Wrench, Droplets, ShieldAlert, Car, Users, FileText];
 const COMPARE_ROWS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-export default function ReportPage() {
+export default function VinCheckPage() {
   const t = useTranslations("report");
+  // Строки бывшей страницы бесплатной проверки: страницы склеены, тексты переиспользуем
+  const tc = useTranslations("check");
   const locale = useLocale() as GuideLocale;
 
   const faqs = [1, 2, 3, 4, 5].map((n) => ({ q: t(`faq${n}q`), a: t(`faq${n}a`) }));
@@ -67,8 +63,8 @@ export default function ReportPage() {
       serviceType: "Vehicle history report",
       description: t("metaDesc"),
       areaServed: ["KZ", "RU", "UZ"],
-      provider: { "@type": "Organization", name: "Caranalizer", url: BASE },
-      url: `${BASE}/${locale}/report`,
+      provider: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+      url: `${SITE_URL}/${locale}${VIN_PATHS[locale as VinLocale] ?? VIN_PATHS.ru}`,
     },
     {
       "@context": "https://schema.org",
@@ -117,6 +113,44 @@ export default function ReportPage() {
                 {t("ctaExample")}
               </a>
             </div>
+
+            {/* Счётчики из бывшей страницы бесплатной проверки: тот же продукт, одна страница */}
+            <div className="flex justify-center gap-8 sm:gap-10 mt-12 pt-8 border-t border-border-subtle">
+              {[["stat1v", "stat1l"], ["stat2v", "stat2l"], ["stat3v", "stat3l"]].map(([v, l]) => (
+                <div key={v} className="text-center">
+                  <div className="text-2xl sm:text-3xl font-bold text-primary font-[family-name:var(--font-heading)]">
+                    {tc(v)}
+                  </div>
+                  <div className="text-xs text-text-muted uppercase tracking-wide mt-1">{tc(l)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Container>
+      </section>
+
+      {/* Платформы — принимаем ссылку с любой из трёх */}
+      <section className="py-16 sm:py-20">
+        <Container>
+          <div className="text-center mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold font-[family-name:var(--font-heading)] mb-3">
+              {tc("platTitle")}
+            </h2>
+            <p className="text-text-secondary max-w-2xl mx-auto">{tc("platSub")}</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            {[
+              { name: "Encar", d: tc("encarD") },
+              { name: "KBChachacha", d: tc("kbD") },
+              { name: "Kcar", d: tc("kcarD") },
+            ].map((p) => (
+              <div key={p.name} className="bg-elevated border border-border-subtle rounded-xl p-8 text-center">
+                <div className="text-xl font-bold font-[family-name:var(--font-heading)] text-primary mb-3">
+                  {p.name}
+                </div>
+                <p className="text-sm text-text-secondary">{p.d}</p>
+              </div>
+            ))}
           </div>
         </Container>
       </section>
@@ -225,13 +259,15 @@ export default function ReportPage() {
           </div>
 
           <div className="max-w-3xl mx-auto mt-6 text-center">
-            <Link
-              href="/check"
+            {/* Раньше вела на отдельную страницу бесплатной проверки; теперь это
+                тот же вариант в форме ниже, поэтому просто якорь. */}
+            <a
+              href="#order"
               className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
             >
               {t("colFree")}
               <ArrowRight className="w-4 h-4" />
-            </Link>
+            </a>
           </div>
         </Container>
       </section>
@@ -264,14 +300,16 @@ export default function ReportPage() {
       {/* Форма заявки */}
       <section id="order" className="py-16 sm:py-20 scroll-mt-16">
         <Container>
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-2xl mx-auto space-y-8">
+            {/* Единственная многоязычная страница сайта — выбор языка стоит до формы */}
+            <LanguageSwitcher />
             <div className="text-center mb-8">
               <h2 className="text-2xl sm:text-3xl font-bold font-[family-name:var(--font-heading)] mb-3">
                 {t("formTitle")}
               </h2>
               <p className="text-text-secondary">{t("formSub")}</p>
             </div>
-            <CheckLeadForm source="report" />
+            <CheckLeadForm defaultSource="report" />
           </div>
         </Container>
       </section>

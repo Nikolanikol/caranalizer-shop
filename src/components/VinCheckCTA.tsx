@@ -24,7 +24,7 @@ export function VinCheckCTA() {
             </p>
           </div>
 
-          <Link href="/check">
+          <Link href="/proverka-avto-po-vin">
             <Button variant="cta" size="lg" className="gap-2 whitespace-nowrap">
               {t("ctaCheck")}
               <ArrowRight className="h-4 w-4" />
