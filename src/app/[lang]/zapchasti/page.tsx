@@ -105,7 +105,7 @@ export default async function ShopHomePage() {
           пути — это описанное исключение из lib/shop/urls.ts.
         */}
         <div className="flex flex-col lg:flex-row gap-8 items-start pt-2">
-          <aside className="w-full lg:w-72 shrink-0 lg:sticky lg:top-28 lg:border-r border-border-subtle lg:pr-6 pb-6 lg:pb-8">
+          <aside className="w-full lg:w-72 shrink-0 lg:sticky lg:top-20 lg:border-r border-border-subtle lg:pr-6 pb-6 lg:pb-8">
             <FilterPanel activeCount={0}>
               <FilterSidebar query={{}} brands={brands} models={[]} basePath={SHOP_CATALOG} />
             </FilterPanel>

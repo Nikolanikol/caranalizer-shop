@@ -155,7 +155,7 @@ export async function CatalogView({
       {/* Не <main>: он уже есть в layout раздела — вложенный ломает разметку и переходы по «к содержимому». */}
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8 items-start">
-          <aside className="w-full lg:w-72 shrink-0 lg:sticky lg:top-28 lg:border-r border-border-subtle lg:pr-6 pb-6 lg:pb-8">
+          <aside className="w-full lg:w-72 shrink-0 lg:sticky lg:top-20 lg:border-r border-border-subtle lg:pr-6 pb-6 lg:pb-8">
             <FilterPanel
               activeCount={
                 [selectedBrandName, model, searchParams.side, searchParams.position].filter(Boolean).length
