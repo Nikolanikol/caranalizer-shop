@@ -2,7 +2,6 @@ import React from 'react';
 import { Link } from '@/i18n/navigation';
 import { PackageSearch } from 'lucide-react';
 import {
-  CATEGORIES,
   SHOP_CATALOG,
   brandUrl,
   catalogUrl,
@@ -19,6 +18,7 @@ import { FilterSidebar } from './filter-sidebar';
 import { FilterPanel } from './filter-panel';
 import { Pagination } from './pagination';
 import { SearchForm } from './search-form';
+import { ShopFrame, ShopHeader } from './shop-shell';
 
 /**
  * Общая витрина: главная, категория, марка и модель — одна и та же страница
@@ -113,50 +113,11 @@ export async function CatalogView({
 
   return (
     <>
-      {/*
-        Шапка каталога намеренно низкая. В прежнем виде она съедала весь первый экран:
-        первый товар начинался на 598 пикселе при высоте окна 720, а на телефоне — сильно ниже.
-        Пилюля-подпись «Каталог оригинальной оптики» убрана: она ничего не сообщала.
-      */}
-      <div className="relative bg-base border-b border-border-subtle py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
-        <div className="relative max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-          <div className="space-y-2 min-w-0">
-            {/*
-              Размер держим на ступень выше подзаголовков раздела: при text-2xl главный
-              заголовок страницы читался слабее пилюль категорий справа, и после перехода
-              с витрины — где h1 идёт text-3xl sm:text-5xl — выглядело так, будто заголовок
-              вообще пропал. Отступы шапки при этом не растут: они и есть то, что когда-то
-              съедало первый экран.
-            */}
-            <h1 className="text-3xl sm:text-4xl font-black text-text tracking-tight leading-tight">
-              {heading}
-            </h1>
-            <p className="max-w-2xl text-xs sm:text-sm text-text-secondary leading-relaxed line-clamp-2">{intro}</p>
-          </div>
+      <ShopHeader heading={heading} intro={intro} activeCategory={category} />
 
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {(Object.keys(CATEGORIES) as PartCategory[]).map((key) => (
-              <Link
-                key={key}
-                href={categoryUrl(key)}
-                className={`px-4 py-2 rounded text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                  category === key
-                    ? 'bg-cta text-base-darker'
-                    : 'bg-base-darker border border-border-subtle text-text-secondary hover:text-text'
-                }`}
-              >
-                {CATEGORIES[key].plural}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Не <main>: он уже есть в layout раздела — вложенный ломает разметку и переходы по «к содержимому». */}
-      <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          <aside className="w-full lg:w-72 shrink-0 lg:sticky lg:top-20 lg:border-r border-border-subtle lg:pr-6 pb-6 lg:pb-8">
-            <FilterPanel
+      <ShopFrame
+        sidebar={
+          <FilterPanel
               activeCount={
                 [selectedBrandName, model, searchParams.side, searchParams.position].filter(Boolean).length
               }
@@ -171,11 +132,10 @@ export async function CatalogView({
                 models={models}
                 basePath={basePath}
               />
-            </FilterPanel>
-          </aside>
-
-          <div className="flex-1 w-full">
-            {/* Поиска нет в шапке — он стоит рядом с товарами, здесь и на главной */}
+          </FilterPanel>
+        }
+      >
+        {/* Поиска нет в шапке — он стоит рядом с товарами, здесь и на витрине */}
             <div className="mb-6">
               <SearchForm initialTerm={searchParams.search ?? ''} />
             </div>
@@ -251,10 +211,8 @@ export async function CatalogView({
               </div>
             )}
 
-            {extra}
-          </div>
-        </div>
-      </div>
+        {extra}
+      </ShopFrame>
     </>
   );
 }
