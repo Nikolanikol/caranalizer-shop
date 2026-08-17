@@ -10,7 +10,7 @@ import {
   QrCode,
   Ship,
 } from 'lucide-react';
-import { PageShell, Section, Todo } from '@/components/shop/page-shell';
+import { PageShell, Section } from '@/components/shop/page-shell';
 import { shopUrl } from '@/lib/shop/urls';
 import { SITE_URL } from '@/lib/site';
 
@@ -187,13 +187,12 @@ export default function HowToOrderPage() {
         </dl>
       </Section>
 
-      <Section title="Реквизиты">
-        <Todo>
-          Нужны данные юридического лица или ИП: наименование, ИНН, ОГРН(ИП) и адрес. Для покупателя это
-          сигнал доверия, для работы с юрлицами по безналичному расчёту — обязательное условие,
-          а для политики обработки данных — оператор, которого по закону надо назвать.
-        </Todo>
-      </Section>
+      {/*
+        Раздел «Реквизиты» снят до появления данных. Вернуть, когда будут наименование
+        юрлица или ИП, ИНН, ОГРН(ИП) и адрес: для работы с юрлицами по безналу это
+        обязательное условие, а для политики обработки данных — оператор, которого
+        по закону надо назвать. Пока раздела нет, чем стоял бы с заглушкой на виду.
+      */}
     </PageShell>
   );
 }
