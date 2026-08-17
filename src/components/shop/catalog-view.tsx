@@ -121,7 +121,14 @@ export async function CatalogView({
       <div className="relative bg-base border-b border-border-subtle py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
         <div className="relative max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div className="space-y-2 min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-black text-text tracking-tight leading-tight">
+            {/*
+              Размер держим на ступень выше подзаголовков раздела: при text-2xl главный
+              заголовок страницы читался слабее пилюль категорий справа, и после перехода
+              с витрины — где h1 идёт text-3xl sm:text-5xl — выглядело так, будто заголовок
+              вообще пропал. Отступы шапки при этом не растут: они и есть то, что когда-то
+              съедало первый экран.
+            */}
+            <h1 className="text-3xl sm:text-4xl font-black text-text tracking-tight leading-tight">
               {heading}
             </h1>
             <p className="max-w-2xl text-xs sm:text-sm text-text-secondary leading-relaxed line-clamp-2">{intro}</p>
