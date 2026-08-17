@@ -11,6 +11,14 @@ const intlMiddleware = createMiddleware(routing);
 // ставит noindex при любом query-параметре.
 const KMOTORS = "https://www.kmotors.shop";
 
+/**
+ * Заголовок, по которому next-intl узнаёт язык запроса. Имя внутреннее для пакета
+ * (`HEADER_LOCALE_NAME` в next-intl), публичного экспорта у него нет — если после
+ * обновления next-intl иноязычная страница проверки начнёт отдавать русский текст,
+ * сверить константу здесь.
+ */
+const INTL_LOCALE_HEADER = "X-NEXT-INTL-LOCALE";
+
 /** Единственный путь, который существует под en/ar — страница проверки по VIN. */
 const FOREIGN_KEEP = VIN_PATHS.en;
 
@@ -85,9 +93,19 @@ export default function middleware(req: NextRequest) {
   // не меняется: посетитель остаётся на своём слаге, отдаём ему ту же страницу.
   const vin = pathname.match(/^\/(en|ar)(\/.*)?$/);
   if (vin && vin[2] === FOREIGN_KEEP) {
+    const locale = vin[1];
     const url = req.nextUrl.clone();
-    url.pathname = `/${vin[1]}${VIN_ROUTE}`;
-    return NextResponse.rewrite(url);
+    url.pathname = `/${locale}${VIN_ROUTE}`;
+
+    // Локаль приходится выставлять руками: этот `rewrite` возвращается до
+    // intlMiddleware, а именно она ставит заголовок, по которому next-intl
+    // определяет язык (`getRequestLocale` читает его через next/headers).
+    // Без этого страница отдавалась с правильным <title>, потому что метаданные
+    // берут язык из params, но со всем остальным содержимым по-русски: h1,
+    // тексты, <html lang> и dir — язык падал на defaultLocale.
+    const headers = new Headers(req.headers);
+    headers.set(INTL_LOCALE_HEADER, locale);
+    return NextResponse.rewrite(url, { request: { headers } });
   }
 
   return intlMiddleware(req);
