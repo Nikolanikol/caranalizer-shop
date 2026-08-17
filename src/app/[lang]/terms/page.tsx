@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { useLocale } from "next-intl";
 import { Container } from "@/components/ui/container";
+import { setRequestLocale } from "next-intl/server";
 
 export async function generateMetadata({
   params,
@@ -19,7 +20,16 @@ export async function generateMetadata({
   };
 }
 
-export default function TermsPage() {
+export default async function TermsPage({ params }: { params: Promise<{ lang: string }> }) {
+  // Язык сообщаем next-intl явно: иначе `useTranslations` ниже читает заголовки запроса,
+  // и страница уходит в динамический рендер. Тело вынесено в синхронный компонент —
+  // хуки в асинхронном серверном компоненте вызывать нельзя.
+  const { lang } = await params;
+  setRequestLocale(lang);
+  return <TermsContent />;
+}
+
+function TermsContent() {
   const locale = useLocale();
 
   if (locale === "en") return (

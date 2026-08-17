@@ -8,6 +8,7 @@ import { GUIDES, type GuideLocale } from "@/lib/guides";
 import { partsDestination } from "@/lib/parts-destination";
 import { kmotorsUrl } from "@/lib/kmotors";
 import { mainAlternates, mainUrl } from "@/lib/seo";
+import { setRequestLocale } from "next-intl/server";
 
 // Крупная кнопка в блоке внизу главной. Вынесена в константу: она нужна и внешней
 // ссылке на kmotors, и внутренней на свой раздел, а класс длинный.
@@ -62,7 +63,16 @@ const HOME_GUIDE_SLUGS = [
   "avto-iz-korei-v-kazahstan",
 ];
 
-export default function HomePage() {
+export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
+  // Язык сообщаем next-intl явно: иначе `useTranslations` ниже читает заголовки запроса,
+  // и страница уходит в динамический рендер. Тело вынесено в синхронный компонент —
+  // хуки в асинхронном серверном компоненте вызывать нельзя.
+  const { lang } = await params;
+  setRequestLocale(lang);
+  return <HomeContent />;
+}
+
+function HomeContent() {
   const t = useTranslations("home");
   const tg = useTranslations("guides");
   const tc = useTranslations("check");

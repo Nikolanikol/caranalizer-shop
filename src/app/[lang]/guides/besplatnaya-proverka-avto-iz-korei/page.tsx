@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { Container } from "@/components/ui/container";
+import { setRequestLocale } from "next-intl/server";
 import { GuideLayout, guideMetadata, type GuideContent } from "../GuideLayout";
 import { CheckLeadForm } from "../../proverka-avto-po-vin/CheckLeadForm";
 import type { GuideLocale } from "@/lib/guides";
@@ -132,8 +133,15 @@ const CONTENT: Record<GuideLocale, GuideContent> = {
   },
 };
 
-export default function Page() {
-  const locale = useLocale() as GuideLocale;
+export default async function Page({ params }: { params: Promise<{ lang: string }> }) {
+  // Тело в синхронном компоненте: хуки в асинхронном серверном вызывать нельзя,
+  // а setRequestLocale нужен до них — иначе страница уходит в динамику.
+  const { lang } = (await params) as { lang: GuideLocale };
+  setRequestLocale(lang);
+  return <GuideContent locale={lang} />;
+}
+
+function GuideContent({ locale }: { locale: GuideLocale }) {
   const t = useTranslations("check");
 
   return (

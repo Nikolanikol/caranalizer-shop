@@ -1,11 +1,12 @@
+import { Space_Grotesk } from "next/font/google";
+import Script from "next/script";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages, getTranslations } from "next-intl/server";
+import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { routing, type Locale } from "@/i18n/routing";
 import { MAIN_LOCALE } from "@/lib/seo";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { HtmlLang } from "@/components/HtmlLang";
 import { CookieBanner } from "@/components/CookieBanner";
 import { Toaster } from "sonner";
 import { MessengerButtons } from "@/components/MessengerButtons";
@@ -36,6 +37,12 @@ export function generateStaticParams() {
  * альтернативы на en/ar страницам, которых на этих языках не существует.
  */
 
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-heading",
+  display: "swap",
+});
+
 export default async function LangLayout({
   children,
   params,
@@ -49,13 +56,20 @@ export default async function LangLayout({
     notFound();
   }
 
+  /**
+   * Сообщаем next-intl язык явно, вместо того чтобы он читал его из заголовков запроса.
+   * Без этого вызова любой `useTranslations` внизу дерева обращается к `headers()`,
+   * а это переводит страницу в динамический рендер — статики не было ни у одной.
+   */
+  setRequestLocale(lang as Locale);
+
   const messages = await getMessages();
   const tn = await getTranslations({ locale: lang as Locale, namespace: "nav" });
   const dir = lang === "ar" ? "rtl" : "ltr";
 
   return (
-    <div dir={dir} lang={lang} className="flex flex-col min-h-screen">
-      <HtmlLang lang={lang} />
+    <html lang={lang} dir={dir} suppressHydrationWarning className={spaceGrotesk.variable}>
+      <body className="flex flex-col min-h-screen">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:start-2 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-white"
@@ -83,6 +97,24 @@ export default async function LangLayout({
         </CartProvider>
         <Toaster theme="dark" position="top-center" richColors />
       </NextIntlClientProvider>
-    </div>
+
+      <Script src="https://www.googletagmanager.com/gtag/js?id=G-7MZ9ET3VPK" strategy="afterInteractive" />
+      <Script id="gtag-init" strategy="afterInteractive">
+        {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-7MZ9ET3VPK');`}
+      </Script>
+      <Script id="clarity-init" strategy="beforeInteractive">
+        {`window.clarity=window.clarity||function(){(window.clarity.q=window.clarity.q||[]).push(arguments)};`}
+      </Script>
+      <Script src="https://www.clarity.ms/tag/xc2ligwlp9" strategy="afterInteractive" />
+      <Script id="yandex-metrika" strategy="afterInteractive">
+        {`(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,'script','https://mc.yandex.ru/metrika/tag.js?id=108825981','ym');ym(108825981,'init',{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:true,ecommerce:"dataLayer"});`}
+      </Script>
+      <noscript>
+        <div>
+          <img src="https://mc.yandex.ru/watch/108825981" style={{ position: 'absolute', left: '-9999px' }} alt="" />
+        </div>
+      </noscript>
+      </body>
+    </html>
   );
 }

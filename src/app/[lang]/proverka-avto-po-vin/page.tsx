@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { useTranslations, useLocale } from "next-intl";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Container } from "@/components/ui/container";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { KmotorsBanner } from "@/components/KmotorsBanner";
@@ -47,7 +47,16 @@ export async function generateMetadata({
 const WHAT_ICONS = [Gauge, Coins, Wrench, Droplets, ShieldAlert, Car, Users, FileText];
 const COMPARE_ROWS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-export default function VinCheckPage() {
+export default async function VinCheckPage({ params }: { params: Promise<{ lang: string }> }) {
+  // Язык сообщаем next-intl явно: иначе `useTranslations` ниже читает заголовки запроса,
+  // и страница уходит в динамический рендер. Тело вынесено в синхронный компонент —
+  // хуки в асинхронном серверном компоненте вызывать нельзя.
+  const { lang } = await params;
+  setRequestLocale(lang);
+  return <VinCheckContent />;
+}
+
+function VinCheckContent() {
   const t = useTranslations("report");
   // Строки бывшей страницы бесплатной проверки: страницы склеены, тексты переиспользуем
   const tc = useTranslations("check");

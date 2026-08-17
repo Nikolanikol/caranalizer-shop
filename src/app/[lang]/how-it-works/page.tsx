@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { useTranslations, useLocale } from "next-intl";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Container } from "@/components/ui/container";
 import { Search, FileText, MessageCircle, Truck } from "lucide-react";
 import { DeliveryMap } from "@/components/DeliveryMap";
@@ -45,7 +45,16 @@ export async function generateMetadata({
 
 const STEP_ICONS = [Search, FileText, MessageCircle, Truck];
 
-export default function HowItWorksPage() {
+export default async function HowItWorksPage({ params }: { params: Promise<{ lang: string }> }) {
+  // Язык сообщаем next-intl явно: иначе `useTranslations` ниже читает заголовки запроса,
+  // и страница уходит в динамический рендер. Тело вынесено в синхронный компонент —
+  // хуки в асинхронном серверном компоненте вызывать нельзя.
+  const { lang } = await params;
+  setRequestLocale(lang);
+  return <HowItWorksContent />;
+}
+
+function HowItWorksContent() {
   const t = useTranslations("howItWorks");
   const locale = useLocale();
 

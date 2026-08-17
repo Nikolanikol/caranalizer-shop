@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { useTranslations, useLocale } from "next-intl";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Container } from "@/components/ui/container";
 import { Link } from "@/i18n/navigation";
 import { GUIDES, type GuideLocale } from "@/lib/guides";
@@ -27,7 +27,16 @@ export async function generateMetadata({
   };
 }
 
-export default function GuidesIndexPage() {
+export default async function GuidesIndexPage({ params }: { params: Promise<{ lang: string }> }) {
+  // Язык сообщаем next-intl явно: иначе `useTranslations` ниже читает заголовки запроса,
+  // и страница уходит в динамический рендер. Тело вынесено в синхронный компонент —
+  // хуки в асинхронном серверном компоненте вызывать нельзя.
+  const { lang } = await params;
+  setRequestLocale(lang);
+  return <GuidesIndexContent />;
+}
+
+function GuidesIndexContent() {
   const t = useTranslations("guides");
   const locale = useLocale() as GuideLocale;
 

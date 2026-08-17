@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { useLocale } from "next-intl";
 import { GuideLayout, guideMetadata, type GuideContent } from "../GuideLayout";
 import type { GuideLocale } from "@/lib/guides";
+import { setRequestLocale } from "next-intl/server";
 
 const SLUG = "kak-kupit-avto-na-encar";
 
@@ -132,7 +132,10 @@ const CONTENT: Record<GuideLocale, GuideContent> = {
   },
 };
 
-export default function Page() {
-  const locale = useLocale() as GuideLocale;
-  return <GuideLayout slug={SLUG} lang={locale} content={CONTENT[locale]} bannerVariant="cars" />;
+export default async function Page({ params }: { params: Promise<{ lang: string }> }) {
+  // Язык берём из адреса и сообщаем next-intl: `useLocale` внутри GuideLayout
+  // иначе читает заголовки запроса, и статики у гайдов не будет.
+  const { lang } = (await params) as { lang: GuideLocale };
+  setRequestLocale(lang);
+  return <GuideLayout slug={SLUG} lang={lang} content={CONTENT[lang]} bannerVariant="cars" />;
 }

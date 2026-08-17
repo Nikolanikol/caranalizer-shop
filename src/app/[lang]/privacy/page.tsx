@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { useLocale } from "next-intl";
 import { Container } from "@/components/ui/container";
+import { setRequestLocale } from "next-intl/server";
 
 
 export async function generateMetadata({
@@ -20,7 +21,16 @@ export async function generateMetadata({
   };
 }
 
-export default function PrivacyPage() {
+export default async function PrivacyPage({ params }: { params: Promise<{ lang: string }> }) {
+  // Язык сообщаем next-intl явно: иначе `useTranslations` ниже читает заголовки запроса,
+  // и страница уходит в динамический рендер. Тело вынесено в синхронный компонент —
+  // хуки в асинхронном серверном компоненте вызывать нельзя.
+  const { lang } = await params;
+  setRequestLocale(lang);
+  return <PrivacyContent />;
+}
+
+function PrivacyContent() {
   const locale = useLocale();
   const isRu = locale === "ru";
   const isAr = locale === "ar";
