@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { X, Menu } from "lucide-react";
+import { SHOP_BASE, SHOP_LOCALE } from "@/lib/shop/urls";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
 const NAV_KEYS = [
@@ -18,9 +19,17 @@ const NAV_KEYS = [
   { key: "contact", href: "/contact" },
 ] as const;
 
+// Раздел запчастей одноязычный — см. тот же приём в Header.
+const PARTS_ITEM = { key: "parts", href: SHOP_BASE } as const;
+
 export function MobileNav() {
   const t = useTranslations("nav");
+  const locale = useLocale();
   const pathname = usePathname();
+  const navItems =
+    locale === SHOP_LOCALE
+      ? [...NAV_KEYS.slice(0, 3), PARTS_ITEM, ...NAV_KEYS.slice(3)]
+      : NAV_KEYS;
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -65,7 +74,7 @@ export function MobileNav() {
               </div>
 
               <div className="flex-1 overflow-y-auto py-4">
-                {NAV_KEYS.map(({ key, href }) => (
+                {navItems.map(({ key, href }) => (
                   <Link
                     key={key}
                     href={href}

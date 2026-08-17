@@ -43,3 +43,8 @@ next-env.d.ts
 # translation/scraping data & logs (local only)
 /data/
 /logs/
+
+# Выгрузки Search Console — снимки на дату, а не исходники.
+# src/data/raw_parts.json сюда НЕ добавлять: скрипта, который его создаёт, в репозитории
+# нет, и без него catalog.json перестанет собираться заново.
+/*.xlsx

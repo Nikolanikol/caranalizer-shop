@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "normalize:parts": "node scripts/normalize-parts.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -23,6 +24,7 @@
     "react-dom": "19.2.4",
     "react-phone-number-input": "^3.4.17",
     "react-simple-maps": "^3.0.0",
+    "server-only": "^0.0.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0"
   },

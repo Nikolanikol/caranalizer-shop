@@ -11,6 +11,13 @@ const nextConfig: NextConfig = {
         hostname: "dyadajdrxnvzkrmuoaku.supabase.co",
         pathname: "/**",
       },
+      // Фотографии запчастей лежат на CDN донора. Сейчас в разделе везде обычный <img>,
+      // но при переходе на next/image домен должен быть здесь.
+      {
+        protocol: "https",
+        hostname: "ecimg.cafe24img.com",
+        pathname: "/**",
+      },
     ],
   },
   async headers() {

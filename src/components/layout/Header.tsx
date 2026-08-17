@@ -1,8 +1,9 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { Container } from "@/components/ui/container";
+import { SHOP_BASE, SHOP_LOCALE } from "@/lib/shop/urls";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { MobileNav } from "./MobileNav";
 
@@ -16,9 +17,15 @@ const NAV_KEYS = [
   { key: "contact", href: "/contact" },
 ] as const;
 
+// Каталог запчастей есть только на русском, поэтому и пункт меню — только там:
+// на /en и /ar ссылка вела бы на 404. Ключ `parts` живёт лишь в ru.json.
+const PARTS_ITEM = { key: "parts", href: SHOP_BASE } as const;
+
 export function Header() {
   const t = useTranslations("nav");
+  const locale = useLocale();
   const pathname = usePathname();
+  const navItems = locale === SHOP_LOCALE ? [PARTS_ITEM, ...NAV_KEYS] : NAV_KEYS;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border-subtle bg-base/80 backdrop-blur-xl">
@@ -32,7 +39,7 @@ export function Header() {
         </Link>
 
         <nav className="hidden lg:flex items-center gap-1">
-          {NAV_KEYS.map(({ key, href }) => (
+          {navItems.map(({ key, href }) => (
             <Link
               key={key}
               href={href}

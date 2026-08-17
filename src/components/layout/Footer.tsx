@@ -1,6 +1,7 @@
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Container } from "@/components/ui/container";
+import { SHOP_BASE, SHOP_LOCALE } from "@/lib/shop/urls";
 import { Send, ExternalLink } from "lucide-react";
 
 const NAV_LINKS = [
@@ -13,6 +14,9 @@ const NAV_LINKS = [
   { key: "contact", href: "/contact" },
 ] as const;
 
+// Каталог запчастей есть только на русском — на других языках ссылка вела бы на 404.
+const PARTS_ITEM = { key: "parts", href: SHOP_BASE } as const;
+
 const KMOTORS_FOOTER =
   "https://www.kmotors.shop/ru/parts?utm_source=caranalizer&utm_medium=footer";
 const KMOTORS_CALC_FOOTER =
@@ -21,7 +25,9 @@ const KMOTORS_CALC_FOOTER =
 export function Footer() {
   const t = useTranslations("footer");
   const tn = useTranslations("nav");
+  const locale = useLocale();
   const year = new Date().getFullYear();
+  const navLinks = locale === SHOP_LOCALE ? [...NAV_LINKS, PARTS_ITEM] : NAV_LINKS;
 
   return (
     <footer className="border-t border-border-subtle bg-base-darker mt-auto">
@@ -41,7 +47,7 @@ export function Footer() {
               {t("navigation")}
             </h3>
             <ul className="space-y-2">
-              {NAV_LINKS.map(({ key, href }) => (
+              {navLinks.map(({ key, href }) => (
                 <li key={key}>
                   <Link
                     href={href}
