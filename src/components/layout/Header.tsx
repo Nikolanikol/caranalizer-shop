@@ -4,7 +4,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { Container } from "@/components/ui/container";
 import { SHOP_BASE, SHOP_LOCALE } from "@/lib/shop/urls";
-import { LanguageSwitcher } from "./LanguageSwitcher";
 import { MobileNav } from "./MobileNav";
 
 // «Проверка авто» намеренно не в списке — на неё ведёт жёлтая CTA-кнопка,
@@ -54,11 +53,12 @@ export function Header() {
           ))}
         </nav>
 
+        {/*
+          Переключателя языков здесь больше нет. Сайт одноязычный, и многоязычна
+          ровно одна страница — проверка по VIN; свой большой переключатель стоит
+          на ней. В шапке он предлагал языки для страниц, которых на них не существует.
+        */}
         <div className="flex items-center gap-3">
-          <div className="hidden lg:flex items-center gap-3">
-            <LanguageSwitcher />
-          </div>
-
           <Link
             href="/check"
             className="hidden sm:inline-flex items-center rounded-lg bg-cta px-4 py-2 text-sm font-semibold text-base-darker hover:opacity-90 transition-opacity"

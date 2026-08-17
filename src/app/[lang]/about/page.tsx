@@ -6,9 +6,8 @@ import { Camera, Shield, MapPin, TrendingDown, CheckCircle } from "lucide-react"
 import { StatCounter } from "@/components/StatCounter";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import type { Locale } from "@/i18n/routing";
+import { mainAlternates, mainUrl } from "@/lib/seo";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
-const LOCALES = ["ru", "en", "ar"] as const;
 
 export async function generateMetadata({
   params,
@@ -30,14 +29,11 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: {
-      languages: Object.fromEntries(LOCALES.map((l) => [l, `${BASE}/${l}/about`])),
-      canonical: `${BASE}/${lang}/about`,
-    },
+    alternates: mainAlternates("/about"),
     openGraph: {
       title,
       description,
-      url: `${BASE}/${lang}/about`,
+      url: mainUrl("/about"),
     },
   };
 }

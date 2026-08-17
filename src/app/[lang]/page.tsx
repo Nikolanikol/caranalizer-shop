@@ -7,9 +7,8 @@ import { ScrollReveal } from "@/components/ScrollReveal";
 import { GUIDES, type GuideLocale } from "@/lib/guides";
 import { partsDestination } from "@/lib/parts-destination";
 import { kmotorsUrl } from "@/lib/kmotors";
+import { mainAlternates, mainUrl } from "@/lib/seo";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
-const LOCALES = ["ru", "en", "ar"] as const;
 // Крупная кнопка в блоке внизу главной. Вынесена в константу: она нужна и внешней
 // ссылке на kmotors, и внутренней на свой раздел, а класс длинный.
 const KM_CTA_PRIMARY =
@@ -36,14 +35,11 @@ export async function generateMetadata({
   return {
     title: titles[lang],
     description: descriptions[lang],
-    alternates: {
-      languages: Object.fromEntries(LOCALES.map((l) => [l, `${BASE}/${l}`])),
-      canonical: `${BASE}/${lang}`,
-    },
+    alternates: mainAlternates(),
     openGraph: {
       title: titles[lang],
       description: descriptions[lang],
-      url: `${BASE}/${lang}`,
+      url: mainUrl(),
     },
   };
 }

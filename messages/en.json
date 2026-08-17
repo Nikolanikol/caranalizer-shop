@@ -257,7 +257,8 @@
     "reportLabel": "Need the details?",
     "reportTitle": "Full VIN report",
     "reportDesc": "Payout amounts, exactly what was repaired, the full mileage chain and ownership history — official Korean database records.",
-    "reportCta": "See what's inside"
+    "reportCta": "See what's inside",
+    "langTitle": "Choose page language"
   },
   "guides": {
     "title": "Guides to cars from Korea",

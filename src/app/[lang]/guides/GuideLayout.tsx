@@ -8,9 +8,10 @@ import { GUIDES, type GuideLocale } from "@/lib/guides";
 import { KmotorsBanner, type KmotorsBannerVariant } from "@/components/KmotorsBanner";
 import { PartsBanner } from "@/components/PartsBanner";
 import { kmotorsUrl } from "@/lib/kmotors";
+import { mainAlternates, mainUrl } from "@/lib/seo";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { ArrowRight, BookOpen, ExternalLink, ShieldCheck } from "lucide-react";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
 
 export interface GuideSection {
   h: string;
@@ -59,9 +60,9 @@ export function GuideLayout({
       headline: meta.title[lang],
       description: meta.teaser[lang],
       inLanguage: lang,
-      mainEntityOfPage: `${BASE}/${lang}/guides/${slug}`,
-      author: { "@type": "Organization", name: "Caranalizer", url: BASE },
-      publisher: { "@type": "Organization", name: "Caranalizer", url: BASE },
+      mainEntityOfPage: mainUrl(`/guides/${slug}`),
+      author: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+      publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
     },
     content.faq.length > 0
       ? {
@@ -265,7 +266,10 @@ export function GuideLayout({
   );
 }
 
-/** Единые metadata для страницы гайда (canonical + hreflang по всем локалям). */
+/**
+ * Единые metadata для страницы гайда. Гайды существуют только по-русски, поэтому
+ * canonical всегда на русскую версию, а hreflang не объявляется вовсе.
+ */
 export function guideMetadata(slug: string, lang: string) {
   const meta = GUIDES.find((g) => g.slug === slug)!;
   const l = (["ru", "en", "ar"].includes(lang) ? lang : "ru") as GuideLocale;
@@ -275,15 +279,7 @@ export function guideMetadata(slug: string, lang: string) {
   return {
     title,
     description,
-    alternates: {
-      canonical: `${BASE}/${lang}${path}`,
-      languages: {
-        ru: `${BASE}/ru${path}`,
-        en: `${BASE}/en${path}`,
-        ar: `${BASE}/ar${path}`,
-        "x-default": `${BASE}/ru${path}`,
-      },
-    },
-    openGraph: { title, description, url: `${BASE}/${lang}${path}` },
+    alternates: mainAlternates(path),
+    openGraph: { title, description, url: mainUrl(path) },
   };
 }

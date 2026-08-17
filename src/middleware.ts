@@ -1,6 +1,7 @@
 import createMiddleware from "next-intl/middleware";
 import { NextRequest, NextResponse } from "next/server";
 import { routing } from "./i18n/routing";
+import { VIN_PATHS } from "./lib/seo";
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -9,6 +10,9 @@ const intlMiddleware = createMiddleware(routing);
 // ВАЖНО: цели редиректов — чистые URL без UTM: /{lang}/parts на KMotors
 // ставит noindex при любом query-параметре.
 const KMOTORS = "https://www.kmotors.shop";
+
+/** Единственный путь, который существует под en/ar — страница проверки по VIN. */
+const FOREIGN_KEEP = VIN_PATHS.en;
 
 export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -37,6 +41,23 @@ export default function middleware(req: NextRequest) {
     url.pathname = `/${shop[1] ?? "ru"}`;
     url.search = "";
     return NextResponse.redirect(url, 301);
+  }
+
+  // Сайт одноязычный, и многоязычна ровно одна страница — проверка по VIN. Всё
+  // остальное под en/ar не существует: уводим на ту единственную страницу, которая
+  // на этом языке есть. 404 здесь был бы честнее по букве, но бесполезнее для
+  // посетителя, а накопленного сигнала у этих адресов нет — за три месяца ни один
+  // из них не собрал в поиске ни одного показа.
+  const foreign = pathname.match(/^\/(en|ar)(\/.*)?$/);
+  if (foreign) {
+    const locale = foreign[1] as "en" | "ar";
+    const rest = foreign[2] ?? "";
+    if (rest !== FOREIGN_KEEP) {
+      const url = req.nextUrl.clone();
+      url.pathname = `/${locale}${FOREIGN_KEEP}`;
+      url.search = "";
+      return NextResponse.redirect(url, 301);
+    }
   }
 
   return intlMiddleware(req);

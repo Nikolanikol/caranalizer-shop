@@ -2,15 +2,16 @@ import type { Metadata } from "next";
 import { useLocale, useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { kmotorsUrl } from "@/lib/kmotors";
+import { VIN_PATHS, vinAlternates } from "@/lib/seo";
+import { SITE_URL } from "@/lib/site";
 import { Container } from "@/components/ui/container";
 import { Link } from "@/i18n/navigation";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { CheckLeadForm } from "./CheckLeadForm";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { Search, Link2, FileText, AlertTriangle, Wrench, Gauge, User, ArrowRight } from "lucide-react";
 import type { Locale } from "@/i18n/routing";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
-const LOCALES = ["ru", "en", "ar"] as const;
 const BOT = "https://t.me/koreancarss_bot";
 export async function generateMetadata({
   params,
@@ -25,14 +26,8 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: {
-      canonical: `${BASE}/${lang}/check`,
-      languages: {
-        ...Object.fromEntries(LOCALES.map((l) => [l, `${BASE}/${l}/check`])),
-        "x-default": `${BASE}/ru/check`,
-      },
-    },
-    openGraph: { title, description, url: `${BASE}/${lang}/check` },
+    alternates: vinAlternates(lang),
+    openGraph: { title, description, url: `${SITE_URL}/${lang}${VIN_PATHS.ru}` },
   };
 }
 
@@ -74,7 +69,7 @@ export default function CheckPage({ params }: { params: Promise<{ lang: string }
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name: "Caranalizer — Korean Car Check",
-    url: `${BASE}`,
+    url: SITE_URL,
     applicationCategory: "UtilitiesApplication",
     operatingSystem: "Telegram",
     description: t("metaDesc"),
@@ -137,12 +132,21 @@ export default function CheckPage({ params }: { params: Promise<{ lang: string }
       {/* Free check form */}
       <section id="free-check" className="py-16 sm:py-20 scroll-mt-16">
         <Container>
-          <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl sm:text-3xl font-bold font-[family-name:var(--font-heading)] mb-3">{t("formTitle")}</h2>
-              <p className="text-text-secondary">{t("formSub")}</p>
+          <div className="max-w-2xl mx-auto space-y-8">
+            {/*
+              Выбор языка стоит здесь, перед формой: это единственная многоязычная
+              страница сайта, и до заполнения заявки посетитель должен успеть
+              переключиться на свой язык.
+            */}
+            <LanguageSwitcher />
+
+            <div>
+              <div className="text-center mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold font-[family-name:var(--font-heading)] mb-3">{t("formTitle")}</h2>
+                <p className="text-text-secondary">{t("formSub")}</p>
+              </div>
+              <CheckLeadForm />
             </div>
-            <CheckLeadForm />
           </div>
         </Container>
       </section>

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { useLocale } from "next-intl";
 import { Container } from "@/components/ui/container";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
 
 export async function generateMetadata({
   params,

@@ -3,6 +3,7 @@ import { Space_Grotesk } from "next/font/google";
 import Script from "next/script";
 import { getLocale } from "next-intl/server";
 import "./globals.css";
+import { SITE_URL } from "@/lib/site";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin", "latin-ext"],
@@ -12,14 +13,14 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: {
-    default: "Caranalizer | Korean Auto Parts — Hyundai, Kia, Genesis OEM Parts from Korea",
+    default: "Caranalizer — проверка авто из Кореи и б/у запчасти с разборов",
     template: "%s",
   },
+  // Заголовок и описание по умолчанию. До этого здесь оставалась вывеска первого
+  // магазина («140,000+ OEM parts»), которого давно нет: наш товар — б/у с разборов.
   description:
-    "Buy 140,000+ genuine Hyundai, Kia, Genesis OEM parts direct from Korea. Korean auto parts & Mobis parts shipped worldwide.",
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://caranalizer.com"
-  ),
+    "Проверка истории корейского автомобиля по VIN и по объявлениям Encar, KBChachacha, Kcar. Б/у оптика с корейских авторазборов с отправкой по России.",
+  metadataBase: new URL(SITE_URL),
   icons: {
     icon: [
       { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },

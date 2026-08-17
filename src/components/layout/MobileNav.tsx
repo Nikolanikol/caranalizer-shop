@@ -6,7 +6,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { X, Menu } from "lucide-react";
 import { SHOP_BASE, SHOP_LOCALE } from "@/lib/shop/urls";
-import { LanguageSwitcher } from "./LanguageSwitcher";
 
 const NAV_KEYS = [
   { key: "home", href: "/" },
@@ -87,10 +86,6 @@ export function MobileNav() {
                     {t(key)}
                   </Link>
                 ))}
-              </div>
-
-              <div className="border-t border-border p-4 flex items-center justify-between">
-                <LanguageSwitcher />
               </div>
             </nav>
           </div>,

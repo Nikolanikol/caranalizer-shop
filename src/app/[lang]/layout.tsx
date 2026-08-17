@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations } from "next-intl/server";
 import { routing, type Locale } from "@/i18n/routing";
+import { MAIN_LOCALE } from "@/lib/seo";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { HtmlLang } from "@/components/HtmlLang";
@@ -11,30 +11,28 @@ import { Toaster } from "sonner";
 import { MessengerButtons } from "@/components/MessengerButtons";
 import { KmotorsTopBar } from "@/components/KmotorsTopBar";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
-
+/**
+ * Собираем заранее только русские страницы.
+ *
+ * Сайт одноязычный: русский — основной и единственный рынок. Многоязычной остаётся
+ * одна страница, проверка по VIN, и она рендерится по запросу (`dynamicParams` по
+ * умолчанию), а не пачкой на каждый язык. До этого каждая страница собиралась трижды —
+ * 42 адреса, из которых 28 никто никогда не открывал, и все они объявляли друг друга
+ * языковыми альтернативами.
+ *
+ * Проверка `routing.locales` ниже остаётся: она отсекает неизвестные локали в 404.
+ * Всё нерусское, кроме страницы проверки, middleware уводит редиректом.
+ */
 export function generateStaticParams() {
-  return routing.locales.map((lang) => ({ lang }));
+  return [{ lang: MAIN_LOCALE }];
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ lang: string }>;
-}): Promise<Metadata> {
-  const { lang } = await params;
-  return {
-    alternates: {
-      languages: {
-        ru: `${BASE}/ru`,
-        en: `${BASE}/en`,
-        ar: `${BASE}/ar`,
-        "x-default": `${BASE}/ru`,
-      },
-      canonical: `${BASE}/${lang}`,
-    },
-  };
-}
+/**
+ * Canonical и hreflang здесь больше не задаются. Каждая страница объявляет их сама
+ * через `mainAlternates()` или `vinAlternates()`; те две, что закрыты `noindex`,
+ * не нуждаются ни в том, ни в другом. Общий блок на уровне layout молча приписывал
+ * альтернативы на en/ar страницам, которых на этих языках не существует.
+ */
 
 export default async function LangLayout({
   children,

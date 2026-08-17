@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { ContactClient } from "./ContactClient";
+import { mainAlternates, mainUrl } from "@/lib/seo";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
-const LOCALES = ["ru", "en", "ar"] as const;
 
 export async function generateMetadata({
   params,
@@ -31,14 +30,11 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: {
-      languages: Object.fromEntries(LOCALES.map((l) => [l, `${BASE}/${l}/contact`])),
-      canonical: `${BASE}/${lang}/contact`,
-    },
+    alternates: mainAlternates("/contact"),
     openGraph: {
       title,
       description,
-      url: `${BASE}/${lang}/contact`,
+      url: mainUrl("/contact"),
     },
   };
 }

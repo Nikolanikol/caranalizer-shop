@@ -10,13 +10,17 @@ import {
 } from "@/lib/shop/catalog";
 import { SHOP_LOCALE } from "@/lib/shop/urls";
 import { SITE_URL as BASE } from "@/lib/site";
+import { MAIN_LOCALE, VIN_PATHS, mainUrl, type VinLocale } from "@/lib/seo";
 import type { PartCategory } from "@/types/part";
 
-const LOCALES = ["ru", "en", "ar"] as const;
-
+/**
+ * Одноязычные страницы: существуют только на русском, hreflang им не положен.
+ * Проверка по VIN идёт отдельным списком ниже — она единственная многоязычная.
+ *
+ * `/privacy` и `/terms` здесь нет намеренно: они закрыты `robots: index: false`.
+ */
 const STATIC_PAGES: { path: string; freq: "daily" | "weekly" | "monthly"; priority: number }[] = [
   { path: "", freq: "weekly", priority: 1.0 },
-  { path: "/check", freq: "weekly", priority: 0.9 },
   { path: "/report", freq: "weekly", priority: 0.9 },
   { path: "/guides", freq: "weekly", priority: 0.8 },
   { path: "/guides/kbchachacha-na-russkom", freq: "monthly", priority: 0.8 },
@@ -35,15 +39,26 @@ const STATIC_PAGES: { path: string; freq: "daily" | "weekly" | "monthly"; priori
 // always-fresh dates) and GSC flags it as invalid when it lands in the future
 // relative to the crawl time.
 function entry(path: string, freq: "daily" | "weekly" | "monthly", priority: number) {
-  return LOCALES.map((locale) => ({
-    url: `${BASE}/${locale}${path}`,
-    changeFrequency: freq,
-    priority,
-    alternates: {
-      languages: Object.fromEntries(
-        LOCALES.map((l) => [l, `${BASE}/${l}${path}`])
-      ),
-    },
+  return { url: mainUrl(path), changeFrequency: freq, priority };
+}
+
+/**
+ * Проверка по VIN — единственная страница с языковыми версиями, и путь у каждой свой.
+ * Альтернативы объявляем полным набором с `x-default` на русскую: основной рынок РФ.
+ */
+function vinEntries(): MetadataRoute.Sitemap {
+  const languages = {
+    ...Object.fromEntries(
+      (Object.keys(VIN_PATHS) as VinLocale[]).map((l) => [l, `${BASE}/${l}${VIN_PATHS[l]}`])
+    ),
+    "x-default": `${BASE}/${MAIN_LOCALE}${VIN_PATHS[MAIN_LOCALE]}`,
+  };
+
+  return (Object.keys(VIN_PATHS) as VinLocale[]).map((locale) => ({
+    url: `${BASE}/${locale}${VIN_PATHS[locale]}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.9,
+    alternates: { languages },
   }));
 }
 
@@ -85,7 +100,8 @@ async function shopPages(): Promise<MetadataRoute.Sitemap> {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
-    ...STATIC_PAGES.flatMap((page) => entry(page.path, page.freq, page.priority)),
+    ...STATIC_PAGES.map((page) => entry(page.path, page.freq, page.priority)),
+    ...vinEntries(),
     ...(await shopPages()),
   ];
 }

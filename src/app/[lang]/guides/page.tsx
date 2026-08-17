@@ -6,9 +6,8 @@ import { Link } from "@/i18n/navigation";
 import { GUIDES, type GuideLocale } from "@/lib/guides";
 import { ArrowRight, BookOpen } from "lucide-react";
 import type { Locale } from "@/i18n/routing";
+import { mainAlternates, mainUrl } from "@/lib/seo";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
-const LOCALES = ["ru", "en", "ar"] as const;
 
 export async function generateMetadata({
   params,
@@ -23,14 +22,8 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: {
-      canonical: `${BASE}/${lang}/guides`,
-      languages: {
-        ...Object.fromEntries(LOCALES.map((l) => [l, `${BASE}/${l}/guides`])),
-        "x-default": `${BASE}/ru/guides`,
-      },
-    },
-    openGraph: { title, description, url: `${BASE}/${lang}/guides` },
+    alternates: mainAlternates("/guides"),
+    openGraph: { title, description, url: mainUrl("/guides") },
   };
 }
 

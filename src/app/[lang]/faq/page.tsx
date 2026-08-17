@@ -5,9 +5,8 @@ import { Container } from "@/components/ui/container";
 import { KmotorsBanner } from "@/components/KmotorsBanner";
 import { PartsBanner } from "@/components/PartsBanner";
 import { FaqClient } from "./FaqClient";
+import { mainAlternates, mainUrl } from "@/lib/seo";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
-const LOCALES = ["ru", "en", "ar"] as const;
 
 export async function generateMetadata({
   params,
@@ -34,14 +33,11 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: {
-      languages: Object.fromEntries(LOCALES.map((l) => [l, `${BASE}/${l}/faq`])),
-      canonical: `${BASE}/${lang}/faq`,
-    },
+    alternates: mainAlternates("/faq"),
     openGraph: {
       title,
       description,
-      url: `${BASE}/${lang}/faq`,
+      url: mainUrl("/faq"),
     },
   };
 }
