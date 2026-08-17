@@ -16,6 +16,8 @@ import { SITE_URL } from '@/lib/site';
 import type { PartCategory } from '@/types/part';
 import { ProductCard } from '@/components/shop/product-card';
 import { SearchForm } from '@/components/shop/search-form';
+import { FilterPanel } from '@/components/shop/filter-panel';
+import { FilterSidebar } from '@/components/shop/filter-sidebar';
 
 /**
  * Витрина раздела — лендинг, а не список товаров.
@@ -91,17 +93,38 @@ export default async function ShopHomePage() {
           <SearchForm size="large" />
         </div>
 
-        <div className="flex flex-wrap items-baseline justify-between gap-2 pt-2">
-          <h2 className="text-lg font-bold text-text tracking-tight">Последние поступления</h2>
-          <Link href={SHOP_CATALOG} className="text-sm font-bold text-cta hover:underline">
-            Весь каталог
-          </Link>
-        </div>
+        {/*
+          Фильтр на витрине работает как навигация: `basePath` — каталог, поэтому любой
+          выбор уводит на /zapchasti/katalog, где уже есть и сортировка, и пагинация.
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-          {latest.map((part) => (
-            <ProductCard key={partUrl(part)} part={part} />
-          ))}
+          Фильтровать «Последние поступления» на месте было бы хуже: их всего восемь,
+          и выборка по марке почти всегда оказывалась бы пустой. А показать здесь весь
+          каталог нельзя — витрина совпала бы с /zapchasti/katalog на 95% (см. выше).
+
+          Категории здесь нет, поэтому марка остаётся параметром запроса, а не сегментом
+          пути — это описанное исключение из lib/shop/urls.ts.
+        */}
+        <div className="flex flex-col lg:flex-row gap-8 items-start pt-2">
+          <aside className="w-full lg:w-72 shrink-0 lg:sticky lg:top-28 lg:border-r border-border-subtle lg:pr-6 pb-6 lg:pb-8">
+            <FilterPanel activeCount={0}>
+              <FilterSidebar query={{}} brands={brands} models={[]} basePath={SHOP_CATALOG} />
+            </FilterPanel>
+          </aside>
+
+          <div className="flex-1 w-full space-y-8">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="text-lg font-bold text-text tracking-tight">Последние поступления</h2>
+              <Link href={SHOP_CATALOG} className="text-sm font-bold text-cta hover:underline">
+                Весь каталог
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              {latest.map((part) => (
+                <ProductCard key={partUrl(part)} part={part} />
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
