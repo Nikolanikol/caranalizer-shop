@@ -6,6 +6,8 @@ import { Container } from "@/components/ui/container";
 import { Link } from "@/i18n/navigation";
 import { GUIDES, type GuideLocale } from "@/lib/guides";
 import { KmotorsBanner, type KmotorsBannerVariant } from "@/components/KmotorsBanner";
+import { PartsBanner } from "@/components/PartsBanner";
+import { kmotorsUrl } from "@/lib/kmotors";
 import { ArrowRight, BookOpen, ExternalLink, ShieldCheck } from "lucide-react";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
@@ -32,8 +34,12 @@ export function GuideLayout({
   slug: string;
   lang: GuideLocale;
   content: GuideContent;
-  /** Какой баннер K-Axis показать в середине статьи */
-  bannerVariant?: KmotorsBannerVariant;
+  /**
+   * Баннер в середине статьи. `parts` — каталог запчастей, и он сам решает,
+   * вести на свой раздел или на kmotors: развилка по языку живёт в PartsBanner.
+   * Остальные варианты — услуги kmotors, которых у нас нет.
+   */
+  bannerVariant?: "parts" | KmotorsBannerVariant;
   /** Добавить блок с переходом на платный отчёт по VIN */
   showReportCta?: boolean;
 }) {
@@ -41,7 +47,10 @@ export function GuideLayout({
   const tc = useTranslations("check");
   const meta = GUIDES.find((g) => g.slug === slug)!;
   const related = GUIDES.filter((g) => g.slug !== slug).slice(0, 3);
-  const kmUrl = `https://www.kmotors.shop/ru/parts?utm_source=caranalizer&utm_medium=guide&utm_campaign=${slug}`;
+  // Блок в конце статьи — про то, чего мы не делаем сами: авто под ключ и растаможка.
+  // Запчасти отсюда убраны: за ними ведёт баннер в середине статьи, и по-русски он
+  // указывает на наш собственный раздел б/у.
+  const kmUrl = kmotorsUrl(lang, "catalog", "guide", slug);
 
   const jsonLd = [
     {
@@ -120,10 +129,14 @@ export function GuideLayout({
                   </ul>
                 )}
               </div>
-              {/* Баннер K-Axis в середине статьи (после второй секции) */}
+              {/* Баннер в середине статьи (после второй секции) */}
               {i === Math.min(1, content.sections.length - 1) && (
                 <div className="mb-10">
-                  <KmotorsBanner variant={bannerVariant} placement={`guide-${slug}`} compact />
+                  {bannerVariant === "parts" ? (
+                    <PartsBanner placement={`guide-${slug}`} compact />
+                  ) : (
+                    <KmotorsBanner variant={bannerVariant} placement={`guide-${slug}`} compact />
+                  )}
                 </div>
               )}
             </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
+import { kmotorsUrl } from "@/lib/kmotors";
 import { Container } from "@/components/ui/container";
 import { Link } from "@/i18n/navigation";
 import { ScrollReveal } from "@/components/ScrollReveal";
@@ -11,9 +12,6 @@ import type { Locale } from "@/i18n/routing";
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
 const LOCALES = ["ru", "en", "ar"] as const;
 const BOT = "https://t.me/koreancarss_bot";
-const KMOTORS_CHECK =
-  "https://www.kmotors.shop/ru/catalog?utm_source=caranalizer&utm_medium=check";
-
 export async function generateMetadata({
   params,
 }: {
@@ -40,6 +38,8 @@ export async function generateMetadata({
 
 export default function CheckPage({ params }: { params: Promise<{ lang: string }> }) {
   const t = useTranslations("check");
+  // Блок «купить авто» после проверки — услуга kmotors, у нас её нет.
+  const carsUrl = kmotorsUrl(useLocale(), "catalog", "check");
 
   const steps = [
     { icon: Search, t: t("step1t"), d: t("step1d") },
@@ -353,7 +353,7 @@ export default function CheckPage({ params }: { params: Promise<{ lang: string }
               <h2 className="text-xl sm:text-2xl font-bold font-[family-name:var(--font-heading)] text-text mb-2">{t("funnelTitle")}</h2>
               <p className="text-sm text-text-secondary max-w-xl">{t("funnelDesc")}</p>
             </div>
-            <a href={KMOTORS_CHECK} target="_blank" rel="noopener noreferrer"
+            <a href={carsUrl} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-7 py-3.5 bg-primary text-white font-semibold rounded-lg hover:bg-primary-hover transition-colors whitespace-nowrap">
               {t("funnelCta")}
               <ArrowRight className="w-4 h-4" />

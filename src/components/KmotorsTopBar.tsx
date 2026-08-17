@@ -4,18 +4,14 @@
 // Цвет — акцентный --color-cta, тот же, что у CTA «Бесплатная проверка».
 import { useLocale, useTranslations } from "next-intl";
 import { trackKmotorsClick } from "@/lib/analytics";
+import { kmotorsUrl } from "@/lib/kmotors";
 import { Container } from "@/components/ui/container";
 import { ArrowRight, Car } from "lucide-react";
-
-// Языки, которые есть на kmotors.shop (проверено: /ru, /en, /ar отдают 200
-// и свой lang). Незнакомую локаль уводим на английскую версию.
-const KMOTORS_LOCALES = ["ru", "en", "ar"];
 
 export function KmotorsTopBar() {
   const t = useTranslations("kmTopBar");
   const locale = useLocale();
-  const target = KMOTORS_LOCALES.includes(locale) ? locale : "en";
-  const url = `https://www.kmotors.shop/${target}?utm_source=caranalizer&utm_medium=topbar&utm_campaign=global`;
+  const url = kmotorsUrl(locale, "", "topbar", "global");
 
   return (
     <a

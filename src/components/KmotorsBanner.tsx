@@ -1,17 +1,18 @@
 "use client";
 
-// Промо-баннер K-Axis (kmotors.shop) — единственный «магазинный» элемент
-// на сайте. Вариант задаёт услугу, placement уходит в UTM и GA-событие.
-import { useTranslations } from "next-intl";
+// Промо-баннер kmotors.shop: авто под ключ и калькулятор растаможки — то, чего
+// caranalizer не делает сам. Вариант задаёт услугу, placement уходит в UTM и GA-событие.
+//
+// Варианта `parts` здесь больше нет: куда ведёт каталог запчастей, зависит от языка
+// (по-русски свой раздел б/у, иначе kmotors), и живёт эта развилка в PartsBanner.
+import { useLocale, useTranslations } from "next-intl";
 import { trackKmotorsClick } from "@/lib/analytics";
-import { ExternalLink, Car, Wrench, Calculator } from "lucide-react";
-
-const KMOTORS = "https://www.kmotors.shop";
+import { kmotorsUrl } from "@/lib/kmotors";
+import { ExternalLink, Car, Calculator } from "lucide-react";
 
 const VARIANTS = {
-  parts: { path: "/ru/parts", icon: Wrench },
-  cars: { path: "/ru/catalog", icon: Car },
-  calc: { path: "/ru/calculator", icon: Calculator },
+  cars: { path: "catalog", icon: Car },
+  calc: { path: "calculator", icon: Calculator },
 } as const;
 
 export type KmotorsBannerVariant = keyof typeof VARIANTS;
@@ -26,8 +27,9 @@ export function KmotorsBanner({
   compact?: boolean;
 }) {
   const t = useTranslations("kmBanner");
+  const locale = useLocale();
   const { path, icon: Icon } = VARIANTS[variant];
-  const url = `${KMOTORS}${path}?utm_source=caranalizer&utm_medium=banner&utm_campaign=${placement}`;
+  const url = kmotorsUrl(locale, path, "banner", placement);
 
   return (
     <div

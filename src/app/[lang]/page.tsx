@@ -5,13 +5,15 @@ import { Link } from "@/i18n/navigation";
 import { VinCheckCTA } from "@/components/VinCheckCTA";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { GUIDES, type GuideLocale } from "@/lib/guides";
+import { partsDestination } from "@/lib/parts-destination";
+import { kmotorsUrl } from "@/lib/kmotors";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
 const LOCALES = ["ru", "en", "ar"] as const;
-const KMOTORS_PARTS =
-  "https://www.kmotors.shop/ru/parts?utm_source=caranalizer&utm_medium=home";
-const KMOTORS_CALC =
-  "https://www.kmotors.shop/ru/calculator?utm_source=caranalizer&utm_medium=home";
+// Крупная кнопка в блоке внизу главной. Вынесена в константу: она нужна и внешней
+// ссылке на kmotors, и внутренней на свой раздел, а класс длинный.
+const KM_CTA_PRIMARY =
+  "inline-flex items-center justify-center gap-2.5 px-10 py-[18px] bg-primary text-white font-[family-name:var(--font-heading)] text-[15px] font-semibold uppercase tracking-[0.05em] rounded-[10px] shadow-[0_0_25px_rgba(59,130,246,0.3)] hover:bg-primary-hover hover:shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:-translate-y-0.5 transition-all duration-300";
 
 export async function generateMetadata({
   params,
@@ -70,6 +72,10 @@ export default function HomePage() {
   const tc = useTranslations("check");
   const locale = useLocale() as GuideLocale;
   const guideTeasers = GUIDES.filter((g) => HOME_GUIDE_SLUGS.includes(g.slug));
+
+  // Куда ведут «запчасти» на этой странице — карточка услуги и кнопка в блоке внизу.
+  const parts = partsDestination(locale, "services");
+  const partsCta = partsDestination(locale, "home");
 
   const features = [
     { icon: ShieldAlert, title: t("feature1Title"), desc: t("feature1Desc") },
@@ -215,15 +221,11 @@ export default function HomePage() {
                 {
                   icon: Car,
                   n: 3,
-                  href: "https://www.kmotors.shop/ru/catalog?utm_source=caranalizer&utm_medium=services&utm_campaign=cars",
+                  href: kmotorsUrl(locale, "catalog", "services", "cars"),
                   external: true,
                 },
-                {
-                  icon: Wrench,
-                  n: 4,
-                  href: "https://www.kmotors.shop/ru/parts?utm_source=caranalizer&utm_medium=services&utm_campaign=parts",
-                  external: true,
-                },
+                // Запчасти: по-русски свой раздел б/у, иначе kmotors — см. lib/parts-destination
+                { icon: Wrench, n: 4, ...parts },
               ] as const
             ).map((svc, i) => {
               const Icon = svc.icon;
@@ -374,17 +376,25 @@ export default function HomePage() {
                 {t("kmSubtitle")}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                {/* Запчасти: свой раздел по-русски, kmotors на остальных языках */}
+                {partsCta.external ? (
+                  <a
+                    href={partsCta.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={KM_CTA_PRIMARY}
+                  >
+                    {t("kmCtaParts")}
+                    <ExternalLink className="w-5 h-5" />
+                  </a>
+                ) : (
+                  <Link href={partsCta.href} className={KM_CTA_PRIMARY}>
+                    {t("kmCtaParts")}
+                    <ArrowRight className="w-5 h-5 rtl:rotate-180" />
+                  </Link>
+                )}
                 <a
-                  href={KMOTORS_PARTS}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2.5 px-10 py-[18px] bg-primary text-white font-[family-name:var(--font-heading)] text-[15px] font-semibold uppercase tracking-[0.05em] rounded-[10px] shadow-[0_0_25px_rgba(59,130,246,0.3)] hover:bg-primary-hover hover:shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:-translate-y-0.5 transition-all duration-300"
-                >
-                  {t("kmCtaParts")}
-                  <ExternalLink className="w-5 h-5" />
-                </a>
-                <a
-                  href={KMOTORS_CALC}
+                  href={kmotorsUrl(locale, "calculator", "home")}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2.5 px-10 py-[18px] bg-transparent text-text border-[1.5px] border-border font-[family-name:var(--font-heading)] text-[15px] font-semibold uppercase tracking-[0.05em] rounded-[10px] hover:border-primary hover:text-primary hover:-translate-y-0.5 transition-all duration-300"

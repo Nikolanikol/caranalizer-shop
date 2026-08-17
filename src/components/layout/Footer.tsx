@@ -2,7 +2,9 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Container } from "@/components/ui/container";
 import { SHOP_BASE, SHOP_LOCALE } from "@/lib/shop/urls";
-import { Send, ExternalLink } from "lucide-react";
+import { partsDestination } from "@/lib/parts-destination";
+import { kmotorsUrl } from "@/lib/kmotors";
+import { Send, ExternalLink, Wrench } from "lucide-react";
 
 const NAV_LINKS = [
   { key: "check", href: "/check" },
@@ -17,17 +19,16 @@ const NAV_LINKS = [
 // Каталог запчастей есть только на русском — на других языках ссылка вела бы на 404.
 const PARTS_ITEM = { key: "parts", href: SHOP_BASE } as const;
 
-const KMOTORS_FOOTER =
-  "https://www.kmotors.shop/ru/parts?utm_source=caranalizer&utm_medium=footer";
-const KMOTORS_CALC_FOOTER =
-  "https://www.kmotors.shop/ru/calculator?utm_source=caranalizer&utm_medium=footer";
-
 export function Footer() {
   const t = useTranslations("footer");
   const tn = useTranslations("nav");
   const locale = useLocale();
   const year = new Date().getFullYear();
   const navLinks = locale === SHOP_LOCALE ? [...NAV_LINKS, PARTS_ITEM] : NAV_LINKS;
+
+  // По-русски ссылка ведёт в свой раздел б/у, на остальных языках — на kmotors.
+  const parts = partsDestination(locale, "footer");
+  const calcHref = kmotorsUrl(locale, "calculator", "footer");
 
   return (
     <footer className="border-t border-border-subtle bg-base-darker mt-auto">
@@ -99,19 +100,29 @@ export function Footer() {
             </p>
             <ul className="space-y-2">
               <li>
-                <a
-                  href={KMOTORS_FOOTER}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  <span>{t("kmotorsParts")}</span>
-                </a>
+                {parts.external ? (
+                  <a
+                    href={parts.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    <span>{t("kmotorsParts")}</span>
+                  </a>
+                ) : (
+                  <Link
+                    href={parts.href}
+                    className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                  >
+                    <Wrench className="h-4 w-4" />
+                    <span>{t("kmotorsParts")}</span>
+                  </Link>
+                )}
               </li>
               <li>
                 <a
-                  href={KMOTORS_CALC_FOOTER}
+                  href={calcHref}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-sm text-primary hover:underline"

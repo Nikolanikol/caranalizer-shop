@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { Container } from "@/components/ui/container";
 import { KmotorsBanner } from "@/components/KmotorsBanner";
+import { PartsBanner } from "@/components/PartsBanner";
 import { FaqClient } from "./FaqClient";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://caranalizer.com";
@@ -80,7 +81,7 @@ export default async function FaqPage({
       <FaqClient />
       <section className="pb-16">
         <Container className="max-w-3xl space-y-4">
-          <KmotorsBanner variant="parts" placement="faq" />
+          <PartsBanner placement="faq" />
           <KmotorsBanner variant="calc" placement="faq" compact />
         </Container>
       </section>
