@@ -12,6 +12,7 @@ import { Toaster } from "sonner";
 import { MessengerButtons } from "@/components/MessengerButtons";
 import { KmotorsTopBar } from "@/components/KmotorsTopBar";
 import { CartProvider } from "@/components/shop/cart-context";
+import { getRates } from "@/lib/shop/rates";
 import { CartDrawer } from "@/components/shop/cart-drawer";
 
 /**
@@ -65,6 +66,8 @@ export default async function LangLayout({
 
   const messages = await getMessages();
   const tn = await getTranslations({ locale: lang as Locale, namespace: "nav" });
+  // Курсы ЦБ нужны корзине, а она клиентская: сама сходить за ними на сервер не может.
+  const rates = await getRates();
   const dir = lang === "ar" ? "rtl" : "ltr";
 
   return (
@@ -86,7 +89,7 @@ export default async function LangLayout({
           CartDrawer сидит на z-[60] и потому не конфликтует с cookie-баннером
           и кнопками мессенджеров: на z-50 оба, и они рендерятся позже.
         */}
-        <CartProvider>
+        <CartProvider rates={rates}>
           <KmotorsTopBar />
           <Header />
           <main id="main-content" className="flex-1">{children}</main>

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { Building2, CheckCircle2, CreditCard, Minus, Plus, QrCode, ShoppingCart, Trash2, X } from 'lucide-react';
-import { formatRub, priceRub } from '@/lib/shop/pricing';
+import { formatRub, formatUsd, priceRub, priceUsd } from '@/lib/shop/pricing';
 import { partUrl } from '@/lib/shop/urls';
 import { RUSSIAN_CITIES } from '@/lib/shop/delivery';
 import { useCart } from './cart-context';
@@ -18,7 +18,7 @@ type Step = 'cart' | 'checkout' | 'success';
  * а выдуманное число в итоге — это обещание цены, которую никто не подтверждал.
  */
 export function CartDrawer() {
-  const { items, isOpen, close, updateQuantity, remove, clear } = useCart();
+  const { items, isOpen, close, updateQuantity, remove, clear, rates } = useCart();
 
   const [step, setStep] = useState<Step>('cart');
   const [city, setCity] = useState(RUSSIAN_CITIES[0].name);
@@ -35,7 +35,10 @@ export function CartDrawer() {
 
   if (!isOpen) return null;
 
-  const goodsRub = items.reduce((sum, item) => sum + priceRub(item.part.priceKrw) * item.quantity, 0);
+  // Итог складывается из тех же округлённых цен, что стоят в строках: покупатель
+  // проверяет сумму глазами, и она обязана сойтись в обеих валютах.
+  const goodsRub = items.reduce((sum, item) => sum + priceRub(item.part.priceKrw, rates) * item.quantity, 0);
+  const goodsUsd = items.reduce((sum, item) => sum + priceUsd(item.part.priceKrw, rates) * item.quantity, 0);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -53,7 +56,7 @@ export function CartDrawer() {
             title: item.part.titleRu,
             oem: item.part.oemNumber,
             quantity: item.quantity,
-            priceRub: priceRub(item.part.priceKrw),
+            priceRub: priceRub(item.part.priceKrw, rates),
           })),
           goodsRub,
           consent,
@@ -151,7 +154,11 @@ export function CartDrawer() {
                         )}
                         <div className="text-xs text-text font-bold line-clamp-2 leading-snug">{part.titleRu}</div>
                         <div className="text-[11px] text-text-secondary font-bold uppercase tracking-widest">
-                          {formatRub(priceRub(part.priceKrw))} / шт
+                          {formatRub(priceRub(part.priceKrw, rates))} / шт
+                          <span className="text-text-muted normal-case tracking-normal">
+                            {' '}
+                            ({formatUsd(priceUsd(part.priceKrw, rates))})
+                          </span>
                         </div>
 
                         <div className="flex items-center gap-3 pt-2">
@@ -372,7 +379,12 @@ export function CartDrawer() {
                 </div>
                 <div className="flex justify-between text-base font-black text-text pt-3 border-t border-border-subtle">
                   <span>Итого за детали:</span>
-                  <span className="font-mono">{formatRub(goodsRub)}</span>
+                  <span className="font-mono text-right">
+                    {formatRub(goodsRub)}
+                    <span className="block text-[11px] font-bold text-text-muted normal-case tracking-normal">
+                      {formatUsd(goodsUsd)}
+                    </span>
+                  </span>
                 </div>
               </div>
 

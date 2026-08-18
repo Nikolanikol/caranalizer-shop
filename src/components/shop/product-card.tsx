@@ -3,7 +3,8 @@ import { Link } from '@/i18n/navigation';
 import { ImageOff } from 'lucide-react';
 import type { AutoPart } from '@/types/part';
 import { partUrl } from '@/lib/shop/catalog';
-import { formatPartPrice } from '@/lib/shop/pricing';
+import { formatPartPrice, formatPartPriceUsd } from '@/lib/shop/pricing';
+import { getRates } from '@/lib/shop/rates';
 import { CONDITION_CLASS, conditionLabel, partDescriptor, partHeading } from '@/lib/shop/labels';
 import { AddToCart } from './add-to-cart';
 import { CopyOem } from './copy-oem';
@@ -23,10 +24,15 @@ import { CopyOem } from './copy-oem';
  *
  * Бейдж «В наличии» убран: `stock` равен единице у всех 967 позиций, и зелёная точка
  * горела всегда.
+ *
+ * Курсы карточка берёт сама, а не получает пропсом сверху: `getRates` читает кэш,
+ * и два десятка карточек на странице стоят одного запроса на всю сборку. Пропс
+ * пришлось бы тянуть через витрину, категорию, марку, модель и страницу товара разом.
  */
-export function ProductCard({ part }: { part: AutoPart }) {
+export async function ProductCard({ part }: { part: AutoPart }) {
   const image = part.images[0];
   const condition = conditionLabel(part);
+  const rates = await getRates();
 
   return (
     <article className="group relative bg-elevated border border-border-subtle hover:border-cta rounded-xl overflow-hidden transition-colors duration-300 flex flex-col">
@@ -86,8 +92,13 @@ export function ProductCard({ part }: { part: AutoPart }) {
         </div>
 
         <div className="mt-auto">
-          <div className="text-[28px] font-bold text-text tracking-tight leading-none mb-2">
-            {formatPartPrice(part.priceKrw)}
+          <div className="flex items-baseline flex-wrap gap-x-2 gap-y-1 mb-2">
+            <span className="text-[28px] font-bold text-text tracking-tight leading-none">
+              {formatPartPrice(part.priceKrw, rates)}
+            </span>
+            <span className="text-sm font-bold text-text-muted leading-none">
+              {formatPartPriceUsd(part.priceKrw, rates)}
+            </span>
           </div>
           <div className="text-xs text-text-muted mb-6 font-medium">Доставка оплачивается отдельно</div>
 

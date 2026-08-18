@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { submitLead } from '@/lib/leads';
 import { messengerLines } from '@/lib/messenger-links';
+import { formatUsd } from '@/lib/shop/pricing';
+import { getRates } from '@/lib/shop/rates';
 
 /**
  * Заявка из корзины раздела запчастей. Роут разбирает тело и валидирует —
@@ -39,6 +41,14 @@ function rub(value: unknown): string {
   return `${num(value).toLocaleString('ru-RU')} ₽`;
 }
 
+/**
+ * «5 000 ₽ (≈ $60)». Курс берётся здесь, а не приходит из браузера: тело запроса
+ * подделывается, а сумма в заявке — то, по чему менеджер выставляет счёт.
+ */
+function withUsd(value: unknown, rubPerUsd: number): string {
+  return `${rub(value)} (${formatUsd(Math.round(num(value) / rubPerUsd / 10) * 10)})`;
+}
+
 export async function POST(request: Request) {
   let payload: {
     customer?: Record<string, string>;
@@ -71,6 +81,7 @@ export async function POST(request: Request) {
     );
   }
 
+  const { rubPerUsd } = await getRates();
   const orderNumber = `KP-${Date.now().toString().slice(-6)}`;
   const payment = customer.payment ? PAYMENT_LABELS[customer.payment] ?? customer.payment : null;
 
@@ -79,7 +90,7 @@ export async function POST(request: Request) {
     .map(
       (item, i) =>
         `${i + 1}. ${item.title ?? '—'}\n   OEM: ${item.oem || '—'}\n   ${item.url ?? ''}\n   ` +
-        `${num(item.quantity)} шт. × ${rub(item.priceRub)}`,
+        `${num(item.quantity)} шт. × ${withUsd(item.priceRub, rubPerUsd)}`,
     );
   const rest = items.length - MAX_ITEMS_IN_MESSAGE;
 
@@ -96,7 +107,7 @@ export async function POST(request: Request) {
         `Заявка ${orderNumber} из каталога запчастей`,
         `Город: ${customer.city || '—'}, адрес: ${customer.address || '—'}`,
         payment && `Оплата: ${payment}`,
-        `Итого за детали: ${rub(goodsRub)}`,
+        `Итого за детали: ${withUsd(goodsRub, rubPerUsd)}`,
         ...items.map((item) => `• ${item.title ?? '—'} — OEM ${item.oem || '—'}, ${num(item.quantity)} шт.`),
       ]
         .filter(Boolean)
@@ -119,7 +130,7 @@ export async function POST(request: Request) {
         ...itemLines,
         rest > 0 && `…и ещё ${rest} позиций — уточните у клиента`,
         '',
-        `💰 Итого за детали: ${rub(goodsRub)}`,
+        `💰 Итого за детали: ${withUsd(goodsRub, rubPerUsd)}`,
         '🚚 Доставка: рассчитать по городу',
       ],
     });

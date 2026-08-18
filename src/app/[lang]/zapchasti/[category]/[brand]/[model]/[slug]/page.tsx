@@ -16,7 +16,8 @@ import {
   partUrl,
 } from '@/lib/shop/catalog';
 import { SHOP_LOCALE, shopUrl } from '@/lib/shop/urls';
-import { formatPartPrice, priceRub } from '@/lib/shop/pricing';
+import { formatPartPrice, formatPartPriceUsd, priceRub } from '@/lib/shop/pricing';
+import { getRates } from '@/lib/shop/rates';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 import { Gallery } from '@/components/shop/gallery';
 import { AddToCart } from '@/components/shop/add-to-cart';
@@ -57,6 +58,9 @@ export async function generateMetadata({
   const part = await getPartByPath(await params);
   if (!part) return { title: 'Деталь не найдена' };
 
+  // Тот же кэшированный ответ ЦБ, что и у страницы: цена в описании обязана совпадать
+  // с ценой на самой карточке.
+  const rates = await getRates();
   const oe = part.oemNumber ? ` (OEM ${part.oemNumber})` : '';
   return {
     title: `${part.titleRu}${oe}`,
@@ -64,7 +68,7 @@ export async function generateMetadata({
     alternates: { canonical: shopUrl(partUrl(part), SITE_URL) },
     openGraph: {
       title: part.titleRu,
-      description: `Оригинал из Южной Кореи${oe}. Цена ${formatPartPrice(part.priceKrw)}.`,
+      description: `Оригинал из Южной Кореи${oe}. Цена ${formatPartPrice(part.priceKrw, rates)}.`,
       images: part.images.slice(0, 1),
       type: 'website',
     },
@@ -83,6 +87,7 @@ export default async function ProductPage({
 
   const similar = await getSimilarParts(part, 4);
   const info = CATEGORIES[part.category];
+  const rates = await getRates();
 
   // Крошки повторяют путь сегмент в сегмент. Модель у 17 товаров не указана —
   // её ступень тогда просто пропускается, а не показывается пустой.
@@ -112,7 +117,7 @@ export default async function ProductPage({
           '@type': 'Offer',
           url: shopUrl(partUrl(part), SITE_URL),
           priceCurrency: 'RUB',
-          price: priceRub(part.priceKrw),
+          price: priceRub(part.priceKrw, rates),
           availability: part.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder',
           seller: { '@type': 'Organization', name: SITE_NAME },
         },
@@ -191,8 +196,13 @@ export default async function ProductPage({
 
           <div className="bg-elevated rounded p-5 border border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="text-3xl font-black text-text tracking-tight leading-none">
-                {formatPartPrice(part.priceKrw)}
+              <div className="flex items-baseline flex-wrap gap-x-3 gap-y-1">
+                <span className="text-3xl font-black text-text tracking-tight leading-none">
+                  {formatPartPrice(part.priceKrw, rates)}
+                </span>
+                <span className="text-base font-bold text-text-muted leading-none">
+                  {formatPartPriceUsd(part.priceKrw, rates)}
+                </span>
               </div>
               <p className="text-[9px] text-text-muted font-bold uppercase tracking-widest mt-2">
                 Доставка оплачивается отдельно

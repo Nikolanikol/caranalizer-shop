@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { AutoPart, CartItem } from '@/types/part';
+import type { Rates } from '@/lib/shop/pricing';
 
 /**
  * Корзина покупателя. Переживает перезагрузку через localStorage — это единственное,
@@ -17,6 +18,12 @@ import type { AutoPart, CartItem } from '@/types/part';
 const STORAGE_KEY = 'koreaparts_cart';
 
 interface CartContextValue {
+  /**
+   * Курсы ЦБ на момент рендера страницы. Приходят из `[lang]/layout.tsx`, а не запросом
+   * из браузера: без курса корзина не может показать даже рублёвую цену — она считается
+   * из вон, — и цифры пришлось бы дорисовывать после загрузки, уже на глазах покупателя.
+   */
+  rates: Rates;
   items: CartItem[];
   count: number;
   isOpen: boolean;
@@ -30,7 +37,7 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
+export function CartProvider({ children, rates }: { children: React.ReactNode; rates: Rates }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -54,6 +61,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<CartContextValue>(
     () => ({
+      rates,
       items,
       count: items.reduce((sum, item) => sum + item.quantity, 0),
       isOpen,
@@ -81,7 +89,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       remove: (id) => setItems((prev) => prev.filter((item) => item.part.id !== id)),
       clear: () => setItems([]),
     }),
-    [items, isOpen],
+    [items, isOpen, rates],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
