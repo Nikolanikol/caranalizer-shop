@@ -28,8 +28,18 @@ export function conditionLabel(part: Pick<AutoPart, 'conditionGrade'>): Conditio
       return { short: 'C · есть повреждение', tone: 'danger' };
     case 'B':
       return { short: 'B · царапины', tone: 'warn' };
+    case 'A':
+      return { short: 'A · состояние хорошее', tone: 'neutral' };
+    case 'A+':
+      return { short: 'A+ · дефектов не отмечено', tone: 'neutral' };
     default:
-      return { short: `${part.conditionGrade} · дефектов не отмечено`, tone: 'neutral' };
+      /*
+       * Пустой грейд значит, что донор о состоянии не написал ничего, — а таких
+       * экземпляров 9 733 из 34 724. Раньше сюда попадала подпись « · дефектов
+       * не отмечено»: обещание о состоянии, которого мы не знаем, да ещё и с пустым
+       * местом вместо буквы. Молчание донора — повод предупредить, а не успокоить.
+       */
+      return { short: 'Состояние не указано', tone: 'warn' };
   }
 }
 

@@ -2,7 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
-import { brandUrl, getBrands, getTopModels, modelUrl } from '@/lib/shop/catalog';
+import { CATEGORIES, getBrands, getTopModels, modelUrl } from '@/lib/shop/catalog';
 import { SHOP_BASE, shopUrl } from '@/lib/shop/urls';
 import { SITE_URL } from '@/lib/site';
 import { CatalogView, type CatalogSearchParams } from '@/components/shop/catalog-view';
@@ -28,9 +28,9 @@ import { CatalogView, type CatalogSearchParams } from '@/components/shop/catalog
  * поэтому страницы с фильтрами и номерами в индекс отдельно не уходят.
  */
 export const metadata: Metadata = {
-  title: 'Запчасти из Южной Кореи — оригинальная оптика',
+  title: 'Запчасти с авторазборов Южной Кореи — оптика, зеркала, блоки управления',
   description:
-    'Оригинальные задние фонари и противотуманные фары с авторазборок Южной Кореи. Поиск по OEM-артикулу, марке и модели, доставка по России.',
+    'Оригинальные б/у запчасти с авторазборов Южной Кореи: фары и фонари, боковые зеркала, блоки управления двигателем, АКПП, ABS и кузовной электроникой. Поиск по OEM-артикулу, фотографии каждого экземпляра, доставка по России.',
   alternates: { canonical: shopUrl('/zapchasti', SITE_URL) },
 };
 
@@ -52,8 +52,8 @@ export default async function ShopHomePage({
         basePath={SHOP_BASE}
         defaultSort="newest"
         searchParams={params}
-        heading="Оригинальная оптика из Кореи"
-        intro={`${total} позиций для ${brands.length} марок: задние фонари и противотуманные фары. Каждая деталь сфотографирована по отдельности — вы видите именно то, что приедет.`}
+        heading="Запчасти с авторазборов Кореи"
+        intro={`${total} деталей для ${brands.length} марок: оптика, зеркала, блоки управления. Каждый экземпляр сфотографирован отдельно — вы видите ровно ту деталь, которая приедет, и знаете, с какой машины она снята.`}
         extra={
           isFiltered ? null : (
             <section className="mt-12 pt-8 border-t border-border-subtle space-y-4">
@@ -65,7 +65,14 @@ export default async function ShopHomePage({
                     href={modelUrl(item.category, item.brandSlug, item.slug)}
                     className="flex items-center justify-between gap-3 px-3 py-2.5 rounded bg-elevated border border-border-subtle text-sm text-text-secondary hover:text-cta hover:border-cta/40 transition-colors"
                   >
-                    <span className="truncate">{item.name}</span>
+                    {/* Тип детали обязателен: без него «BMW 5 Series» стоит в списке дважды —
+                        по разу на категорию — и обе ссылки выглядят одинаково. */}
+                    <span className="min-w-0">
+                      <span className="block truncate">{item.name}</span>
+                      <span className="block truncate text-[10px] uppercase tracking-widest text-text-dim mt-0.5">
+                        {CATEGORIES[item.category].plural}
+                      </span>
+                    </span>
                     <span className="text-[10px] tabular-nums text-text-dim shrink-0">{item.count}</span>
                   </Link>
                 ))}
@@ -85,7 +92,10 @@ export default async function ShopHomePage({
             {brands.slice(0, 18).map((brand) => (
               <Link
                 key={brand.slug}
-                href={brandUrl('zadnie-fonari', brand.slug)}
+                /* Не на категорию: страницы марки без категории в адресах нет, а жёсткие
+                   «задние фонари» вели в пустоту у марок, у которых фонарей не бывает.
+                   Витрина с фильтром по марке показывает всё, что есть. */
+                href={`${SHOP_BASE}?brand=${encodeURIComponent(brand.name)}`}
                 className="inline-flex items-center gap-2 px-3 py-2 rounded bg-elevated border border-border-subtle text-sm text-text-secondary hover:text-cta hover:border-cta/40 transition-colors"
               >
                 {brand.name}

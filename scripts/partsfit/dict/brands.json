@@ -1,0 +1,232 @@
+{
+  "기아": {
+    "en": "Kia",
+    "ru": "Киа",
+    "aliases": []
+  },
+  "닛산": {
+    "en": "Nissan",
+    "ru": "Ниссан",
+    "aliases": []
+  },
+  "다이하츠": {
+    "en": "Daihatsu",
+    "ru": "Дайхацу",
+    "aliases": []
+  },
+  "닷지": {
+    "en": "Dodge",
+    "ru": "Додж",
+    "aliases": []
+  },
+  "도요타": {
+    "en": "Toyota",
+    "ru": "Тойота",
+    "aliases": ["Тоёта"]
+  },
+  "동풍": {
+    "en": "Dongfeng",
+    "ru": "Дунфэн",
+    "aliases": ["DFM"]
+  },
+  "란시아": {
+    "en": "Lancia",
+    "ru": "Лянча",
+    "aliases": []
+  },
+  "랜드로버": {
+    "en": "Land Rover",
+    "ru": "Ленд Ровер",
+    "aliases": ["Range Rover"]
+  },
+  "렉서스": {
+    "en": "Lexus",
+    "ru": "Лексус",
+    "aliases": []
+  },
+  "르노": {
+    "en": "Renault",
+    "ru": "Рено",
+    "aliases": ["Renault Samsung", "Renault Korea"]
+  },
+  "링컨": {
+    "en": "Lincoln",
+    "ru": "Линкольн",
+    "aliases": []
+  },
+  "마세라티": {
+    "en": "Maserati",
+    "ru": "Мазерати",
+    "aliases": []
+  },
+  "머큐리": {
+    "en": "Mercury",
+    "ru": "Меркури",
+    "aliases": []
+  },
+  "미니": {
+    "en": "Mini",
+    "ru": "Мини",
+    "aliases": ["MINI Cooper"]
+  },
+  "미츠비시": {
+    "en": "Mitsubishi",
+    "ru": "Мицубиси",
+    "aliases": ["Митсубиши"]
+  },
+  "벤츠": {
+    "en": "Mercedes-Benz",
+    "ru": "Мерседес",
+    "aliases": ["Mercedes", "Бенц"]
+  },
+  "벤틀리": {
+    "en": "Bentley",
+    "ru": "Бентли",
+    "aliases": []
+  },
+  "볼보": {
+    "en": "Volvo",
+    "ru": "Вольво",
+    "aliases": []
+  },
+  "북기은상": {
+    "en": "BAIC",
+    "ru": "БАИК",
+    "aliases": ["Beijing", "Бэйцзин"]
+  },
+  "뷰익": {
+    "en": "Buick",
+    "ru": "Бьюик",
+    "aliases": []
+  },
+  "사브": {
+    "en": "Saab",
+    "ru": "Сааб",
+    "aliases": []
+  },
+  "사이언": {
+    "en": "Scion",
+    "ru": "Сайон",
+    "aliases": []
+  },
+  "쉐보레": {
+    "en": "Chevrolet",
+    "ru": "Шевроле",
+    "aliases": ["Daewoo", "GM Daewoo", "Дэу"]
+  },
+  "스마트": {
+    "en": "Smart",
+    "ru": "Смарт",
+    "aliases": []
+  },
+  "스바루": {
+    "en": "Subaru",
+    "ru": "Субару",
+    "aliases": []
+  },
+  "스카니아": {
+    "en": "Scania",
+    "ru": "Скания",
+    "aliases": []
+  },
+  "시트로엥": {
+    "en": "Citroen",
+    "ru": "Ситроен",
+    "aliases": ["Citroën"]
+  },
+  "아우디": {
+    "en": "Audi",
+    "ru": "Ауди",
+    "aliases": []
+  },
+  "인피니티": {
+    "en": "Infiniti",
+    "ru": "Инфинити",
+    "aliases": []
+  },
+  "재규어": {
+    "en": "Jaguar",
+    "ru": "Ягуар",
+    "aliases": []
+  },
+  "제네시스": {
+    "en": "Genesis",
+    "ru": "Дженесис",
+    "aliases": []
+  },
+  "지프": {
+    "en": "Jeep",
+    "ru": "Джип",
+    "aliases": []
+  },
+  "캐딜락": {
+    "en": "Cadillac",
+    "ru": "Кадиллак",
+    "aliases": []
+  },
+  "크라이슬러": {
+    "en": "Chrysler",
+    "ru": "Крайслер",
+    "aliases": []
+  },
+  "테슬라": {
+    "en": "Tesla",
+    "ru": "Тесла",
+    "aliases": []
+  },
+  "포드": {
+    "en": "Ford",
+    "ru": "Форд",
+    "aliases": []
+  },
+  "포르쉐": {
+    "en": "Porsche",
+    "ru": "Порше",
+    "aliases": []
+  },
+  "폭스바겐": {
+    "en": "Volkswagen",
+    "ru": "Фольксваген",
+    "aliases": ["VW"]
+  },
+  "폴스타": {
+    "en": "Polestar",
+    "ru": "Полстар",
+    "aliases": []
+  },
+  "푸조": {
+    "en": "Peugeot",
+    "ru": "Пежо",
+    "aliases": []
+  },
+  "피아트": {
+    "en": "Fiat",
+    "ru": "Фиат",
+    "aliases": []
+  },
+  "현대": {
+    "en": "Hyundai",
+    "ru": "Хендай",
+    "aliases": ["Хёндай", "Хундай"]
+  },
+  "혼다": {
+    "en": "Honda",
+    "ru": "Хонда",
+    "aliases": []
+  },
+  "BMW": {
+    "en": "BMW",
+    "ru": "БМВ",
+    "aliases": []
+  },
+  "GM대우": {
+    "en": "Chevrolet",
+    "ru": "Шевроле",
+    "aliases": ["Daewoo", "GM Daewoo", "Дэу"]
+  },
+  "KG모빌리티": {
+    "en": "SsangYong",
+    "ru": "Санг Йонг",
+    "aliases": ["KGM", "KG Mobility", "СсангЙонг"]
+  }
+}

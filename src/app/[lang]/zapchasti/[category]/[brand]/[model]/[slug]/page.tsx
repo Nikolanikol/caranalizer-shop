@@ -1,26 +1,26 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { ChevronRight, Info, ShieldCheck, Truck } from 'lucide-react';
+import { ChevronRight, Info } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import {
   CATEGORIES,
   SHOP_BASE,
   brandUrl,
   categoryUrl,
-  getAllParts,
+  getIndexableParts,
   getPartByPath,
   getSimilarParts,
   isCategory,
   modelUrl,
   partUrl,
 } from '@/lib/shop/catalog';
-import { SHOP_LOCALE, shopUrl } from '@/lib/shop/urls';
-import { formatPartPrice, formatPartPriceUsd, priceRub } from '@/lib/shop/pricing';
+import { SHOP_LOCALE, oemUrl, shopUrl } from '@/lib/shop/urls';
+import { formatPartPrice, priceRub } from '@/lib/shop/pricing';
 import { getRates } from '@/lib/shop/rates';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
-import { Gallery } from '@/components/shop/gallery';
-import { AddToCart } from '@/components/shop/add-to-cart';
+import { VIN_PATHS } from '@/lib/seo';
+import { OfferPicker } from '@/components/shop/offer-picker';
 import { CopyOem } from '@/components/shop/copy-oem';
 import { FitmentHelp } from '@/components/shop/fitment-help';
 import { ProductCard } from '@/components/shop/product-card';
@@ -33,15 +33,23 @@ import { ProductCard } from '@/components/shop/product-card';
  * не требует нового файла, а каждый уровень пути ведёт на реальную страницу.
  */
 
-// Рендерим только реально существующие товары, всё остальное — 404.
-export const dynamicParams = false;
+/*
+ * Пререндерим не весь каталог, а только карточки, которым положена страница в индексе
+ * (два и более экземпляра) — 5 834 из 18 655. Остальные рендерятся по первому запросу
+ * и кэшируются: собирать восемнадцать тысяч страниц ради товара, который живёт
+ * до первой продажи, бессмысленно.
+ *
+ * Плата за `dynamicParams: true` — несуществующий адрес теперь отвечает 200 с `noindex`,
+ * а не 404: `notFound()` в потоковом ответе кода не меняет (см. AGENTS.md).
+ */
+export const dynamicParams = true;
 
 export async function generateStaticParams({ params }: { params: { lang: string } }) {
   // Раздел одноязычный: на других локалях товаров нет, и 967 страниц
   // не должны собираться по второму и третьему разу.
   if (params.lang !== SHOP_LOCALE) return [];
 
-  const parts = await getAllParts();
+  const parts = await getIndexableParts();
   return parts.map((part) => ({
     category: part.category,
     brand: part.brandSlug,
@@ -66,6 +74,15 @@ export async function generateMetadata({
     title: `${part.titleRu}${oe}`,
     description: `${part.titleRu}${oe}. Оригинал с авторазборки Южной Кореи, фотографии именно этой детали. Доставка по России, ${part.deliveryDays}.`,
     alternates: { canonical: shopUrl(partUrl(part), SITE_URL) },
+    /*
+     * Карточка, за которой стоит один экземпляр, живёт до первой продажи: товар ушёл —
+     * страница умерла. Таких 12 821 из 18 655, и пускать их в индекс значит заранее
+     * наплодить 404 там, где уже 307 755 адресов висят непроиндексированными.
+     *
+     * Страница при этом работает: без неё товар нельзя положить в корзину. Закрыт
+     * только индекс, и признак берётся из данных, а не из списка исключений.
+     */
+    robots: part.offersCount < 2 ? { index: false, follow: true } : undefined,
     openGraph: {
       title: part.titleRu,
       description: `Оригинал из Южной Кореи${oe}. Цена ${formatPartPrice(part.priceKrw, rates)}.`,
@@ -113,14 +130,31 @@ export default async function ProductPage({
         mpn: part.oemNumber || undefined,
         brand: { '@type': 'Brand', name: part.brand },
         itemCondition: part.used ? 'https://schema.org/UsedCondition' : 'https://schema.org/NewCondition',
-        offers: {
-          '@type': 'Offer',
-          url: shopUrl(partUrl(part), SITE_URL),
-          priceCurrency: 'RUB',
-          price: priceRub(part.priceKrw, rates),
-          availability: part.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder',
-          seller: { '@type': 'Organization', name: SITE_NAME },
-        },
+        /*
+         * У детали несколько экземпляров с разной ценой, поэтому AggregateOffer,
+         * а не Offer: цена в разметке обязана совпадать с тем, что видит покупатель,
+         * а он видит вилку. Валюта — рубли: доллар на сайте справочный.
+         */
+        offers:
+          part.offersCount > 1
+            ? {
+                '@type': 'AggregateOffer',
+                url: shopUrl(partUrl(part), SITE_URL),
+                priceCurrency: 'RUB',
+                lowPrice: priceRub(part.priceKrw, rates),
+                highPrice: priceRub(part.priceKrwMax, rates),
+                offerCount: part.offersCount,
+                availability: part.inStock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder',
+                seller: { '@type': 'Organization', name: SITE_NAME },
+              }
+            : {
+                '@type': 'Offer',
+                url: shopUrl(partUrl(part), SITE_URL),
+                priceCurrency: 'RUB',
+                price: priceRub(part.priceKrw, rates),
+                availability: part.inStock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder',
+                seller: { '@type': 'Organization', name: SITE_NAME },
+              },
       },
       {
         '@type': 'BreadcrumbList',
@@ -137,15 +171,17 @@ export default async function ProductPage({
     ],
   };
 
+  // Характеристики детали, общие для всех экземпляров. Всё, что различается —
+  // состояние, разъём, цвет, VIN — показывает `OfferPicker` у выбранного экземпляра.
   const specs: [string, string][] = [
     ['Марка', part.brand],
     ['Модель', part.model],
-    ['Год', String(part.year)],
+    ['Годы', part.years],
     ['Сторона', part.side],
     ['Расположение', part.position],
-    ['Разъём', part.connectorPins],
-    ['Вес', part.weightKg ? `${part.weightKg} кг` : ''],
-    ['Габариты', part.dimensionsCm ? `${part.dimensionsCm.join(' × ')} см` : ''],
+    ['Кросс-номера', part.crossNumbers.join(', ')],
+    ['Вес', part.weightKg ? `${part.weightKg} кг (оценка)` : ''],
+    ['Габариты', part.dimensionsCm ? `${part.dimensionsCm.join(' × ')} см (оценка)` : ''],
   ];
 
   return (
@@ -167,85 +203,67 @@ export default async function ProductPage({
         <span className="text-text-secondary normal-case tracking-normal">{part.titleRu}</span>
       </nav>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Gallery images={part.images} alt={part.titleRu} />
-
-        <div className="space-y-5">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-elevated text-text-secondary font-mono text-xs uppercase tracking-wider font-bold border border-border-subtle">
-              OEM: <span className="text-text">{part.oemNumber || 'по запросу'}</span>
-              <CopyOem value={part.oemNumber} />
-            </span>
-            <Link
-              href={brandUrl(part.category, part.brandSlug)}
-              className="px-3 py-1.5 rounded bg-elevated text-text-secondary text-[10px] uppercase tracking-widest font-bold border border-border-subtle hover:text-cta transition-colors"
-            >
-              {part.brand} {part.model}
-            </Link>
-            <span className="px-3 py-1.5 rounded bg-surface text-text text-[10px] uppercase tracking-widest font-bold border border-border">
-              {part.side}
-            </span>
-            {part.aftermarket && (
-              <span className="px-3 py-1.5 rounded bg-amber-950/60 text-amber-300 text-[10px] uppercase tracking-widest font-bold border border-amber-900">
-                Аналог, не оригинал
+      <OfferPicker
+        part={part}
+        rates={rates}
+        vinCheckHref={`/${SHOP_LOCALE}${VIN_PATHS[SHOP_LOCALE]}`}
+        header={
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Артикул ведёт на свою страницу: там видно, на каких ещё машинах
+                  встречается номер, и что есть в наличии по нему целиком. */}
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-elevated text-text-secondary font-mono text-xs uppercase tracking-wider font-bold border border-border-subtle">
+                OEM:{' '}
+                {part.oemNumber ? (
+                  <Link href={oemUrl(part.oemNumber)} className="text-text hover:text-cta transition-colors">
+                    {part.oemNumber}
+                  </Link>
+                ) : (
+                  <span className="text-text">по запросу</span>
+                )}
+                <CopyOem value={part.oemNumber} />
               </span>
-            )}
-          </div>
-
-          <h1 className="text-2xl sm:text-3xl font-black text-text tracking-tight leading-tight">{part.titleRu}</h1>
-
-          <div className="bg-elevated rounded p-5 border border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-baseline flex-wrap gap-x-3 gap-y-1">
-                <span className="text-3xl font-black text-text tracking-tight leading-none">
-                  {formatPartPrice(part.priceKrw, rates)}
+              <Link
+                href={brandUrl(part.category, part.brandSlug)}
+                className="px-3 py-1.5 rounded bg-elevated text-text-secondary text-[10px] uppercase tracking-widest font-bold border border-border-subtle hover:text-cta transition-colors"
+              >
+                {part.brand} {part.model}
+              </Link>
+              {part.side && (
+                <span className="px-3 py-1.5 rounded bg-surface text-text text-[10px] uppercase tracking-widest font-bold border border-border">
+                  {part.side}
                 </span>
-                <span className="text-base font-bold text-text-muted leading-none">
-                  {formatPartPriceUsd(part.priceKrw, rates)}
-                </span>
-              </div>
-              <p className="text-[9px] text-text-muted font-bold uppercase tracking-widest mt-2">
-                Доставка оплачивается отдельно
+              )}
+            </div>
+
+            <h1 className="text-2xl sm:text-3xl font-black text-text tracking-tight leading-tight">{part.titleRu}</h1>
+          </>
+        }
+        footer={
+          <>
+            <dl className="grid grid-cols-2 gap-2 text-xs">
+              {specs
+                .filter(([, value]) => value)
+                .map(([label, value]) => (
+                  <div key={label} className="bg-elevated p-3 rounded border border-border-subtle">
+                    <dt className="text-text-dim block text-[9px] font-bold uppercase tracking-widest mb-1">{label}</dt>
+                    <dd className="font-bold text-text-secondary text-[11px] tracking-wide">{value}</dd>
+                  </div>
+                ))}
+            </dl>
+
+            <FitmentHelp />
+
+            <div className="bg-amber-950/30 border border-amber-900/50 rounded p-4 flex gap-3">
+              <Info className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-200/80 leading-relaxed">
+                Все фотографии показывают именно тот экземпляр, который приедет. Сверьте его по фото и OE-номеру
+                со своей машиной — при сомнениях напишите нам до оформления заявки.
               </p>
             </div>
-            <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-text-secondary bg-base-darker px-3 py-2 rounded border border-border-subtle">
-              <Truck className="w-3.5 h-3.5 text-text-muted" />
-              Доставка: {part.deliveryDays}
-            </p>
-          </div>
-
-          <AddToCart part={part} size="large" />
-
-          <dl className="grid grid-cols-2 gap-2 text-xs">
-            {specs
-              .filter(([, value]) => value)
-              .map(([label, value]) => (
-                <div key={label} className="bg-elevated p-3 rounded border border-border-subtle">
-                  <dt className="text-text-dim block text-[9px] font-bold uppercase tracking-widest mb-1">{label}</dt>
-                  <dd className="font-bold text-text-secondary text-[11px] tracking-wide">{value}</dd>
-                </div>
-              ))}
-          </dl>
-
-          <div className="bg-elevated rounded p-5 border border-border-subtle space-y-2">
-            <h2 className="flex items-center gap-2 text-[10px] font-bold text-text-secondary uppercase tracking-widest">
-              <ShieldCheck className="w-4 h-4 text-text-muted" />
-              Состояние {part.conditionGrade}
-            </h2>
-            <p className="text-xs text-text-secondary leading-relaxed">{part.conditionNotes}</p>
-          </div>
-
-          <FitmentHelp />
-
-          <div className="bg-amber-950/30 border border-amber-900/50 rounded p-4 flex gap-3">
-            <Info className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-            <p className="text-xs text-amber-200/80 leading-relaxed">
-              Все фотографии показывают именно ту деталь, которая приедет. Сверьте её по фото и OE-номеру со
-              своей машиной — при сомнениях напишите нам до оформления заявки.
-            </p>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {similar.length > 0 && (
         <section className="mt-12">

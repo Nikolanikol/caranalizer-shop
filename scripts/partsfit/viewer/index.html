@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Каталог partsfit — просмотр</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #16213c; --line: #26304d; --ink: #e8edf7;
+    --dim: #93a2c4; --accent: #7aa2ff; --warn: #f0b429; --danger: #f2545b; --ok: #34d399;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  a { color: inherit; text-decoration: none; }
+
+  header { position: sticky; top: 0; z-index: 10; background: var(--bg);
+    border-bottom: 1px solid var(--line); padding: 14px 20px; }
+  .bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  h1 { font-size: 16px; margin: 0 12px 0 0; font-weight: 650; white-space: nowrap; }
+  input, select { background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 11px; font: inherit; }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  #q { flex: 1; min-width: 220px; }
+  .muted { color: var(--dim); }
+  .stats { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px;
+    font-size: 12px; color: var(--dim); }
+  .stats b { color: var(--ink); font-weight: 600; }
+
+  main { display: grid; grid-template-columns: 220px 1fr; gap: 20px; padding: 20px;
+    align-items: start; }
+  @media (max-width: 820px) { main { grid-template-columns: 1fr; } aside { order: 2; } }
+
+  aside section { margin-bottom: 22px; }
+  aside h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--dim); margin: 0 0 8px; }
+  .facet { display: flex; justify-content: space-between; gap: 8px; padding: 5px 8px;
+    border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .facet:hover { background: var(--panel); }
+  .facet.on { background: var(--accent); color: #07122b; font-weight: 600; }
+  .facet span:last-child { color: var(--dim); font-variant-numeric: tabular-nums; }
+  .facet.on span:last-child { color: #07122b; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    overflow: hidden; cursor: pointer; display: flex; flex-direction: column; }
+  .card:hover { border-color: var(--accent); }
+  .card img { width: 100%; aspect-ratio: 4/3; object-fit: cover; background: #0b1226; }
+  .card .body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 5px; flex: 1; }
+  .card .name { font-weight: 600; font-size: 13px; line-height: 1.35; }
+  .oem { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+    color: var(--accent); word-break: break-all; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    margin-top: auto; padding-top: 4px; }
+  .tag { font-size: 11px; padding: 2px 7px; border-radius: 999px;
+    border: 1px solid var(--line); color: var(--dim); }
+  .tag.vin { border-color: #2f6b4f; color: var(--ok); }
+  .price { font-weight: 650; font-variant-numeric: tabular-nums; }
+
+  .g { font-size: 11px; padding: 2px 7px; border-radius: 999px; font-weight: 600; }
+  .g-Aplus, .g-A { background: #1e3a2f; color: var(--ok); }
+  .g-B { background: #3d2f14; color: var(--warn); }
+  .g-C { background: #3d1c22; color: var(--danger); }
+  .g-none { background: #26304d; color: var(--dim); }
+
+  .pager { display: flex; gap: 8px; align-items: center; justify-content: center;
+    margin: 22px 0 8px; }
+  button { background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 7px 14px; font: inherit; cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: .35; cursor: default; }
+
+  dialog { background: var(--bg); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 14px; padding: 0; max-width: 940px; width: 94vw; max-height: 88vh; }
+  dialog::backdrop { background: rgba(4, 8, 20, .72); }
+  .dh { position: sticky; top: 0; background: var(--bg); border-bottom: 1px solid var(--line);
+    padding: 16px 20px; display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+  .db { padding: 16px 20px 22px; overflow: auto; }
+  .offer { border: 1px solid var(--line); border-radius: 10px; padding: 12px;
+    margin-bottom: 12px; background: var(--panel); }
+  .offer .top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+  .shots { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+  .shots img { height: 96px; border-radius: 7px; flex: 0 0 auto; background: #0b1226; }
+  .shots .more { height: 96px; flex: 0 0 auto; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 0 12px; border-radius: 7px;
+    border: 1px dashed var(--line); color: var(--dim); font-size: 12px; text-align: center; }
+  .shots .more:hover { border-color: var(--accent); color: var(--accent); }
+  .ko { font-size: 12px; color: var(--dim); margin-top: 8px; word-break: break-word; }
+  .notes { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .vin { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--ok); }
+  .empty { padding: 60px 20px; text-align: center; color: var(--dim); }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <h1>Каталог partsfit</h1>
+    <input id="q" placeholder="Артикул, марка, модель — 92101T1100, Sorento, Genesis">
+    <select id="sort">
+      <option value="offers">Сначала где больше экземпляров</option>
+      <option value="price">Сначала дешёвые</option>
+      <option value="price_desc">Сначала дорогие</option>
+      <option value="year">Сначала новые</option>
+    </select>
+    <button id="reset">Сбросить</button>
+  </div>
+  <div class="stats" id="stats"></div>
+</header>
+
+<main>
+  <aside>
+    <section><h2>Тип детали</h2><div id="types"></div></section>
+    <section><h2>Марка</h2><div id="brands"></div></section>
+  </aside>
+  <div>
+    <div class="muted" id="count"></div>
+    <div class="grid" id="grid"></div>
+    <div class="pager" id="pager"></div>
+  </div>
+</main>
+
+<dialog id="modal"><div class="dh" id="dh"></div><div class="db" id="db"></div></dialog>
+
+<script>
+const state = { type: '', brand: '', q: '', sort: 'offers', page: 1 };
+// У детали с 63 экземплярами по восемь фото на каждый — это 504 запроса на открытие
+// карточки. Показываем первые несколько, остальные смотрят у донора по ссылке.
+const SHOTS = 5;
+const $ = (id) => document.getElementById(id);
+const krw = (n) => n == null ? '—' : new Intl.NumberFormat('ru-RU').format(n) + ' ₩';
+
+const gradeClass = (g) => g === 'A+' ? 'g-Aplus' : g === 'A' ? 'g-A' : g === 'B' ? 'g-B' : g === 'C' ? 'g-C' : 'g-none';
+const gradeText = (g) => g || 'не указано';
+
+async function loadStats() {
+  const s = await (await fetch('/api/stats')).json();
+  const g = s.grades;
+  $('stats').innerHTML = [
+    `<span><b>${s.products.toLocaleString('ru')}</b> деталей</span>`,
+    `<span><b>${s.offers.toLocaleString('ru')}</b> экземпляров</span>`,
+    `<span><b>${s.brands}</b> марок · <b>${s.models}</b> моделей</span>`,
+    `<span><b>${s.photos.toLocaleString('ru')}</b> фото</span>`,
+    `<span>VIN донора: <b>${s.vin.toLocaleString('ru')}</b></span>`,
+    `<span>с разъёмом: <b>${s.pins.toLocaleString('ru')}</b></span>`,
+    `<span>с цветом: <b>${s.color.toLocaleString('ru')}</b></span>`,
+    `<span>состояние: A+ <b>${(g['A+']||0).toLocaleString('ru')}</b> · A <b>${(g.A||0).toLocaleString('ru')}</b> · B <b>${(g.B||0).toLocaleString('ru')}</b> · C <b>${(g.C||0).toLocaleString('ru')}</b> · нет <b>${(g['—']||0).toLocaleString('ru')}</b></span>`,
+  ].join('');
+}
+
+function facetList(node, rows, key) {
+  node.innerHTML = rows.map((row) => `
+    <div class="facet ${state[key] === row.slug ? 'on' : ''}" data-key="${key}" data-slug="${row.slug}">
+      <span>${row.label}</span><span>${row.count.toLocaleString('ru')}</span>
+    </div>`).join('');
+}
+
+async function load() {
+  const params = new URLSearchParams({ type: state.type, brand: state.brand, q: state.q, sort: state.sort, page: state.page });
+  const data = await (await fetch('/api/products?' + params)).json();
+
+  facetList($('types'), data.facets.types, 'type');
+  facetList($('brands'), data.facets.brands.slice(0, 30), 'brand');
+  $('count').textContent = `${data.total.toLocaleString('ru')} деталей · страница ${data.page} из ${data.pages}`;
+
+  $('grid').innerHTML = data.items.length ? data.items.map((p) => `
+    <div class="card" data-id="${encodeURIComponent(p.id)}">
+      ${p.cover ? `<img loading="lazy" src="${p.cover}" alt="">` : '<div style="aspect-ratio:4/3"></div>'}
+      <div class="body">
+        <div class="name">${p.title_ru}</div>
+        <div class="oem">${p.oem_number}</div>
+        <div class="row">
+          <span class="g ${gradeClass(p.best_grade)}">${gradeText(p.best_grade)}</span>
+          <span class="tag">${p.offers_count} шт.</span>
+          ${p.withVin ? `<span class="tag vin">VIN ${p.withVin}</span>` : ''}
+        </div>
+        <div class="price">${p.price_krw_min === p.price_krw_max ? krw(p.price_krw_min) : krw(p.price_krw_min) + ' – ' + krw(p.price_krw_max)}</div>
+      </div>
+    </div>`).join('') : '<div class="empty">Ничего не найдено</div>';
+
+  $('pager').innerHTML = data.pages > 1 ? `
+    <button ${data.page <= 1 ? 'disabled' : ''} data-page="${data.page - 1}">← Назад</button>
+    <span class="muted">${data.page} / ${data.pages}</span>
+    <button ${data.page >= data.pages ? 'disabled' : ''} data-page="${data.page + 1}">Вперёд →</button>` : '';
+}
+
+async function openProduct(id) {
+  const p = await (await fetch('/api/product/' + id)).json();
+  $('dh').innerHTML = `
+    <div>
+      <div style="font-size:17px;font-weight:650">${p.title_ru}</div>
+      <div class="oem" style="margin-top:4px">${p.oem_number}${p.cross_numbers.length ? ' · кроссы: ' + p.cross_numbers.join(', ') : ''}</div>
+      <div class="muted" style="margin-top:4px;font-size:12px">${p.type} · ${p.brand}${p.model ? ' ' + p.model : ''} · ${p.year_from}${p.year_to !== p.year_from ? '–' + p.year_to : ''} · ${p.side || 'без стороны'} · ${p.offers_count} экз.</div>
+    </div>
+    <button onclick="modal.close()">Закрыть</button>`;
+
+  $('db').innerHTML = p.offers.map((o) => `
+    <div class="offer">
+      <div class="top">
+        <span class="price">${krw(o.price_krw)}</span>
+        <span class="g ${gradeClass(o.condition_grade)}">${gradeText(o.condition_grade)}</span>
+        <span class="tag">${o.year}</span>
+        ${o.pins ? `<span class="tag">${o.pins_layout || o.pins} конт.</span>` : ''}
+        ${o.lamp_type_ru ? `<span class="tag">${o.lamp_type_ru}</span>` : ''}
+        ${o.completeness_ru ? `<span class="tag">${o.completeness_ru}</span>` : ''}
+        ${o.color_code ? `<span class="tag">цвет ${o.color_code}${o.color_name ? ' · ' + o.color_name : ''}</span>` : ''}
+        ${o.donor_vin ? `<span class="vin">VIN ${o.donor_vin}</span>` : ''}
+      </div>
+      ${o.features_ru.length ? `<div class="notes">${o.features_ru.map((f) => `<span class="tag">${f}</span>`).join('')}</div>` : ''}
+      ${o.condition_notes.length ? `<div class="notes">${o.condition_notes.map((n) => `<span class="tag">${n}</span>`).join('')}</div>` : ''}
+      <div class="shots">${o.photos.slice(0, SHOTS).map((u) => `<img loading="lazy" src="${u}" alt="">`).join('')}${o.photos.length > SHOTS ? `<a class="more" href="${o.source_url}" target="_blank" rel="noopener">+${o.photos.length - SHOTS}<br>ещё</a>` : ''}</div>
+      ${o.condition_ko ? `<div class="ko">Донор: ${o.condition_ko}</div>` : '<div class="ko">Донор ничего не написал о состоянии.</div>'}
+      <div class="ko"><a href="${o.source_url}" target="_blank" rel="noopener">Страница у донора ↗</a></div>
+    </div>`).join('');
+
+  $('modal').showModal();
+}
+
+document.addEventListener('click', (event) => {
+  const facet = event.target.closest('.facet');
+  if (facet) {
+    const key = facet.dataset.key;
+    state[key] = state[key] === facet.dataset.slug ? '' : facet.dataset.slug;
+    state.page = 1;
+    return load();
+  }
+  const card = event.target.closest('.card');
+  if (card) return openProduct(card.dataset.id);
+  const pageButton = event.target.closest('[data-page]');
+  if (pageButton) {
+    state.page = Number(pageButton.dataset.page);
+    load();
+    scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
+
+let typing;
+$('q').addEventListener('input', (event) => {
+  clearTimeout(typing);
+  typing = setTimeout(() => { state.q = event.target.value.trim(); state.page = 1; load(); }, 250);
+});
+$('sort').addEventListener('change', (event) => { state.sort = event.target.value; state.page = 1; load(); });
+$('reset').addEventListener('click', () => {
+  Object.assign(state, { type: '', brand: '', q: '', sort: 'offers', page: 1 });
+  $('q').value = ''; $('sort').value = 'offers'; load();
+});
+
+loadStats();
+load();
+</script>
+</body>
+</html>

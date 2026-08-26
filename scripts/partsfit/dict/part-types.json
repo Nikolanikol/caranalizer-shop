@@ -1,0 +1,136 @@
+{
+  "헤드램프": {
+    "slug": "perednie-fary",
+    "ru": "Фара передняя",
+    "plural": "Передние фары",
+    "gender": "f",
+    "hasPosition": false,
+    "keywords": ["фара", "передняя фара", "фара передняя", "головной свет", "оптика"],
+    "hasSide": true,
+    "attributes": ["lampType", "completeness", "features", "pins"]
+  },
+  "테일램프": {
+    "slug": "zadnie-fonari",
+    "ru": "Фонарь задний",
+    "plural": "Задние фонари",
+    "gender": "m",
+    "hasPosition": true,
+    "keywords": ["фонарь", "задний фонарь", "стоп", "стоп-сигнал", "фонарь задний"],
+    "hasSide": true,
+    "attributes": ["lampType", "completeness", "features", "pins"]
+  },
+  "포그램프": {
+    "slug": "protivotumannye-fary",
+    "ru": "Противотуманная фара",
+    "plural": "Противотуманные фары",
+    "gender": "f",
+    "hasPosition": false,
+    "keywords": ["противотуманка", "птф", "противотуманная фара", "туманка"],
+    "hasSide": true,
+    "attributes": ["lampType", "completeness", "features", "pins"]
+  },
+  "사이드미러": {
+    "slug": "bokovye-zerkala",
+    "ru": "Зеркало боковое",
+    "plural": "Боковые зеркала",
+    "gender": "n",
+    "hasPosition": false,
+    "keywords": ["зеркало", "боковое зеркало", "зеркало заднего вида", "зеркальный элемент"],
+    "hasSide": true,
+    "attributes": ["mirrorFeatures", "color", "pins"]
+  },
+  "ETACS/BCM": {
+    "slug": "blok-komforta-bcm",
+    "ru": "Блок комфорта (BCM)",
+    "plural": "Блоки комфорта BCM",
+    "gender": "m",
+    "hasPosition": false,
+    "hasSide": false,
+    "keywords": ["BCM", "ETACS", "блок комфорта", "блок кузовной электроники", "этакс", "боди контрол"],
+    "attributes": ["completeness", "pins"]
+  },
+  "ECU": {
+    "slug": "blok-upravleniya-dvigatelem",
+    "ru": "Блок управления двигателем (ECU)",
+    "plural": "Блоки управления двигателем",
+    "gender": "m",
+    "hasPosition": false,
+    "hasSide": false,
+    "keywords": ["ECU", "ЭБУ", "блок управления двигателем", "мозги", "контроллер двигателя", "PCM"],
+    "attributes": ["completeness", "pins"]
+  },
+  "TCU": {
+    "slug": "blok-upravleniya-akpp",
+    "ru": "Блок управления АКПП (TCU)",
+    "plural": "Блоки управления АКПП",
+    "gender": "m",
+    "hasPosition": false,
+    "hasSide": false,
+    "keywords": ["TCU", "блок управления АКПП", "блок АКПП", "ЭБУ коробки", "TCM"],
+    "attributes": ["completeness", "pins"]
+  },
+  "ABS": {
+    "slug": "blok-abs",
+    "ru": "Блок ABS",
+    "plural": "Блоки ABS",
+    "gender": "m",
+    "hasPosition": false,
+    "hasSide": false,
+    "keywords": ["ABS", "АБС", "блок ABS", "гидроблок", "модуль ABS", "ESP"],
+    "attributes": ["completeness", "pins"]
+  },
+  "모듈": {
+    "slug": "elektronnye-bloki",
+    "ru": "Электронный блок",
+    "plural": "Электронные блоки",
+    "gender": "m",
+    "hasPosition": false,
+    "hasSide": false,
+    "keywords": ["электронный блок", "модуль", "юнит", "блок управления", "unit"],
+    "attributes": ["completeness", "pins"]
+  },
+  "컴비네이션램프": {
+    "slug": "zadnie-fonari",
+    "ru": "Фонарь задний",
+    "plural": "Задние фонари",
+    "gender": "m",
+    "hasPosition": true,
+    "hasSide": true,
+    "attributes": ["lampType", "completeness", "features", "pins"],
+    "qualifiers": {
+      "안개등": "포그램프",
+      "후미등": "테일램프"
+    },
+    "keywords": ["фонарь", "задний фонарь", "стоп", "стоп-сигнал", "комбинированный фонарь"]
+  },
+  "리플렉터등": {
+    "slug": "zadnie-fonari",
+    "ru": "Фонарь задний",
+    "plural": "Задние фонари",
+    "gender": "m",
+    "hasPosition": false,
+    "hasSide": true,
+    "attributes": ["lampType", "pins"],
+    "keywords": ["катафот", "отражатель", "рефлектор", "фонарь в бампере"]
+  },
+  "백피니셔": {
+    "slug": "nakladka-zadney-paneli",
+    "ru": "Накладка задней панели",
+    "plural": "Накладки задней панели",
+    "gender": "f",
+    "hasPosition": false,
+    "hasSide": false,
+    "attributes": ["lampType", "color", "pins"],
+    "keywords": ["накладка задней панели", "планка между фонарями", "накладка багажника", "молдинг"]
+  },
+  "백도어트림": {
+    "slug": "obshivka-dveri-bagazhnika",
+    "ru": "Обшивка двери багажника",
+    "plural": "Обшивки двери багажника",
+    "gender": "f",
+    "hasPosition": false,
+    "hasSide": true,
+    "attributes": ["color", "pins"],
+    "keywords": ["обшивка багажника", "трим двери багажника", "накладка пятой двери"]
+  }
+}

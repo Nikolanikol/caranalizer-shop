@@ -9,6 +9,18 @@ import { partsDestination } from "@/lib/parts-destination";
 import { kmotorsUrl } from "@/lib/kmotors";
 import { mainAlternates, mainUrl } from "@/lib/seo";
 import { setRequestLocale } from "next-intl/server";
+import {
+  CATEGORIES,
+  findParts,
+  getBrands,
+  getTopModels,
+  type AutoPart,
+  type Facet,
+} from "@/lib/shop/catalog";
+import { SHOP_BASE, categoryUrl, modelUrl } from "@/lib/shop/urls";
+import type { PartCategory } from "@/types/part";
+import { SearchForm } from "@/components/shop/search-form";
+import { ProductCard } from "@/components/shop/product-card";
 
 // Крупная кнопка в блоке внизу главной. Вынесена в константу: она нужна и внешней
 // ссылке на kmotors, и внутренней на свой раздел, а класс длинный.
@@ -22,13 +34,18 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { lang } = await params;
 
+  /*
+   * Русский заголовок теперь про каталог: главная стала входом в раздел запчастей.
+   * Иноязычные оставлены про проверку по VIN — там каталога нет и не будет,
+   * а middleware всё равно уводит /en и /ar на страницу проверки.
+   */
   const titles: Record<string, string> = {
-    ru: "Бесплатная проверка авто из Кореи — Encar, KBChachacha",
+    ru: "Запчасти с авторазборов Южной Кореи — оптика, зеркала, блоки управления",
     en: "Korean Car Check — Free Encar & KBChachacha Report | Caranalizer",
     ar: "فحص السيارات من كوريا — تقرير مجاني Encar وKBChachacha | Caranalizer",
   };
   const descriptions: Record<string, string> = {
-    ru: "Пришлите ссылку на объявление Encar, KBChachacha или Kcar — бесплатная проверка истории на русском: ДТП, страховые выплаты, пробег, комплектация по VIN.",
+    ru: "Оригинальные б/у запчасти с авторазборов Южной Кореи: фары и фонари, зеркала, блоки управления. Поиск по OEM-артикулу, фото каждого экземпляра, VIN донорской машины. Плюс бесплатная проверка авто из Кореи по VIN.",
     en: "Send an Encar, KBChachacha or Kcar listing link — free history check: accidents, insurance payouts, mileage, factory specs by VIN.",
     ar: "أرسل رابط إعلان من Encar أو KBChachacha أو Kcar — فحص مجاني للتاريخ: الحوادث، مدفوعات التأمين، المسافة، المواصفات حسب VIN.",
   };
@@ -69,10 +86,46 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   // хуки в асинхронном серверном компоненте вызывать нельзя.
   const { lang } = await params;
   setRequestLocale(lang);
-  return <HomeContent />;
+
+  /*
+   * Каталог тянем здесь, а не в теле: тело синхронное из-за `useTranslations`.
+   *
+   * Главная — вход в каталог, а не второй его список. Ни фильтра, ни пагинации здесь
+   * быть не должно: витрина раздела уже такая, и второй список ровно того же товара —
+   * это то, от чего раздел уводили, убирая `/zapchasti/katalog`.
+   */
+  const [brands, models, fresh] = await Promise.all([
+    getBrands(),
+    getTopModels(8),
+    findParts({ sort: 'newest', page: 1 }),
+  ]);
+
+  const total = brands.reduce((sum, brand) => sum + brand.count, 0);
+
+  return (
+    <HomeContent
+      brands={brands.slice(0, 14)}
+      models={models}
+      fresh={fresh.items.slice(0, 8)}
+      total={total}
+      brandCount={brands.length}
+    />
+  );
 }
 
-function HomeContent() {
+function HomeContent({
+  brands,
+  models,
+  fresh,
+  total,
+  brandCount,
+}: {
+  brands: Facet[];
+  models: (Facet & { category: PartCategory; brandSlug: string; brand: string })[];
+  fresh: AutoPart[];
+  total: number;
+  brandCount: number;
+}) {
   const t = useTranslations("home");
   const tg = useTranslations("guides");
   const tc = useTranslations("check");
@@ -109,6 +162,16 @@ function HomeContent() {
       "@type": "WebSite",
       name: "Caranalizer",
       url: "https://caranalizer.com",
+      // Поиск по каталогу теперь стоит на главной, и поисковику о нём стоит сказать:
+      // приходят с артикулом на руках, а не листать разделы.
+      potentialAction: {
+        "@type": "SearchAction",
+        target: {
+          "@type": "EntryPoint",
+          urlTemplate: `https://caranalizer.com/ru${SHOP_BASE}?search={search_term_string}`,
+        },
+        "query-input": "required name=search_term_string",
+      },
     },
   ];
 
@@ -142,31 +205,39 @@ function HomeContent() {
         <div className="relative z-10 text-center max-w-[800px] px-6 py-16">
           <div className="inline-flex items-center gap-2 px-5 py-2 bg-elevated/80 border border-border rounded-full font-[family-name:var(--font-heading)] text-xs font-medium uppercase tracking-[0.08em] text-primary mb-8 opacity-0 animate-[fadeInUp_0.6s_ease_forwards_0.2s]">
             <span className="w-1.5 h-1.5 bg-primary rounded-full animate-[pulse_2s_ease_infinite]" />
-            {t("badge")}
+            Б/у оригинал · доставка по России
           </div>
 
+          {/* Тексты здесь по-русски, а не через переводы: каталог одноязычный, и главная
+              теперь про него. Тот же приём уже принят для `partsBanner.*` и `nav.parts`. */}
           <h1 className="font-[family-name:var(--font-heading)] text-[clamp(32px,5vw,64px)] font-bold leading-[1.1] tracking-tight uppercase mb-6 opacity-0 animate-[fadeInUp_0.6s_ease_forwards_0.4s]">
-            {t("heroTitle")}{" "}
-            <span className="text-primary">{t("heroTitleAccent")}</span>
+            Запчасти с авторазборов{" "}
+            <span className="text-primary">Южной Кореи</span>
           </h1>
 
-          <p className="text-[clamp(16px,2vw,20px)] text-text-muted max-w-[560px] mx-auto mb-10 leading-relaxed opacity-0 animate-[fadeInUp_0.6s_ease_forwards_0.6s]">
-            {t("heroSubtitle")}
+          <p className="text-[clamp(16px,2vw,20px)] text-text-muted max-w-[600px] mx-auto mb-8 leading-relaxed opacity-0 animate-[fadeInUp_0.6s_ease_forwards_0.6s]">
+            {total.toLocaleString("ru")} деталей для {brandCount} марок: оптика, зеркала, блоки управления.
+            Каждый экземпляр сфотографирован отдельно — вы видите ровно ту деталь, которая приедет.
           </p>
 
+          {/* Поиск в самом верху: приходят с артикулом на руках, а не листать каталог. */}
+          <div className="max-w-[560px] mx-auto mb-8 opacity-0 animate-[fadeInUp_0.6s_ease_forwards_0.7s]">
+            <SearchForm size="large" />
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center opacity-0 animate-[fadeInUp_0.6s_ease_forwards_0.8s]">
-            <a
-              href="#free-check"
+            <Link
+              href={SHOP_BASE}
               className="inline-flex items-center justify-center gap-2.5 px-10 py-[18px] bg-primary text-white font-[family-name:var(--font-heading)] text-[15px] font-semibold uppercase tracking-[0.05em] rounded-[10px] shadow-[0_0_25px_rgba(59,130,246,0.3)] hover:bg-primary-hover hover:shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden"
             >
-              {t("ctaCheck")}
+              Смотреть каталог
               <ArrowRight className="w-5 h-5" />
-            </a>
+            </Link>
             <Link
-              href="/how-it-works"
+              href="#free-check"
               className="inline-flex items-center justify-center gap-2.5 px-10 py-[18px] bg-transparent text-text border-[1.5px] border-border font-[family-name:var(--font-heading)] text-[15px] font-semibold uppercase tracking-[0.05em] rounded-[10px] hover:border-primary hover:text-primary hover:-translate-y-0.5 transition-all duration-300"
             >
-              {t("ctaHow")}
+              {t("ctaCheck")}
               <ArrowRight className="w-5 h-5" />
             </Link>
           </div>
@@ -193,6 +264,104 @@ function HomeContent() {
       </section>
 
       {/* ===== Free check form (лид-форма на первом скролле) ===== */}
+      {/* ===== Каталог: типы деталей ===== */}
+      <section className="relative py-16 border-b border-border">
+        <Container>
+          <div className="flex flex-wrap items-baseline justify-between gap-3 mb-6">
+            <h2 className="font-[family-name:var(--font-heading)] text-[clamp(22px,3vw,32px)] font-bold tracking-tight uppercase">
+              Что есть в наличии
+            </h2>
+            <Link href={SHOP_BASE} className="text-sm font-bold text-cta hover:underline">
+              Весь каталог →
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+            {(Object.keys(CATEGORIES) as PartCategory[]).map((key) => (
+              <Link
+                key={key}
+                href={categoryUrl(key)}
+                className="px-4 py-3 rounded bg-elevated border border-border-subtle text-sm text-text-secondary hover:text-cta hover:border-cta/40 transition-colors"
+              >
+                {CATEGORIES[key].plural}
+              </Link>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      {/* ===== Свежие поступления ===== */}
+      {fresh.length > 0 && (
+        <section className="relative py-16 border-b border-border">
+          <Container>
+            <div className="flex flex-wrap items-baseline justify-between gap-3 mb-6">
+              <h2 className="font-[family-name:var(--font-heading)] text-[clamp(22px,3vw,32px)] font-bold tracking-tight uppercase">
+                Свежие поступления
+              </h2>
+              <Link href={`${SHOP_BASE}?sort=newest`} className="text-sm font-bold text-cta hover:underline">
+                Показать все →
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+              {fresh.map((part) => (
+                <ProductCard key={part.id} part={part} />
+              ))}
+            </div>
+          </Container>
+        </section>
+      )}
+
+      {/* ===== Марки и частые машины ===== */}
+      <section className="relative py-16 border-b border-border">
+        <Container>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <div>
+              <h2 className="font-[family-name:var(--font-heading)] text-[clamp(22px,3vw,32px)] font-bold tracking-tight uppercase mb-6">
+                Марки
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {brands.map((brand) => (
+                  <Link
+                    key={brand.slug}
+                    href={`${SHOP_BASE}?brand=${encodeURIComponent(brand.name)}`}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded bg-elevated border border-border-subtle text-sm text-text-secondary hover:text-cta hover:border-cta/40 transition-colors"
+                  >
+                    {brand.name}
+                    <span className="text-[10px] tabular-nums text-text-dim">{brand.count}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h2 className="font-[family-name:var(--font-heading)] text-[clamp(22px,3vw,32px)] font-bold tracking-tight uppercase mb-6">
+                Чаще всего спрашивают
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {models.map((item) => (
+                  <Link
+                    key={`${item.category}/${item.brandSlug}/${item.slug}`}
+                    href={modelUrl(item.category, item.brandSlug, item.slug)}
+                    className="flex items-center justify-between gap-3 px-3 py-2.5 rounded bg-elevated border border-border-subtle text-sm text-text-secondary hover:text-cta hover:border-cta/40 transition-colors"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate">{item.name}</span>
+                      {/* Тип детали обязателен: без него одна машина стоит в списке
+                          дважды — по разу на категорию — и ссылки неотличимы. */}
+                      <span className="block truncate text-[10px] uppercase tracking-widest text-text-dim mt-0.5">
+                        {CATEGORIES[item.category].plural}
+                      </span>
+                    </span>
+                    <span className="text-[10px] tabular-nums text-text-dim shrink-0">{item.count}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Container>
+      </section>
+
       <section id="free-check" className="relative py-20 bg-base-darker border-y border-border scroll-mt-16">
         <Container>
           <div className="max-w-2xl mx-auto">

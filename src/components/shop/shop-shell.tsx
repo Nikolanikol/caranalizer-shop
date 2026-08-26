@@ -1,9 +1,10 @@
 import React from 'react';
+import { ChevronRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 // CATEGORIES живёт в серверном слое каталога, пути — в urls: этот файл серверный,
 // поэтому импорт безопасен, но брать адреса из urls дешевле.
 import { CATEGORIES } from '@/lib/shop/catalog';
-import { categoryUrl } from '@/lib/shop/urls';
+import { SHOP_BASE, categoryUrl } from '@/lib/shop/urls';
 import type { PartCategory } from '@/types/part';
 
 /**
@@ -22,38 +23,89 @@ import type { PartCategory } from '@/types/part';
  */
 
 /**
- * Шапка страницы раздела: заголовок слева, пилюли категорий справа сверху.
+ * Шапка страницы раздела: заголовок сверху, полоса категорий под ним.
+ *
+ * Раньше пилюли стояли справа от заголовка. С двумя категориями это работало, с
+ * одиннадцатью — нет: `shrink-0` отдавал им всю нужную ширину, и «Блоки управления
+ * двигателем BMW 3 Series» разъезжался на шесть строк, а сами пилюли обрезались краем
+ * экрана. Под заголовком они не отнимают у него ширину и переносятся на вторую строку.
+ *
+ * Геометрия одинакова на всех страницах раздела — правило, из которого этот файл
+ * и появился, никуда не делось: заголовок и полоса стоят на одних координатах везде.
  *
  * Отступы намеренно низкие. В прежнем виде шапка каталога съедала весь первый экран:
  * первый товар начинался на 598 пикселе при высоте окна 720, а на телефоне — сильно ниже.
- *
- * Размер h1 — `text-3xl sm:text-4xl`, на ступень выше подзаголовков раздела. При `text-2xl`
- * он читался слабее пилюль справа, и заголовок страницы выглядел отсутствующим.
  */
 export function ShopHeader({
   heading,
   intro,
   activeCategory,
+  trail,
 }: {
   heading: string;
   intro: string;
   /** Подсвеченная пилюля. На витрине категории нет — не подсвечена ни одна. */
   activeCategory?: PartCategory;
+  /**
+   * Путь до страницы. Последняя ступень — сама страница, у неё адреса нет.
+   *
+   * Живёт в шапке, а не в каждой странице: без крошек со страницы модели нельзя было
+   * подняться к марке — полоса категорий уводит на верхний уровень, а промежуточные
+   * ступени в разметке просто отсутствовали.
+   */
+  trail?: { name: string; href?: string }[];
 }) {
   return (
     <div className="relative bg-base border-b border-border-subtle py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
-      <div className="relative max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-        <div className="space-y-2 min-w-0">
-          <h1 className="text-3xl sm:text-4xl font-black text-text tracking-tight leading-tight">{heading}</h1>
-          <p className="max-w-2xl text-xs sm:text-sm text-text-secondary leading-relaxed line-clamp-2">{intro}</p>
+      <div className="relative max-w-7xl mx-auto space-y-4">
+        {trail && trail.length > 0 && (
+          <nav
+            aria-label="Хлебные крошки"
+            className="flex items-center flex-wrap gap-1 text-[10px] font-bold uppercase tracking-widest text-text-muted"
+          >
+            {trail.map((step, index) => (
+              <React.Fragment key={`${step.href ?? 'current'}-${step.name}`}>
+                {index > 0 && <ChevronRight className="w-3 h-3" />}
+                {step.href ? (
+                  <Link href={step.href} className="hover:text-text transition-colors">
+                    {step.name}
+                  </Link>
+                ) : (
+                  <span aria-current="page" className="text-text-secondary">
+                    {step.name}
+                  </span>
+                )}
+              </React.Fragment>
+            ))}
+          </nav>
+        )}
+
+        <div className="space-y-2">
+          <h1 className="text-3xl sm:text-4xl font-black text-text tracking-tight leading-tight text-balance">
+            {heading}
+          </h1>
+          <p className="max-w-3xl text-xs sm:text-sm text-text-secondary leading-relaxed line-clamp-2">{intro}</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+        {/* Пилюли переносятся, а не прокручиваются: в прокрутке правый край обрезался,
+            и было не видно, что список продолжается. Все одиннадцать типов деталей
+            должны читаться сразу — это единственная навигация по разделу. */}
+        <nav aria-label="Типы деталей" className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <Link
+            href={SHOP_BASE}
+            className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded text-[10px] font-bold uppercase tracking-wide sm:tracking-widest transition-colors ${
+              activeCategory
+                ? 'bg-base-darker border border-border-subtle text-text-secondary hover:text-text'
+                : 'bg-cta text-base-darker'
+            }`}
+          >
+            Все запчасти
+          </Link>
           {(Object.keys(CATEGORIES) as PartCategory[]).map((key) => (
             <Link
               key={key}
               href={categoryUrl(key)}
-              className={`px-4 py-2 rounded text-[10px] font-bold uppercase tracking-widest transition-colors ${
+              className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded text-[10px] font-bold uppercase tracking-wide sm:tracking-widest transition-colors ${
                 activeCategory === key
                   ? 'bg-cta text-base-darker'
                   : 'bg-base-darker border border-border-subtle text-text-secondary hover:text-text'
@@ -62,7 +114,7 @@ export function ShopHeader({
               {CATEGORIES[key].plural}
             </Link>
           ))}
-        </div>
+        </nav>
       </div>
     </div>
   );

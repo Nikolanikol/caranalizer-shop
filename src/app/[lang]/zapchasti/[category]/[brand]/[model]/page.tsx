@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import {
   CATEGORIES,
-  getAllParts,
+  getLandingPaths,
   getBrandBySlug,
   getModelBySlug,
   isCategory,
@@ -21,17 +21,13 @@ import { CatalogView, type CatalogSearchParams } from '@/components/shop/catalog
 export async function generateStaticParams({ params }: { params: { lang: string } }) {
   if (params.lang !== SHOP_LOCALE) return [];
 
-  const parts = await getAllParts();
-  const seen = new Set<string>();
-
-  return parts
-    .map((part) => ({ category: part.category, brand: part.brandSlug, model: part.modelSlug }))
-    .filter((entry) => {
-      const key = `${entry.category}/${entry.brand}/${entry.model}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+  // Готовые тройки вместо перебора всего каталога: тянуть 18 тысяч товаров ради
+  // полутора тысяч уникальных адресов моделей — лишняя работа на каждой сборке.
+  const { models } = await getLandingPaths();
+  return [...models].map((path) => {
+    const [category, brand, model] = path.split('/');
+    return { category, brand, model };
+  });
 }
 
 export async function generateMetadata({

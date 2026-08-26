@@ -15,6 +15,10 @@ import type { AutoPart, PartCategory } from '@/types/part';
  *   /zapchasti/zadnie-fonari/bmw                                        марка
  *   /zapchasti/zadnie-fonari/bmw/5-series                               модель
  *   /zapchasti/zadnie-fonari/bmw/5-series/vnutrenniy-pravyy-63217376474 товар
+ *
+ * Особняком стоит страница артикула:
+ *   /zapchasti/oem/92101T1100                                           совместимость
+ * Она не уровень иерархии, а вход сбоку — по номеру, а не по машине.
  */
 
 /**
@@ -34,6 +38,20 @@ export const SHOP_BASE = '/zapchasti';
  * не был строкой в двух местах.
  */
 export const SHOP_CATALOG_LEGACY = `${SHOP_BASE}/katalog`;
+
+/**
+ * Страница артикула: на каких машинах встречается номер.
+ *
+ * Сегмент `oem` статический, поэтому Next разбирает его раньше динамического
+ * `[category]` — столкновения с `/zapchasti/<категория>/<марка>` не будет.
+ *
+ * Номер в адрес идёт как есть, в верхнем регистре: именно так его печатают в поиске
+ * и именно так он лежит в базе. Разделители донор ставит по-разному, поэтому
+ * страница сама ищет и по очищенному виду тоже.
+ */
+export function oemUrl(oemNumber: string): string {
+  return `${SHOP_BASE}/oem/${encodeURIComponent(oemNumber.toUpperCase())}`;
+}
 
 /** Язык у магазина один: каталог и карточки товаров существуют только на русском. */
 export const SHOP_LOCALE = 'ru';

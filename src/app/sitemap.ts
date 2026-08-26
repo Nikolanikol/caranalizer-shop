@@ -3,7 +3,8 @@ import {
   CATEGORIES,
   brandUrl,
   categoryUrl,
-  getAllParts,
+  getIndexableParts,
+  getLandingPaths,
   modelUrl,
   partUrl,
 } from "@/lib/shop/catalog";
@@ -69,17 +70,22 @@ function shopEntry(path: string, freq: "daily" | "weekly" | "monthly", priority:
 }
 
 async function shopPages(): Promise<MetadataRoute.Sitemap> {
-  const parts = await getAllParts();
+  // Карточки — только те, что переживают продажу: у детали с одним экземпляром
+  // страница умрёт вместе с товаром, и в карте сайта ей не место (см. AGENTS.md).
+  const parts = await getIndexableParts();
 
-  // Уровни иерархии собираем из самих товаров: каждый сегмент пути — реальная страница.
-  // Сегмент `prochee` пропускаем: страница модели закрывает его от индексации сама,
-  // и держать его в карте — противоречить самим себе.
-  const brands = new Set<string>();
-  const models = new Set<string>();
-  for (const part of parts) {
-    brands.add(brandUrl(part.category, part.brandSlug));
-    if (part.model) models.add(modelUrl(part.category, part.brandSlug, part.modelSlug));
-  }
+  // Посадочные страницы берём по всему каталогу, а не по индексируемым карточкам:
+  // марка и модель живут, пока у них есть хоть один товар. Сегмент `prochee`
+  // пропускаем — страница модели закрывает его от индексации сама.
+  const landing = await getLandingPaths();
+  const brands = new Set([...landing.brands].map((path) => {
+    const [category, brand] = path.split('/');
+    return brandUrl(category as PartCategory, brand);
+  }));
+  const models = new Set([...landing.models].map((path) => {
+    const [category, brand, model] = path.split('/');
+    return modelUrl(category as PartCategory, brand, model);
+  }));
 
   return [
     shopEntry("/zapchasti", "weekly", 0.9),

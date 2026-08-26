@@ -8,7 +8,7 @@ import { SITE_URL } from '@/lib/site';
 export const metadata: Metadata = {
   title: 'Гарантия и возврат запчастей',
   description:
-    'Условия гарантии и возврата на б/у оптику из Южной Кореи: что делать, если деталь не подошла или повреждена при доставке.',
+    'Условия гарантии и возврата на б/у запчасти из Южной Кореи: что делать, если деталь не подошла или повреждена при доставке.',
   alternates: { canonical: shopUrl('/zapchasti/garantiya-i-vozvrat', SITE_URL) },
 };
 

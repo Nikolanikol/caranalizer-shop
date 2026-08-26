@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from '@/i18n/navigation';
 import { PackageSearch } from 'lucide-react';
 import {
+  CATEGORIES,
   SHOP_BASE,
   brandUrl,
   catalogUrl,
@@ -90,6 +91,32 @@ export async function CatalogView({
           ? categoryUrl(category)
           : SHOP_BASE);
 
+  /*
+   * Хлебные крошки строим здесь: категория, марка и модель уже известны компоненту,
+   * и дописывать их в каждую из трёх страниц значило бы завести три расходящиеся копии.
+   * Последняя ступень — сама страница, у неё адреса нет.
+   *
+   * На витрине крошек нет вовсе: подниматься с неё некуда.
+   */
+  const steps = category
+    ? [
+        { name: 'Запчасти', href: SHOP_BASE },
+        { name: CATEGORIES[category].plural, href: categoryUrl(category) },
+        ...(brand ? [{ name: brand.name, href: brandUrl(category, brand.slug) }] : []),
+        // Модель отбрасывается по пустому имени, а не по отсутствию сегмента: у товаров
+        // без модели сегмент есть (`prochee`), а имени нет — и ступень выходила пустой,
+        // с висящей стрелкой и ссылкой марки на саму себя.
+        ...(brand && model?.name
+          ? [{ name: model.name, href: modelUrl(category, brand.slug, model.slug) }]
+          : []),
+      ].filter((step) => step.name)
+    : [];
+
+  // Последняя ступень — текущая страница, ссылки у неё быть не должно.
+  const trail = steps.length
+    ? steps.map((step, index) => (index === steps.length - 1 ? { name: step.name } : step))
+    : undefined;
+
   const result = await findParts({
     category,
     brandSlug: brand?.slug,
@@ -120,7 +147,7 @@ export async function CatalogView({
 
   return (
     <>
-      <ShopHeader heading={heading} intro={intro} activeCategory={category} />
+      <ShopHeader heading={heading} intro={intro} activeCategory={category} trail={trail} />
 
       <ShopFrame
         sidebar={

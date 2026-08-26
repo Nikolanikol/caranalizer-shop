@@ -19,7 +19,7 @@ export async function generateMetadata({
     ar: "اتصل بنا — طلب قطع غيار السيارات الكورية | Caranalizer",
   };
   const descriptions: Record<string, string> = {
-    ru: "Свяжитесь с нами: проверка автомобиля по VIN, подбор б/у оптики с корейских разборов, расчёт доставки. Отвечаем в Telegram и WhatsApp.",
+    ru: "Свяжитесь с нами: проверка автомобиля по VIN, подбор б/у запчастей с корейских разборов, расчёт доставки. Отвечаем в Telegram и WhatsApp.",
     en: "Contact us to order genuine Hyundai, Kia, Genesis parts from Korea. Fast response, expert help finding the right part.",
     ar: "تواصل معنا لطلب قطع غيار هيونداي وكيا وجينيسيس الأصلية من كوريا. رد سريع ومساعدة في اختيار القطعة المناسبة.",
   };

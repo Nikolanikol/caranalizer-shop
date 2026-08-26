@@ -7,8 +7,8 @@ import { twMerge } from "tailwind-merge";
  * Единственное, что здесь осталось. Рядом жили `normalizeManufacturer`,
  * `getCategoryName` и `getProductName` — они работали с моделью товара первого
  * магазина (`name_ru`, `part_number`, `category_id`), которой больше нет.
- * Настоящая модель — `types/part.ts`, названия в ней уже нормализованы
- * скриптом `normalize:parts`.
+ * Настоящая модель — `types/part.ts`: деталь и экземпляр разведены, данные приходят
+ * из Supabase через `lib/shop/catalog.ts`.
  */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
