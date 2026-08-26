@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Container } from "@/components/ui/container";
@@ -103,7 +104,7 @@ function AboutContent() {
         >
           <Container className="max-w-4xl py-10">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-border-subtle">
-              {stats.map((s, i) => (
+              {stats.map((s) => (
                 <div key={s.label} className="text-center px-6 py-4">
                   <span
                     className="font-[family-name:var(--font-heading)] text-[32px] font-bold block"
@@ -191,10 +192,12 @@ function AboutContent() {
 
             <ScrollReveal delay={0.15}>
               <div className="relative rounded-2xl overflow-hidden border border-border-subtle shadow-[0_8px_32px_rgba(0,0,0,0.3)] aspect-[4/3]">
-                <img
+                <Image
                   src="/mobis-factory.jpg"
                   alt="Hyundai Mobis factory in Asan, South Korea"
-                  className="absolute inset-0 w-full h-full object-cover"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover"
                 />
                 <div
                   className="absolute inset-0"

@@ -114,6 +114,10 @@ export default async function LangLayout({
       </Script>
       <noscript>
         <div>
+          {/* Счётчик Метрики для браузеров без JS. Именно <img>: next/image рисует
+              разметку и грузит через свой загрузчик, а здесь нужен один голый запрос
+              к чужому домену — оптимизировать нечего. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="https://mc.yandex.ru/watch/108825981" style={{ position: 'absolute', left: '-9999px' }} alt="" />
         </div>
       </noscript>

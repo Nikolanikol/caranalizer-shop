@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { useTranslations, useLocale } from "next-intl";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { setRequestLocale } from "next-intl/server";
 import { Container } from "@/components/ui/container";
 import { Search, FileText, MessageCircle, Truck } from "lucide-react";
 import { DeliveryMap } from "@/components/DeliveryMap";
 import { KmotorsBanner } from "@/components/KmotorsBanner";
 import { PartsBanner } from "@/components/PartsBanner";
-import type { Locale } from "@/i18n/routing";
 import { mainAlternates, mainUrl } from "@/lib/seo";
 
 

@@ -42,9 +42,17 @@ export function CartProvider({ children, rates }: { children: React.ReactNode; r
   const [isOpen, setIsOpen] = useState(false);
 
   // Читаем после монтирования: на сервере localStorage нет, иначе разъедется гидратация.
+  //
+  // Правило react-hooks/set-state-in-effect на это ругается, и по делу — но лечится
+  // оно не переносом строки, а переводом корзины на useSyncExternalStore с кэшем
+  // снимка: getSnapshot обязан возвращать ту же ссылку, пока данные не менялись,
+  // а JSON.parse каждый раз отдаёт новый массив и роняет рендер в бесконечный цикл.
+  // Это отдельная работа по самому денежному клиентскому компоненту, и делать её
+  // заодно с чем-то другим нельзя: ошибка здесь стоит покупателю потерянной корзины.
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (saved) setItems(JSON.parse(saved));
     } catch {
       // повреждённая корзина — не повод падать

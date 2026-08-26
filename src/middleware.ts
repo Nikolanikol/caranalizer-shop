@@ -6,11 +6,55 @@ import { SHOP_BASE, SHOP_LOCALE } from "./lib/shop/urls";
 
 const intlMiddleware = createMiddleware(routing);
 
-// Магазин переехал на K-Axis: товарные разделы отдают постоянный 301,
-// чтобы накопленный поисковый сигнал перетёк на kmotors.shop.
-// ВАЖНО: цели редиректов — чистые URL без UTM: /{lang}/parts на KMotors
-// ставит noindex при любом query-параметре.
-const KMOTORS = "https://www.kmotors.shop";
+/**
+ * Прежний магазин: пути удалены и отвечают 410, а не редиректом.
+ *
+ * Раньше они отдавали 301 на kmotors.shop, чтобы накопленный поисковый сигнал перетёк
+ * на вторую площадку. Проверено 26.08.2026 — не перетекал: `kmotors.shop/ru/parts/<что
+ * угодно>` отдаёт 200 с `<meta name="robots" content="noindex">` и одну и ту же
+ * generic-страницу хоть на настоящий артикул, хоть на выдуманный. Робот шёл по
+ * редиректу и получал «не индексируй меня», то есть склеивать было не с чем.
+ *
+ * 410 говорит прямо: страницы больше нет. Из индекса такие адреса выпадают быстрее,
+ * чем при 404, и робот почти не возвращается их перепроверять. Это единственный рычаг,
+ * который у нас есть: в отчёте «обнаружена, не проиндексирована» лежит хвост прежнего
+ * магазина на 307 755 адресов, инструмента «удалить хвост» не существует, и уходит он
+ * сам — если адреса честно отвечают «удалено» и никуда не ведут.
+ *
+ * Оборотная сторона принята сознательно: остаток сигнала этих адресов теряется.
+ * Терять там было уже нечего — цель редиректа сама стояла под noindex.
+ *
+ * ВАЖНО: не закрывать эти пути в robots.txt. Заблокированный адрес робот не обходит,
+ * значит и 410 по нему не увидит, и адрес останется в отчёте навсегда. Правило общее:
+ * ответ и `Disallow` несовместимы, выбирать надо одно.
+ */
+const LEGACY_SHOP =
+  /^\/(?:(?:ru|en|ar)\/)?(?:parts(?:\/.*)?|catalog(?:\/.*)?|vehicles(?:\/.*)?|cart\/?|checkout\/?)$/;
+
+/**
+ * Страница для человека. Робот смотрит на код ответа, а посетителю по старой закладке
+ * нужно объяснить, куда делся магазин, — поэтому не пустое тело.
+ */
+const GONE_PAGE = `<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Страница удалена — Caranalizer</title>
+<style>
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0f172a;
+    color:#e2e8f0;font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  main{max-width:32rem;padding:2rem;text-align:center}
+  h1{font-size:1.5rem;margin:0 0 .75rem}
+  p{margin:0 0 1.5rem;color:#94a3b8}
+  a{display:inline-block;padding:.75rem 1.25rem;border-radius:.5rem;
+    background:#38bdf8;color:#0f172a;text-decoration:none;font-weight:600}
+</style></head>
+<body><main>
+  <h1>Этой страницы больше нет</h1>
+  <p>Прежний каталог закрыт. Запчасти с корейских авторазборов теперь в новом разделе —
+     18 655 деталей с поиском по артикулу.</p>
+  <a href="/ru/zapchasti">Перейти в каталог запчастей</a>
+</main></body></html>`;
 
 /**
  * Заголовок, по которому next-intl узнаёт язык запроса. Имя внутреннее для пакета
@@ -37,35 +81,13 @@ const VIN_ROUTE = VIN_PATHS.ru;
 export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // /:lang?/parts[/slug] → тот же адрес на KMotors. Форматы слага идентичны:
-  // part_number или id-N; legacy "PN--name"/"PN--" KMotors нормализует сам.
-  //
-  // Слаг необязателен: /parts и /ru/parts — индексная страница прежнего каталога,
-  // и у KMotors ровно такой адрес есть. Без этого они отдавали 404, то есть
-  // накопленный по ним сигнал просто терялся вместо перехода на вторую площадку.
-  const parts = pathname.match(/^\/(?:(ru|en|ar)\/)?parts(?:\/(.*))?$/);
-  if (parts) {
-    const lang = parts[1] ?? "ru";
-    const slug = (parts[2] ?? "").replace(/-+$/, "");
-    const target = slug ? `${KMOTORS}/${lang}/parts/${slug}` : `${KMOTORS}/${lang}/parts`;
-    return NextResponse.redirect(target, 301);
-  }
-
-  // Каталог и страницы моделей → каталог запчастей KMotors (пер-категорийных
-  // и пер-модельных URL у KMotors нет)
-  const listing = pathname.match(/^\/(?:(ru|en|ar)\/)?(?:catalog|vehicles)(?:\/.*)?$/);
-  if (listing) {
-    const lang = listing[1] ?? "ru";
-    return NextResponse.redirect(`${KMOTORS}/${lang}/parts`, 301);
-  }
-
-  // Корзина/чекаут упразднены → на главную соответствующего языка
-  const shop = pathname.match(/^\/(?:(ru|en|ar)\/)?(?:cart|checkout)\/?$/);
-  if (shop) {
-    const url = req.nextUrl.clone();
-    url.pathname = `/${shop[1] ?? "ru"}`;
-    url.search = "";
-    return NextResponse.redirect(url, 301);
+  // Прежний магазин: /parts, /catalog, /vehicles, /cart, /checkout — с языковым
+  // префиксом и без. Подробности и почему именно 410 — в комментарии к LEGACY_SHOP.
+  if (LEGACY_SHOP.test(pathname)) {
+    return new NextResponse(GONE_PAGE, {
+      status: 410,
+      headers: { "content-type": "text/html; charset=utf-8" },
+    });
   }
 
   // Прежний полный каталог: витрина получила фильтр, сортировку и пагинацию, после чего

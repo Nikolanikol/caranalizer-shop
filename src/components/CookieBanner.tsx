@@ -1,28 +1,54 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import { useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { X } from "lucide-react";
 
 const STORAGE_KEY = "ca-cookie-consent";
 
+/**
+ * Согласие лежит в localStorage — то есть вне React и только в браузере.
+ *
+ * Читаем его через useSyncExternalStore, а не установкой состояния из эффекта:
+ * на сервере localStorage нет, а эффект давал лишний проход рендера, на котором
+ * баннер успевал мигнуть уже согласившемуся посетителю. `getServerSnapshot`
+ * возвращает «согласие есть», поэтому на сервере баннер не рисуется вовсе
+ * и гидратация не расходится.
+ */
+let listeners: Array<() => void> = [];
+
+function subscribe(onChange: () => void) {
+  listeners.push(onChange);
+  return () => {
+    listeners = listeners.filter((listener) => listener !== onChange);
+  };
+}
+
+function hasConsent() {
+  try {
+    return localStorage.getItem(STORAGE_KEY) !== null;
+  } catch {
+    // Приватный режим: хранить ответ негде, и спрашивать каждый раз заново — хуже
+    // молчания. Считаем, что спрашивать не о чем.
+    return true;
+  }
+}
+
+function grantConsent() {
+  try {
+    localStorage.setItem(STORAGE_KEY, "accepted");
+  } catch {
+    // Не сохранилось — баннер вернётся в следующий раз. Падать тут не из-за чего.
+  }
+  for (const listener of listeners) listener();
+}
+
 export function CookieBanner() {
   const locale = useLocale();
-  const [visible, setVisible] = useState(false);
+  const consented = useSyncExternalStore(subscribe, hasConsent, () => true);
 
-  useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      setVisible(true);
-    }
-  }, []);
-
-  function accept() {
-    localStorage.setItem(STORAGE_KEY, "accepted");
-    setVisible(false);
-  }
-
-  if (!visible) return null;
+  if (consented) return null;
 
   const t = {
     ru: {
@@ -57,13 +83,13 @@ export function CookieBanner() {
         </p>
         <div className="flex items-center gap-3 shrink-0">
           <button
-            onClick={accept}
+            onClick={grantConsent}
             className="px-5 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-hover transition-colors"
           >
             {t.btn}
           </button>
           <button
-            onClick={accept}
+            onClick={grantConsent}
             className="p-1.5 text-text-dim hover:text-text transition-colors"
             aria-label="Close"
           >

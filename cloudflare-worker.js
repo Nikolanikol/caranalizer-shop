@@ -10,7 +10,7 @@ const AR_COUNTRIES = new Set([
   "LY", "TN", "MA", "DZ", "SD", "MR", "SO", "DJ", "KM",
 ]);
 
-export default {
+const worker = {
   async fetch(request) {
     const url = new URL(request.url);
     const pathname = url.pathname;
@@ -42,3 +42,5 @@ export default {
     return Response.redirect(`${url.origin}/${locale}${pathname === "/" ? "" : pathname}`, 302);
   },
 };
+
+export default worker;

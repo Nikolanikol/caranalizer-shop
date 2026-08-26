@@ -17,10 +17,8 @@ export function StatCounter({ value, className }: StatCounterProps) {
   const isNumeric = !isNaN(numeric) && numeric > 0;
 
   useEffect(() => {
-    if (!isNumeric) {
-      setDisplayed(value);
-      return;
-    }
+    // Нечисловое значение анимировать нечего — оно рисуется напрямую при рендере.
+    if (!isNumeric) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -53,7 +51,7 @@ export function StatCounter({ value, className }: StatCounterProps) {
 
   return (
     <span ref={ref} className={className}>
-      {displayed}
+      {isNumeric ? displayed : value}
     </span>
   );
 }

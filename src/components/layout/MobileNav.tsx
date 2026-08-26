@@ -30,9 +30,14 @@ export function MobileNav() {
       : NAV_KEYS;
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
+  // Закрываем меню при переходе на другую страницу. Сравнением при рендере,
+  // а не эффектом: это рекомендованный React способ сбросить состояние при смене
+  // пропа, и он не даёт лишнего прохода, на котором меню висит поверх новой страницы.
+  const [shownPath, setShownPath] = useState(pathname);
+  if (shownPath !== pathname) {
+    setShownPath(pathname);
     setOpen(false);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
