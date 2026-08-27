@@ -21,10 +21,13 @@ export function AddToCart({
   part,
   offer,
   size = 'normal',
+  label = 'В корзину',
 }: {
   part: AutoPart;
   offer?: Offer;
   size?: 'normal' | 'large';
+  /** Подпись приходит сверху: компонент клиентский, а язык известен странице. */
+  label?: string;
 }) {
   const { add } = useCart();
 
@@ -53,7 +56,7 @@ export function AddToCart({
       }`}
     >
       <ShoppingCart className="w-4 h-4" />
-      <span>В корзину</span>
+      <span>{label}</span>
     </button>
   );
 }

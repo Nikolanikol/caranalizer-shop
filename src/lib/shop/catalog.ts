@@ -697,6 +697,70 @@ export async function getSimilarParts(part: AutoPart, limit = 4): Promise<AutoPa
   return attachCovers(((data ?? []) as unknown as ProductRow[]).map(toPart));
 }
 
+/**
+ * Артикулы, которым место в карте сайта, — те, у которых есть совместимость.
+ *
+ * Страница артикула переживает продажу, только если может показать «встречается на этих
+ * машинах»: список берётся из `partsfit_fitment`, а он выводится из товаров и от наличия
+ * не зависит. Артикулов без совместимости 1 047 из 16 755 — у донора по ним расходится
+ * тип детали или сторона, и такие строки в таблицу не попадают намеренно. Их страница
+ * держится только на товаре: пропадёт товар — останется 404, поэтому в карту они не идут
+ * и закрыты `noindex` (ветка `!fitment.length` в `generateMetadata`).
+ *
+ * Это то же правило, по которому в карту не идут карточки с одним экземпляром.
+ *
+ * Читается через `selectAll`: строк 16 407, а PostgREST отдаёт тысячу и молчит об этом.
+ */
+export async function getIndexableOemNumbers(): Promise<string[]> {
+  const db = createServerClient();
+  const rows = await selectAll<{ oem_number: string }>((from, to) =>
+    db.from('partsfit_fitment').select('oem_number').order('oem_number').range(from, to),
+  );
+  return [...new Set(rows.map((row) => row.oem_number).filter(Boolean))];
+}
+
+/**
+ * Настоящая цена позиций корзины — в вонах, прямо из базы.
+ *
+ * Нужна затем, что тело запроса на `/api/checkout` приходит из браузера и подделывается.
+ * До этой функции сервер печатал присланную рублёвую сумму как есть, и подменённый
+ * запрос присылал «1 ₽ за штуку» — менеджер выставлял счёт по этой цифре.
+ *
+ * Ключ корзины двузначен по происхождению, и обе ветки настоящие:
+ *
+ * - выбран экземпляр (карточка товара) — `id` это `product_no` донора, он лежит
+ *   в `partsfit_offers`, и цена у него своя: между экземплярами одной детали она
+ *   отличается вдвое;
+ * - экземпляр не выбран (списки товаров) — `id` это путь товара, и показанной ценой
+ *   была минимальная по странице, то есть `price_krw_min` из `partsfit_products`.
+ *
+ * Экземпляр главнее: если один и тот же ключ нашёлся в обеих таблицах, берём его.
+ * Не найденный ключ в карту не попадает вовсе — вызывающий обязан различать
+ * «цена проверена» и «такой позиции в каталоге нет», а не подставлять ноль.
+ */
+export async function getPricesKrwByCartId(ids: string[]): Promise<Map<string, number>> {
+  const unique = [...new Set(ids.filter((id) => typeof id === 'string' && id.length > 0))];
+  const prices = new Map<string, number>();
+  if (!unique.length) return prices;
+
+  const db = createServerClient();
+  const [products, offers] = await Promise.all([
+    db.from('partsfit_products').select('id, price_krw_min').in('id', unique),
+    db.from('partsfit_offers').select('id, price_krw').in('id', unique),
+  ]);
+  if (products.error) throw new Error(`Каталог, цены товаров: ${products.error.message}`);
+  if (offers.error) throw new Error(`Каталог, цены экземпляров: ${offers.error.message}`);
+
+  for (const row of (products.data ?? []) as { id: string; price_krw_min: number }[]) {
+    prices.set(row.id, row.price_krw_min);
+  }
+  // Экземпляр перекрывает товар: он конкретнее, и именно его положили в корзину.
+  for (const row of (offers.data ?? []) as { id: string; price_krw: number }[]) {
+    prices.set(row.id, row.price_krw);
+  }
+  return prices;
+}
+
 // Сборщики адресов переехали в lib/urls.ts: этот файл серверный, а корзине они
 // тоже нужны. Реэкспорт — чтобы существующие импорты из '@/lib/catalog' продолжали работать.
 export { SHOP_BASE, partUrl, categoryUrl, brandUrl, modelUrl, catalogUrl } from './urls';

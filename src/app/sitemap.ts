@@ -3,12 +3,14 @@ import {
   CATEGORIES,
   brandUrl,
   categoryUrl,
+  getIndexableOemNumbers,
   getIndexableParts,
   getLandingPaths,
   modelUrl,
   partUrl,
 } from "@/lib/shop/catalog";
-import { SHOP_LOCALE } from "@/lib/shop/urls";
+import { oemUrl } from "@/lib/shop/urls";
+import { SHOP_LOCALE, SHOP_LOCALES } from "@/lib/shop/urls";
 import { SITE_URL as BASE } from "@/lib/site";
 import { MAIN_LOCALE, VIN_PATHS, mainUrl, type VinLocale } from "@/lib/seo";
 import type { PartCategory } from "@/types/part";
@@ -62,11 +64,33 @@ function vinEntries(): MetadataRoute.Sitemap {
 }
 
 /**
- * Раздел запчастей: только русский и без hreflang-альтернатив — других языковых
- * версий у этих страниц не существует, и объявлять их было бы прямой ложью карте сайта.
+ * Раздел запчастей: по одной записи на каждый язык из `SHOP_LOCALES`, и у каждой полный
+ * набор `hreflang`.
+ *
+ * Раньше здесь был только русский — раздел был одноязычным. С 27.08.2026 у него есть
+ * английская версия, и объявить её обязательно: без `hreflang` Google считает две
+ * страницы с одинаковой структурой дублями и склеивает их сам, как правило не в нашу
+ * пользу. `x-default` ведёт на русскую — она старше и полнее по текстам.
+ *
+ * Одна запись превращается в две, поэтому карта сайта растёт вдвое. Это осознанно:
+ * половина поисковых кликов у прежнего магазина приходила на иноязычные адреса.
  */
-function shopEntry(path: string, freq: "daily" | "weekly" | "monthly", priority: number) {
-  return { url: `${BASE}/${SHOP_LOCALE}${path}`, changeFrequency: freq, priority };
+function shopEntries(
+  path: string,
+  freq: "daily" | "weekly" | "monthly",
+  priority: number
+): MetadataRoute.Sitemap {
+  const languages = {
+    ...Object.fromEntries(SHOP_LOCALES.map((l) => [l, `${BASE}/${l}${path}`])),
+    "x-default": `${BASE}/${SHOP_LOCALE}${path}`,
+  };
+
+  return SHOP_LOCALES.map((locale) => ({
+    url: `${BASE}/${locale}${path}`,
+    changeFrequency: freq,
+    priority,
+    alternates: { languages },
+  }));
 }
 
 async function shopPages(): Promise<MetadataRoute.Sitemap> {
@@ -78,6 +102,13 @@ async function shopPages(): Promise<MetadataRoute.Sitemap> {
   // марка и модель живут, пока у них есть хоть один товар. Сегмент `prochee`
   // пропускаем — страница модели закрывает его от индексации сама.
   const landing = await getLandingPaths();
+
+  /*
+   * Страницы артикулов. Опубликованы 28.08.2026: до этого лежали под `noindex`
+   * и вне карты, пока не осядет хвост прежнего магазина. Берём только те, у которых
+   * есть совместимость, — остальные не переживут продажу, подробности в `catalog.ts`.
+   */
+  const oems = await getIndexableOemNumbers();
   const brands = new Set([...landing.brands].map((path) => {
     const [category, brand] = path.split('/');
     return brandUrl(category as PartCategory, brand);
@@ -88,16 +119,17 @@ async function shopPages(): Promise<MetadataRoute.Sitemap> {
   }));
 
   return [
-    shopEntry("/zapchasti", "weekly", 0.9),
-    shopEntry("/zapchasti/kak-zakazat", "monthly", 0.5),
-    shopEntry("/zapchasti/dostavka-i-oplata", "monthly", 0.5),
-    shopEntry("/zapchasti/garantiya-i-vozvrat", "monthly", 0.5),
-    ...(Object.keys(CATEGORIES) as PartCategory[]).map((category) =>
-      shopEntry(categoryUrl(category), "daily", 0.9)
+    ...shopEntries("/zapchasti", "weekly", 0.9),
+    ...shopEntries("/zapchasti/kak-zakazat", "monthly", 0.5),
+    ...shopEntries("/zapchasti/dostavka-i-oplata", "monthly", 0.5),
+    ...shopEntries("/zapchasti/garantiya-i-vozvrat", "monthly", 0.5),
+    ...(Object.keys(CATEGORIES) as PartCategory[]).flatMap((category) =>
+      shopEntries(categoryUrl(category), "daily", 0.9)
     ),
-    ...[...brands].map((path) => shopEntry(path, "daily", 0.8)),
-    ...[...models].map((path) => shopEntry(path, "daily", 0.8)),
-    ...parts.map((part) => shopEntry(partUrl(part), "weekly", 0.7)),
+    ...[...brands].flatMap((path) => shopEntries(path, "daily", 0.8)),
+    ...[...models].flatMap((path) => shopEntries(path, "daily", 0.8)),
+    ...parts.flatMap((part) => shopEntries(partUrl(part), "weekly", 0.7)),
+    ...oems.flatMap((oem) => shopEntries(oemUrl(oem), "weekly", 0.7)),
   ];
 }
 

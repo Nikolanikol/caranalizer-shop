@@ -2,12 +2,23 @@
 
 import React, { useState } from 'react';
 import { ImageOff } from 'lucide-react';
+import type { ShopLocale } from '@/lib/shop/terms';
+import { ui } from '@/lib/shop/ui-text';
 
 /**
  * Галерея карточки товара. Фото — главное, что есть у б/у детали:
  * покупатель принимает решение по ним, поэтому лента полная, без обрезки.
  */
-export function Gallery({ images, alt }: { images: string[]; alt: string }) {
+export function Gallery({
+  images,
+  alt,
+  locale = 'ru',
+}: {
+  images: string[];
+  alt: string;
+  locale?: ShopLocale;
+}) {
+  const t = ui(locale);
   const [active, setActive] = useState(0);
   const [failed, setFailed] = useState<Record<number, boolean>>({});
 
@@ -15,7 +26,7 @@ export function Gallery({ images, alt }: { images: string[]; alt: string }) {
     return (
       <div className="w-full aspect-[4/3] bg-base-darker border border-border-subtle rounded flex flex-col items-center justify-center text-text-dim">
         <ImageOff className="w-10 h-10 mb-2 opacity-40" />
-        <span className="text-[10px] font-bold uppercase tracking-widest">Фото нет</span>
+        <span className="text-[10px] font-bold uppercase tracking-widest">{t.noPhoto}</span>
       </div>
     );
   }
@@ -46,7 +57,7 @@ export function Gallery({ images, alt }: { images: string[]; alt: string }) {
               key={image}
               type="button"
               onClick={() => setActive(index)}
-              aria-label={`Фото ${index + 1} из ${images.length}`}
+              aria-label={`${t.photo} ${index + 1} ${t.photoOf} ${images.length}`}
               className={`w-16 h-16 rounded overflow-hidden border shrink-0 transition-all cursor-pointer ${
                 active === index ? 'border-cta opacity-100' : 'border-border-subtle opacity-50 hover:opacity-100'
               }`}

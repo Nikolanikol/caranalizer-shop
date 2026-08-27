@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { X, Menu } from "lucide-react";
-import { SHOP_BASE, SHOP_LOCALE } from "@/lib/shop/urls";
+import { SHOP_BASE, isShopLocale } from "@/lib/shop/urls";
 
 const NAV_KEYS = [
   { key: "home", href: "/" },
@@ -25,7 +25,7 @@ export function MobileNav() {
   const locale = useLocale();
   const pathname = usePathname();
   const navItems =
-    locale === SHOP_LOCALE
+    isShopLocale(locale)
       ? [...NAV_KEYS.slice(0, 3), PARTS_ITEM, ...NAV_KEYS.slice(3)]
       : NAV_KEYS;
   const [open, setOpen] = useState(false);

@@ -1,7 +1,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Container } from "@/components/ui/container";
-import { SHOP_BASE, SHOP_LOCALE } from "@/lib/shop/urls";
+import { SHOP_BASE, isShopLocale } from "@/lib/shop/urls";
 import { partsDestination } from "@/lib/parts-destination";
 import { kmotorsUrl } from "@/lib/kmotors";
 import { Send, ExternalLink, Wrench } from "lucide-react";
@@ -23,7 +23,7 @@ export function Footer() {
   const tn = useTranslations("nav");
   const locale = useLocale();
   const year = new Date().getFullYear();
-  const navLinks = locale === SHOP_LOCALE ? [...NAV_LINKS, PARTS_ITEM] : NAV_LINKS;
+  const navLinks = isShopLocale(locale) ? [...NAV_LINKS, PARTS_ITEM] : NAV_LINKS;
 
   // По-русски ссылка ведёт в свой раздел б/у, на остальных языках — на kmotors.
   const parts = partsDestination(locale, "footer");

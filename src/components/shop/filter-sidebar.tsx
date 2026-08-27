@@ -7,6 +7,8 @@ import { SHOP_BASE, brandUrl, catalogUrl, categoryUrl, modelUrl } from '@/lib/sh
 import type { Facet } from '@/lib/shop/catalog';
 import type { PartCategory } from '@/types/part';
 import type { Segment } from './catalog-view';
+import type { ShopLocale } from '@/lib/shop/terms';
+import { ui } from '@/lib/shop/ui-text';
 
 /**
  * Фильтр — обычные ссылки, без JavaScript. Состояние живёт в адресе, поэтому
@@ -17,14 +19,18 @@ import type { Segment } from './catalog-view';
  * где категории ещё нет и пути под марку не существует.
  */
 
+/*
+ * `value` — то, что лежит в данных и уходит в адрес, поэтому оно русское и таким
+ * остаётся на всех языках: это ключ фильтра, а не подпись. Переводится только `key`.
+ */
 const SIDES = [
-  { label: 'Левая', value: 'Левый (LH)' },
-  { label: 'Правая', value: 'Правый (RH)' },
+  { key: 'sideLeft', value: 'Левый (LH)' },
+  { key: 'sideRight', value: 'Правый (RH)' },
 ];
 
 const POSITIONS = [
-  { label: 'В крыло', value: 'Внешний (в крыло)' },
-  { label: 'В крышку', value: 'Внутренний (в крышку багажника)' },
+  { key: 'positionOuter', value: 'Внешний (в крыло)' },
+  { key: 'positionInner', value: 'Внутренний (в крышку багажника)' },
 ];
 
 interface Query {
@@ -67,6 +73,7 @@ export function FilterSidebar({
   brands,
   models,
   basePath,
+  locale = 'ru',
 }: {
   category?: PartCategory;
   brand?: Segment;
@@ -76,7 +83,9 @@ export function FilterSidebar({
   brands: Facet[];
   models: Facet[];
   basePath?: string;
+  locale?: ShopLocale;
 }) {
+  const t = ui(locale);
   const base =
     basePath ??
     (model
@@ -108,7 +117,7 @@ export function FilterSidebar({
       <div className="flex items-center justify-end lg:justify-between pb-4 border-b border-border-subtle">
         <h2 className="hidden lg:flex items-center gap-3 text-sm font-bold text-text">
           <Filter className="w-4 h-4 text-text-secondary" />
-          Фильтры каталога
+          {t.filters}
         </h2>
         {hasFilters && (
           <Link
@@ -116,16 +125,16 @@ export function FilterSidebar({
             className="text-xs text-text-muted hover:text-text flex items-center gap-1 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            Сбросить
+            {t.reset}
           </Link>
         )}
       </div>
 
       <section className="space-y-2">
-        <h3 className="text-sm font-bold text-text">Марка автомобиля</h3>
+        <h3 className="text-sm font-bold text-text">{t.brand}</h3>
         <div className="max-h-[320px] overflow-y-auto custom-scrollbar pr-1">
           <Option href={allBrandsHref} active={!selectedBrandName}>
-            Все марки
+            {t.allBrands}
           </Option>
           {brands.map((facet) => (
             <Option
@@ -142,10 +151,10 @@ export function FilterSidebar({
 
       {selectedBrandName && models.length > 0 && (
         <section className="space-y-2">
-          <h3 className="text-sm font-bold text-text">Модель</h3>
+          <h3 className="text-sm font-bold text-text">{t.model}</h3>
           <div className="max-h-[320px] overflow-y-auto custom-scrollbar pr-1">
             <Option href={allModelsHref} active={!model}>
-              Все модели
+              {t.allModels}
             </Option>
             {models.map((facet) => (
               <Option
@@ -162,9 +171,9 @@ export function FilterSidebar({
       )}
 
       <section className="space-y-2">
-        <h3 className="text-sm font-bold text-text">Сторона установки</h3>
+        <h3 className="text-sm font-bold text-text">{t.side}</h3>
         <Option href={catalogUrl({ base, ...query, side: '' })} active={!query.side}>
-          Любая сторона
+          {t.anySide}
         </Option>
         {SIDES.map((side) => (
           <Option
@@ -172,16 +181,16 @@ export function FilterSidebar({
             href={catalogUrl({ base, ...query, side: side.value })}
             active={query.side === side.value}
           >
-            {side.label}
+            {t[side.key]}
           </Option>
         ))}
       </section>
 
       {category !== 'protivotumannye-fary' && (
         <section className="space-y-2">
-          <h3 className="text-sm font-bold text-text">Расположение</h3>
+          <h3 className="text-sm font-bold text-text">{t.position}</h3>
           <Option href={catalogUrl({ base, ...query, position: '' })} active={!query.position}>
-            Любое
+            {t.anyPosition}
           </Option>
           {POSITIONS.map((position) => (
             <Option
@@ -189,7 +198,7 @@ export function FilterSidebar({
               href={catalogUrl({ base, ...query, position: position.value })}
               active={query.position === position.value}
             >
-              {position.label}
+              {t[position.key]}
             </Option>
           ))}
         </section>

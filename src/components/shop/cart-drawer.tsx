@@ -1,11 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { Building2, CheckCircle2, CreditCard, Minus, Plus, QrCode, ShoppingCart, Trash2, X } from 'lucide-react';
+import { Building2, CheckCircle2, CreditCard, Landmark, Minus, Plus, QrCode, ShoppingCart, Trash2, X } from 'lucide-react';
 import { formatRub, formatUsd, priceRub, priceUsd } from '@/lib/shop/pricing';
 import { partUrl } from '@/lib/shop/urls';
 import { RUSSIAN_CITIES } from '@/lib/shop/delivery';
+import { partTitle } from '@/lib/shop/labels';
+import type { ShopLocale } from '@/lib/shop/terms';
 import { useCart } from './cart-context';
 
 type Step = 'cart' | 'checkout' | 'success';
@@ -19,15 +22,22 @@ type Step = 'cart' | 'checkout' | 'success';
  */
 export function CartDrawer() {
   const { items, isOpen, close, updateQuantity, remove, clear, rates } = useCart();
+  const locale: ShopLocale = useLocale() === 'en' ? 'en' : 'ru';
+  const t = TEXT[locale];
 
   const [step, setStep] = useState<Step>('cart');
-  const [city, setCity] = useState(RUSSIAN_CITIES[0].name);
+  /*
+   * Город: по-русски выбор из списка со сроками, по-английски — свободная строка.
+   * Список городов российский, а отправляем мы по всему миру: покупателю из Италии
+   * пришлось бы выбрать «Москва», и менеджер получил бы заявку с чужим городом.
+   */
+  const [city, setCity] = useState(locale === 'en' ? '' : RUSSIAN_CITIES[0].name);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [telegram, setTelegram] = useState('');
   const [address, setAddress] = useState('');
   const [vin, setVin] = useState('');
-  const [payment, setPayment] = useState<'qwikpay' | 'invoice_ur' | 'paypal'>('qwikpay');
+  const [payment, setPayment] = useState<'qwikpay' | 'swift' | 'invoice_ur' | 'paypal'>('qwikpay');
   const [consent, setConsent] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,7 +62,10 @@ export function CartDrawer() {
         body: JSON.stringify({
           customer: { name: fullName, phone, telegram, city, address, vin, payment },
           items: items.map((item) => ({
+            // Ключ, по которому сервер дочитывает цену из базы: присланной он не верит.
+            id: item.part.id,
             url: partUrl(item.part),
+            // В заявку название уходит по-русски всегда: её читает русскоязычный менеджер.
             title: item.part.titleRu,
             oem: item.part.oemNumber,
             quantity: item.quantity,
@@ -64,19 +77,19 @@ export function CartDrawer() {
       });
 
       const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.error || 'Не удалось отправить заявку');
+      if (!response.ok || !data.success) throw new Error(data.error || t.submitFailed);
 
       setOrderNumber(data.orderNumber);
       setStep('success');
       clear();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Не удалось отправить заявку');
+      setError(err instanceof Error ? err.message : t.submitFailed);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const title = step === 'cart' ? 'Корзина деталей' : step === 'checkout' ? 'Оформление заявки' : 'Заявка принята';
+  const title = step === 'cart' ? t.titleCart : step === 'checkout' ? t.titleCheckout : t.titleDone;
 
   return (
     /*
@@ -98,7 +111,7 @@ export function CartDrawer() {
               <div>
                 <h2 className="text-xs uppercase tracking-widest font-bold text-text">{title}</h2>
                 <p className="text-[10px] uppercase font-bold tracking-widest text-text-muted mt-0.5">
-                  {items.length} {items.length === 1 ? 'позиция' : 'позиций'}
+                  {items.length} {items.length === 1 ? t.itemOne : t.itemMany}
                 </p>
               </div>
             </div>
@@ -106,7 +119,7 @@ export function CartDrawer() {
             <button
               type="button"
               onClick={close}
-              aria-label="Закрыть корзину"
+              aria-label={t.closeCart}
               className="p-1.5 rounded bg-black/50 border border-border text-text-muted hover:text-text hover:bg-black transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
@@ -121,14 +134,14 @@ export function CartDrawer() {
                     <ShoppingCart className="w-5 h-5" />
                   </span>
                   <p className="text-[11px] uppercase tracking-widest font-bold text-text-muted">
-                    В корзине пока нет деталей
+                    {t.empty}
                   </p>
                   <button
                     type="button"
                     onClick={close}
                     className="px-5 py-3 rounded bg-elevated hover:bg-surface text-text text-[10px] uppercase tracking-widest font-bold cursor-pointer transition-colors"
                   >
-                    Вернуться в каталог
+                    {t.backToCatalog}
                   </button>
                 </div>
               ) : (
@@ -141,7 +154,7 @@ export function CartDrawer() {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={part.images[0]}
-                        alt={part.titleRu}
+                        alt={partTitle(part, locale)}
                         referrerPolicy="no-referrer"
                         className="w-16 h-16 rounded object-cover border border-border-subtle shrink-0"
                       />
@@ -152,9 +165,9 @@ export function CartDrawer() {
                             OEM: <span className="text-text">{part.oemNumber}</span>
                           </div>
                         )}
-                        <div className="text-xs text-text font-bold line-clamp-2 leading-snug">{part.titleRu}</div>
+                        <div className="text-xs text-text font-bold line-clamp-2 leading-snug">{partTitle(part, locale)}</div>
                         <div className="text-[11px] text-text-secondary font-bold uppercase tracking-widest">
-                          {formatRub(priceRub(part.priceKrw, rates))} / шт
+                          {formatRub(priceRub(part.priceKrw, rates))} / {t.perItem}
                           <span className="text-text-muted normal-case tracking-normal">
                             {' '}
                             ({formatUsd(priceUsd(part.priceKrw, rates))})
@@ -166,7 +179,7 @@ export function CartDrawer() {
                             <button
                               type="button"
                               onClick={() => updateQuantity(part.id, -1)}
-                              aria-label="Убрать одну"
+                              aria-label={t.decrease}
                               className="p-1.5 text-text-muted hover:text-text cursor-pointer"
                             >
                               <Minus className="w-3.5 h-3.5" />
@@ -175,7 +188,7 @@ export function CartDrawer() {
                             <button
                               type="button"
                               onClick={() => updateQuantity(part.id, 1)}
-                              aria-label="Добавить одну"
+                              aria-label={t.increase}
                               className="p-1.5 text-text-muted hover:text-text cursor-pointer"
                             >
                               <Plus className="w-3.5 h-3.5" />
@@ -185,7 +198,7 @@ export function CartDrawer() {
                           <button
                             type="button"
                             onClick={() => remove(part.id)}
-                            title="Удалить"
+                            title={t.remove}
                             className="text-text-dim hover:text-text-secondary p-1 cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -201,15 +214,15 @@ export function CartDrawer() {
               <form id="checkout-form" onSubmit={submit} className="space-y-4">
                 <div className="bg-elevated p-4 rounded border border-border-subtle space-y-1.5">
                   <p className="text-[10px] font-bold text-text uppercase tracking-widest">
-                    Прямой выкуп с авторазборок Южной Кореи
+                    {t.directBuy}
                   </p>
                   <p className="text-[9px] font-bold text-text-muted uppercase tracking-widest">
-                    Это заявка, а не оплата. Менеджер свяжется и подтвердит наличие и итоговую сумму
+                    {t.notAPayment}
                   </p>
                 </div>
 
                 <label className="block space-y-1">
-                  <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">ФИО получателя</span>
+                  <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">{t.fullName}</span>
                   <input
                     type="text"
                     value={fullName}
@@ -221,12 +234,12 @@ export function CartDrawer() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <label className="block space-y-1">
-                    <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">Телефон</span>
+                    <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">{t.phone}</span>
                     <input
                       type="tel"
                       value={phone}
                       onChange={(event) => setPhone(event.target.value)}
-                      placeholder="+7 999 000-00-00"
+                      placeholder={t.phonePlaceholder}
                       required
                       className="w-full bg-elevated border border-border-subtle rounded px-3 py-2.5 text-xs text-text focus:outline-none focus:border-cta placeholder-text-dim transition-colors"
                     />
@@ -244,23 +257,34 @@ export function CartDrawer() {
                 </div>
 
                 <label className="block space-y-1">
-                  <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">Город получения</span>
-                  <select
-                    value={city}
-                    onChange={(event) => setCity(event.target.value)}
-                    className="w-full bg-elevated border border-border-subtle rounded px-3 py-2.5 text-xs text-text focus:outline-none focus:border-cta transition-colors cursor-pointer"
-                  >
-                    {RUSSIAN_CITIES.map((item) => (
-                      <option key={item.name} value={item.name}>
-                        {item.name} — {item.days}
-                      </option>
-                    ))}
-                  </select>
+                  <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">{t.city}</span>
+                  {locale === 'en' ? (
+                    <input
+                      type="text"
+                      value={city}
+                      onChange={(event) => setCity(event.target.value)}
+                      required
+                      placeholder="Italy, Milan"
+                      className="w-full bg-elevated border border-border-subtle rounded px-3 py-2.5 text-xs text-text focus:outline-none focus:border-cta placeholder-text-dim transition-colors"
+                    />
+                  ) : (
+                    <select
+                      value={city}
+                      onChange={(event) => setCity(event.target.value)}
+                      className="w-full bg-elevated border border-border-subtle rounded px-3 py-2.5 text-xs text-text focus:outline-none focus:border-cta transition-colors cursor-pointer"
+                    >
+                      {RUSSIAN_CITIES.map((item) => (
+                        <option key={item.name} value={item.name}>
+                          {item.name} — {item.days}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </label>
 
                 <label className="block space-y-1">
                   <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">
-                    Адрес ПВЗ СДЭК или улица
+                    {t.address}
                   </span>
                   <input
                     type="text"
@@ -273,7 +297,7 @@ export function CartDrawer() {
 
                 <label className="block space-y-1">
                   <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">
-                    VIN автомобиля — сверим перед выкупом
+                    {t.vin}
                   </span>
                   <input
                     type="text"
@@ -286,14 +310,20 @@ export function CartDrawer() {
 
                 <fieldset className="space-y-2">
                   <legend className="text-[9px] font-bold text-text-muted uppercase tracking-widest mb-2">
-                    Удобный способ оплаты
+                    {t.payment}
                   </legend>
                   {(
                     [
-                      // Способы должны совпадать с PAYMENT_LABELS в api/checkout и с текстом
-                      // на /zapchasti/dostavka-i-oplata: это одна и та же оферта в трёх местах.
-                      { value: 'qwikpay', label: 'QwikPay / Золотая Корона', icon: QrCode },
-                      { value: 'invoice_ur', label: 'Инвойс на юрлицо', icon: Building2 },
+                      // Способы должны совпадать с PAYMENT_LABELS в api/checkout, с текстом
+                      // на /zapchasti/dostavka-i-oplata и с блоком PAYMENTS на /zapchasti/kak-zakazat:
+                      // это одна и та же оферта в четырёх местах.
+                      //
+                      // На сервер уходит `value`, а не подпись, поэтому перевод подписи
+                      // контракт не задевает: в заявке менеджер увидит русский вариант
+                      // из PAYMENT_LABELS независимо от языка покупателя.
+                      { value: 'qwikpay', label: t.payQwikpay, icon: QrCode },
+                      { value: 'swift', label: t.paySwift, icon: Landmark },
+                      { value: 'invoice_ur', label: t.payInvoice, icon: Building2 },
                       { value: 'paypal', label: 'PayPal', icon: CreditCard },
                     ] as const
                   ).map(({ value, label, icon: Icon }) => (
@@ -328,15 +358,15 @@ export function CartDrawer() {
                     className="accent-cta w-3.5 h-3.5 mt-0.5 shrink-0"
                   />
                   <span className="text-[10px] text-text-secondary leading-relaxed">
-                    Согласен на обработку персональных данных в соответствии с{' '}
+                    {t.consentBefore}{' '}
                     <Link
                       href="/privacy"
                       target="_blank"
                       className="text-cta hover:underline"
                     >
-                      политикой
+                      {t.consentPolicy}
                     </Link>
-                    . Данные нужны, чтобы связаться и оформить отправку.
+                    {t.consentAfter}
                   </span>
                 </label>
 
@@ -353,16 +383,16 @@ export function CartDrawer() {
                 <span className="w-14 h-14 bg-elevated text-success rounded border border-border flex items-center justify-center mx-auto">
                   <CheckCircle2 className="w-6 h-6" />
                 </span>
-                <h3 className="text-lg font-black text-text uppercase tracking-tight">Заявка {orderNumber} принята</h3>
+                <h3 className="text-lg font-black text-text uppercase tracking-tight">{t.accepted(orderNumber)}</h3>
                 <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest leading-relaxed">
-                  Менеджер свяжется с вами, подтвердит наличие и пришлёт фото детали перед отправкой.
+                  {t.acceptedHint}
                 </p>
                 <button
                   type="button"
                   onClick={close}
                   className="px-5 py-3 rounded bg-elevated hover:bg-surface text-text text-[10px] uppercase tracking-widest font-bold cursor-pointer transition-colors"
                 >
-                  Вернуться в каталог
+                  {t.backToCatalog}
                 </button>
               </div>
             )}
@@ -372,13 +402,13 @@ export function CartDrawer() {
             <div className="p-5 border-t border-border-subtle bg-base-darker space-y-4">
               <div className="space-y-2 text-[11px] font-bold uppercase tracking-widest text-text-muted">
                 <div className="flex justify-between">
-                  <span>Доставка:</span>
+                  <span>{t.shipping}:</span>
                   <span className="text-text-secondary normal-case tracking-normal font-medium text-right">
-                    менеджер рассчитает по вашему городу
+                    {t.shippingHint}
                   </span>
                 </div>
                 <div className="flex justify-between text-base font-black text-text pt-3 border-t border-border-subtle">
-                  <span>Итого за детали:</span>
+                  <span>{t.total}:</span>
                   <span className="font-mono text-right">
                     {formatRub(goodsRub)}
                     <span className="block text-[11px] font-bold text-text-muted normal-case tracking-normal">
@@ -394,7 +424,7 @@ export function CartDrawer() {
                   onClick={() => setStep('checkout')}
                   className="w-full py-4 rounded bg-cta hover:bg-cta-hover text-base-darker font-black text-[11px] uppercase tracking-widest cursor-pointer transition-colors"
                 >
-                  Оформить заявку
+                  {t.checkout}
                 </button>
               ) : (
                 <div className="flex gap-3">
@@ -402,16 +432,14 @@ export function CartDrawer() {
                     type="button"
                     onClick={() => setStep('cart')}
                     className="px-5 py-4 rounded bg-elevated hover:bg-surface border border-border-subtle text-text-secondary text-[10px] font-bold uppercase tracking-widest cursor-pointer transition-colors"
-                  >
-                    Назад
-                  </button>
+                  >{t.back}</button>
                   <button
                     type="submit"
                     form="checkout-form"
                     disabled={isSubmitting}
                     className="flex-1 py-4 rounded bg-cta hover:bg-cta-hover text-base-darker font-black text-[10px] uppercase tracking-widest cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSubmitting ? 'Отправка…' : 'Отправить заявку'}
+                    {isSubmitting ? t.sending : t.send}
                   </button>
                 </div>
               )}
@@ -422,3 +450,92 @@ export function CartDrawer() {
     </div>
   );
 }
+
+/**
+ * Тексты корзины. Живут здесь, а не в общем словаре раздела: это проза формы, и она
+ * используется только тут. Заявка в Telegram при этом уходит по-русски в любом случае —
+ * её собирает сервер, а читает русскоязычный менеджер.
+ */
+const TEXT = {
+  ru: {
+    titleCart: 'Корзина деталей',
+    titleCheckout: 'Оформление заявки',
+    titleDone: 'Заявка принята',
+    itemOne: 'позиция',
+    itemMany: 'позиций',
+    closeCart: 'Закрыть корзину',
+    empty: 'В корзине пока нет деталей',
+    backToCatalog: 'Вернуться в каталог',
+    decrease: 'Убрать одну',
+    increase: 'Добавить одну',
+    remove: 'Удалить',
+    directBuy: 'Прямой выкуп с авторазборок Южной Кореи',
+    notAPayment: 'Это заявка, а не оплата. Менеджер свяжется и подтвердит наличие и итоговую сумму',
+    fullName: 'ФИО получателя',
+    phone: 'Телефон',
+    city: 'Город получения',
+    address: 'Адрес ПВЗ СДЭК или улица',
+    vin: 'VIN автомобиля — сверим перед выкупом',
+    payment: 'Удобный способ оплаты',
+    consentBefore: 'Согласен на обработку персональных данных в соответствии с',
+    consentPolicy: 'политикой',
+    consentAfter: '. Данные нужны, чтобы связаться и оформить отправку.',
+    shipping: 'Доставка',
+    shippingHint: 'менеджер рассчитает по вашему городу',
+    total: 'Итого за детали',
+    checkout: 'Оформить заявку',
+    back: 'Назад',
+    send: 'Отправить заявку',
+    sending: 'Отправка…',
+    submitFailed: 'Не удалось отправить заявку',
+    accepted: (order: string) => `Заявка ${order} принята`,
+    acceptedHint: 'Менеджер свяжется с вами, подтвердит наличие и пришлёт фото детали перед отправкой.',
+    payQwikpay: 'QwikPay / Золотая Корона',
+    paySwift: 'SWIFT-перевод',
+    payInvoice: 'Инвойс на юрлицо',
+    perItem: 'шт',
+    phonePlaceholder: '+7 999 000-00-00',
+  },
+  en: {
+    titleCart: 'Parts cart',
+    titleCheckout: 'Your request',
+    titleDone: 'Request received',
+    itemOne: 'item',
+    itemMany: 'items',
+    closeCart: 'Close the cart',
+    empty: 'No parts in the cart yet',
+    backToCatalog: 'Back to the catalog',
+    decrease: 'Remove one',
+    increase: 'Add one',
+    remove: 'Delete',
+    directBuy: 'Bought directly at South Korean salvage yards',
+    notAPayment:
+      'This is a request, not a payment. The manager will get in touch and confirm the item and the final amount',
+    fullName: 'Full name',
+    phone: 'Phone',
+    city: 'Country and city',
+    address: 'Delivery address',
+    vin: 'Car VIN — we will check before buying',
+    payment: 'Preferred payment method',
+    consentBefore: 'I agree to the processing of my personal data in line with the',
+    consentPolicy: 'privacy policy',
+    consentAfter: '. We need the details to reach you and arrange the shipment.',
+    shipping: 'Shipping',
+    shippingHint: 'the manager will work it out for your address',
+    total: 'Parts total',
+    checkout: 'Place a request',
+    back: 'Back',
+    send: 'Send the request',
+    sending: 'Sending…',
+    submitFailed: 'Could not send the request',
+    accepted: (order: string) => `Request ${order} received`,
+    acceptedHint:
+      'The manager will get in touch, confirm the item is there and send photos before dispatch.',
+    payQwikpay: 'QwikPay / Zolotaya Korona',
+    paySwift: 'SWIFT transfer',
+    payInvoice: 'Invoice for a company',
+    perItem: 'item',
+    // Международный формат: подсказка с российским кодом сбивала бы покупателя из Италии.
+    phonePlaceholder: '+39 000 000 0000',
+  },
+} as const;

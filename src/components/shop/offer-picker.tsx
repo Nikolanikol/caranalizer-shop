@@ -5,7 +5,17 @@ import { Check, Fingerprint, Truck } from 'lucide-react';
 import type { AutoPart, Offer } from '@/types/part';
 import type { Rates } from '@/lib/shop/pricing';
 import { formatPartPrice, formatPartPriceUsd } from '@/lib/shop/pricing';
-import { CONDITION_CLASS, conditionLabel } from '@/lib/shop/labels';
+import { CONDITION_CLASS, conditionLabel, partTitle } from '@/lib/shop/labels';
+import {
+  COMPLETENESS_EN,
+  CONDITION_NOTES_EN,
+  FEATURES_EN,
+  LAMP_TYPE_EN,
+  type ShopLocale,
+  term,
+  terms,
+} from '@/lib/shop/terms';
+import { ui } from '@/lib/shop/ui-text';
 import { Gallery } from './gallery';
 import { AddToCart } from './add-to-cart';
 import { CopyOem } from './copy-oem';
@@ -28,13 +38,17 @@ export function OfferPicker({
   header,
   footer,
   vinCheckHref,
+  locale = 'ru',
 }: {
   part: AutoPart;
   rates: Rates;
   header: React.ReactNode;
   footer: React.ReactNode;
   vinCheckHref: string;
+  locale?: ShopLocale;
 }) {
+  const t = ui(locale);
+  const title = partTitle(part, locale);
   const offers = part.offers ?? [];
   const [activeId, setActiveId] = useState(offers[0]?.id ?? '');
   const active = offers.find((offer) => offer.id === activeId) ?? offers[0];
@@ -44,10 +58,10 @@ export function OfferPicker({
   if (!active) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Gallery images={part.images} alt={part.titleRu} />
+        <Gallery images={part.images} alt={title} locale={locale} />
         <div className="space-y-5">
           {header}
-          <p className="text-sm text-text-secondary">Этой детали сейчас нет в наличии.</p>
+          <p className="text-sm text-text-secondary">{t.outOfStock}</p>
           {footer}
         </div>
       </div>
@@ -57,7 +71,12 @@ export function OfferPicker({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Ключ по экземпляру: у каждого свои фото, и лента обязана начинаться заново. */}
-      <Gallery key={active.id} images={active.images} alt={`${part.titleRu} — экземпляр ${active.id}`} />
+      <Gallery
+        key={active.id}
+        images={active.images}
+        alt={`${title} — ${t.instance} ${active.id}`}
+        locale={locale}
+      />
 
       <div className="space-y-5">
         {header}
@@ -73,26 +92,28 @@ export function OfferPicker({
               </span>
             </div>
             <p className="text-[9px] text-text-muted font-bold uppercase tracking-widest mt-2">
-              Доставка оплачивается отдельно
+              {t.shippingExtra}
             </p>
           </div>
           <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-text-secondary bg-base-darker px-3 py-2 rounded border border-border-subtle">
             <Truck className="w-3.5 h-3.5 text-text-muted" />
-            Доставка: {part.deliveryDays}
+            {t.delivery}: {locale === 'en' ? t.deliveryDays : part.deliveryDays}
           </p>
         </div>
 
-        <AddToCart part={part} offer={active} size="large" />
+        <AddToCart part={part} offer={active} size="large" label={t.addToCart} />
 
-        <OfferDetails offer={active} vinCheckHref={vinCheckHref} />
+        <OfferDetails offer={active} vinCheckHref={vinCheckHref} locale={locale} />
 
         {offers.length > 1 && (
-          <section aria-label="Экземпляры этой детали" className="space-y-2">
+          <section aria-label={t.offers} className="space-y-2">
             <h2 className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">
-              В наличии {offers.length} шт. — выберите экземпляр
+              {locale === 'en'
+                ? `${offers.length} in stock — pick one`
+                : `В наличии ${offers.length} шт. — выберите экземпляр`}
             </h2>
             <p className="text-[11px] text-text-muted leading-relaxed">
-              Это разные детали с разных машин. Цена, состояние и фотографии у каждой свои.
+              {t.offersHint}
             </p>
             <ul className="max-h-96 overflow-y-auto custom-scrollbar space-y-1.5 pr-1">
               {offers.map((offer) => (
@@ -102,6 +123,7 @@ export function OfferPicker({
                   rates={rates}
                   active={offer.id === active.id}
                   onPick={() => setActiveId(offer.id)}
+                  locale={locale}
                 />
               ))}
             </ul>
@@ -120,13 +142,15 @@ function OfferRow({
   rates,
   active,
   onPick,
+  locale = 'ru',
 }: {
   offer: Offer;
   rates: Rates;
   active: boolean;
   onPick: () => void;
+  locale?: ShopLocale;
 }) {
-  const condition = conditionLabel(offer);
+  const condition = conditionLabel(offer, locale);
 
   return (
     <li>
@@ -152,7 +176,11 @@ function OfferRow({
 
         <div className="flex items-center gap-x-3 gap-y-1 flex-wrap mt-1.5 text-[10px] font-bold uppercase tracking-widest text-text-muted">
           <span>{offer.year}</span>
-          {offer.images.length > 0 && <span>{offer.images.length} фото</span>}
+          {offer.images.length > 0 && (
+            <span>
+              {offer.images.length} {ui(locale).photos}
+            </span>
+          )}
           {offer.pins ? <span>{offer.pinsLayout || offer.pins} конт.</span> : null}
           {offer.colorCode && <span>цвет {offer.colorCode}</span>}
           {offer.donorVin && (
@@ -164,7 +192,9 @@ function OfferRow({
         </div>
 
         {offer.conditionNotes.length > 0 && (
-          <p className="text-[11px] text-text-secondary mt-1.5 leading-snug">{offer.conditionNotes.join(' · ')}</p>
+          <p className="text-[11px] text-text-secondary mt-1.5 leading-snug">
+            {terms(offer.conditionNotes, locale, CONDITION_NOTES_EN).join(' · ')}
+          </p>
         )}
       </button>
     </li>
@@ -172,21 +202,32 @@ function OfferRow({
 }
 
 /** Подробности выбранного экземпляра — то, чего нет у детали вообще. */
-function OfferDetails({ offer, vinCheckHref }: { offer: Offer; vinCheckHref: string }) {
-  const condition = conditionLabel(offer);
+function OfferDetails({
+  offer,
+  vinCheckHref,
+  locale = 'ru',
+}: {
+  offer: Offer;
+  vinCheckHref: string;
+  locale?: ShopLocale;
+}) {
+  const t = ui(locale);
+  const condition = conditionLabel(offer, locale);
   const specs = [
-    offer.lampTypeRu,
-    offer.completenessRu,
-    offer.pins ? `Разъём ${offer.pinsLayout || offer.pins} контактов` : '',
-    offer.colorCode ? `Цвет кузова ${offer.colorCode}${offer.colorName ? ` · ${offer.colorName}` : ''}` : '',
-    ...offer.featuresRu,
+    term(offer.lampTypeRu, locale, LAMP_TYPE_EN),
+    term(offer.completenessRu, locale, COMPLETENESS_EN),
+    offer.pins ? `${t.connector} ${offer.pinsLayout || offer.pins} ${t.pins}` : '',
+    offer.colorCode
+      ? `${t.bodyColor} ${offer.colorCode}${offer.colorName ? ` · ${offer.colorName}` : ''}`
+      : '',
+    ...terms(offer.featuresRu, locale, FEATURES_EN),
   ].filter(Boolean);
 
   return (
     <div className="space-y-3">
       <div className="bg-elevated rounded p-4 border border-border-subtle space-y-2">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <h2 className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Этот экземпляр</h2>
+          <h2 className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">{t.thisOffer}</h2>
           <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${CONDITION_CLASS[condition.tone]}`}>
             {condition.short}
           </span>
@@ -194,7 +235,7 @@ function OfferDetails({ offer, vinCheckHref }: { offer: Offer; vinCheckHref: str
 
         {offer.conditionNotes.length > 0 && (
           <ul className="text-xs text-text-secondary leading-relaxed list-disc pl-4 space-y-0.5">
-            {offer.conditionNotes.map((note) => (
+            {terms(offer.conditionNotes, locale, CONDITION_NOTES_EN).map((note) => (
               <li key={note}>{note}</li>
             ))}
           </ul>
@@ -217,7 +258,7 @@ function OfferDetails({ offer, vinCheckHref }: { offer: Offer; vinCheckHref: str
           /* Исходная строка донора. Менеджеру она нужнее любого перевода, а покупателю
              показывает, что описание не сочинено нами. */
           <p className="text-[10px] text-text-dim leading-relaxed pt-1 break-words">
-            Описание продавца: {offer.conditionKo}
+            {locale === 'en' ? 'Seller description' : 'Описание продавца'}: {offer.conditionKo}
           </p>
         )}
       </div>
@@ -226,7 +267,7 @@ function OfferDetails({ offer, vinCheckHref }: { offer: Offer; vinCheckHref: str
         <div className="bg-elevated rounded p-4 border border-border-subtle space-y-2">
           <h2 className="flex items-center gap-2 text-[10px] font-bold text-text-secondary uppercase tracking-widest">
             <Fingerprint className="w-4 h-4 text-success" />
-            Машина, с которой снята деталь
+            {t.donorCar}
           </h2>
           <p className="flex items-center gap-2 font-mono text-sm text-text tracking-wider break-all">
             {offer.donorVin}
@@ -236,7 +277,7 @@ function OfferDetails({ offer, vinCheckHref }: { offer: Offer; vinCheckHref: str
             href={vinCheckHref}
             className="inline-block text-[11px] font-bold text-cta hover:underline"
           >
-            Проверить историю этой машины по VIN →
+            {t.checkVin}
           </a>
         </div>
       )}

@@ -2,7 +2,10 @@ import React from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { CATEGORIES, brandUrl, getBrandBySlug, getBrands, isCategory } from '@/lib/shop/catalog';
-import { SHOP_LOCALE, shopUrl } from '@/lib/shop/urls';
+import { SHOP_LOCALE, isShopLocale, shopAlternates } from '@/lib/shop/urls';
+import { categoryPlural } from '@/lib/shop/labels';
+import { brandCopy } from '@/lib/shop/landing-text';
+import type { ShopLocale } from '@/lib/shop/terms';
 import { SITE_URL } from '@/lib/site';
 import { CatalogView, type CatalogSearchParams } from '@/components/shop/catalog-view';
 
@@ -25,19 +28,22 @@ export async function generateStaticParams({ params }: { params: { lang: string 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ category: string; brand: string }>;
+  params: Promise<{ lang: string; category: string; brand: string }>;
 }): Promise<Metadata> {
-  const { category, brand } = await params;
+  const { lang, category, brand } = await params;
   if (!isCategory(category)) return {};
 
   const name = await getBrandBySlug(category, brand);
   if (!name) return {};
 
+  const locale: ShopLocale = isShopLocale(lang) ? lang : 'ru';
   const info = CATEGORIES[category];
+  const copy = brandCopy(locale, categoryPlural(category, locale, info.plural), name);
+
   return {
-    title: `${info.plural} ${name} — оригинал из Кореи`,
-    description: `${info.plural} ${name} с авторазборок Южной Кореи. Поиск по OEM-артикулу и модели, фотографии каждой детали, доставка по России.`,
-    alternates: { canonical: shopUrl(brandUrl(category, brand), SITE_URL) },
+    title: copy.title,
+    description: copy.description,
+    alternates: shopAlternates(brandUrl(category, brand), SITE_URL, locale),
   };
 }
 
@@ -45,24 +51,27 @@ export default async function BrandPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ category: string; brand: string }>;
+  params: Promise<{ lang: string; category: string; brand: string }>;
   searchParams: Promise<CatalogSearchParams>;
 }) {
-  const { category, brand } = await params;
+  const { lang, category, brand } = await params;
   if (!isCategory(category)) notFound();
 
   const name = await getBrandBySlug(category, brand);
   if (!name) notFound();
 
+  const locale: ShopLocale = isShopLocale(lang) ? lang : 'ru';
   const info = CATEGORIES[category];
+  const copy = brandCopy(locale, categoryPlural(category, locale, info.plural), name);
 
   return (
     <CatalogView
       category={category}
       brand={{ name, slug: brand }}
       searchParams={await searchParams}
-      heading={`${info.plural} ${name}`}
-      intro={`${info.plural} ${name} с авторазборок Южной Кореи. Все фотографии — того самого товара, который приедет. Выберите модель, чтобы сузить подборку.`}
+      heading={copy.heading}
+      intro={copy.intro}
+      locale={locale}
     />
   );
 }

@@ -3,8 +3,9 @@
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { Container } from "@/components/ui/container";
-import { SHOP_BASE, SHOP_LOCALE } from "@/lib/shop/urls";
+import { SHOP_BASE, isShopLocale } from "@/lib/shop/urls";
 import { CartButton } from "@/components/shop/cart-button";
+import { ShopLanguageSwitcher } from "@/components/shop/shop-language-switcher";
 import { MobileNav } from "./MobileNav";
 
 // «Проверка авто» теперь обычный пункт меню, а не жёлтая CTA-кнопка справа: услуга
@@ -26,7 +27,7 @@ export function Header() {
   const t = useTranslations("nav");
   const locale = useLocale();
   const pathname = usePathname();
-  const navItems = locale === SHOP_LOCALE ? [PARTS_ITEM, ...NAV_KEYS] : NAV_KEYS;
+  const navItems = isShopLocale(locale) ? [PARTS_ITEM, ...NAV_KEYS] : NAV_KEYS;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border-subtle bg-base/80 backdrop-blur-xl">
@@ -56,11 +57,14 @@ export function Header() {
         </nav>
 
         {/*
-          Переключателя языков здесь больше нет. Сайт одноязычный, и многоязычна
-          ровно одна страница — проверка по VIN; свой большой переключатель стоит
-          на ней. В шапке он предлагал языки для страниц, которых на них не существует.
+          Переключатель языков в шапке есть, но только внутри раздела запчастей —
+          `ShopLanguageSwitcher` за его пределами не рисуется вовсе. Общего переключателя
+          здесь по-прежнему нет и быть не должно: сайт вокруг раздела одноязычный,
+          и в шапке такой переключатель предлагал языки для страниц, которых на них
+          не существует. У страницы проверки по VIN свой большой переключатель на ней самой.
         */}
         <div className="flex items-center gap-3">
+          <ShopLanguageSwitcher />
           <CartButton />
           <MobileNav />
         </div>

@@ -53,12 +53,65 @@ export function oemUrl(oemNumber: string): string {
   return `${SHOP_BASE}/oem/${encodeURIComponent(oemNumber.toUpperCase())}`;
 }
 
-/** Язык у магазина один: каталог и карточки товаров существуют только на русском. */
+/**
+ * Языки раздела запчастей.
+ *
+ * Раздел был одноязычным до 27.08.2026, и посылка звучала так: каталог приходит
+ * от донора по-русски, а иноязычный покупатель обслуживается на kmotors. Данные
+ * Search Console её опровергли — половина кликов приходит на `/en/` (29%) и `/ar/` (21%),
+ * а kmotors торгует **новыми** деталями, и б/у покупателю там нечего купить.
+ *
+ * Переводить при этом почти нечего: свободной прозы в каталоге нет, заголовок собирается
+ * из типа детали, марки, модели и года, а состояние и опции приходят из закрытых наборов.
+ * Весь словарь — 60 терминов в `lib/shop/terms.ts`.
+ *
+ * `ar` пока не включён: решено начать с `en`, инфраструктура под него та же.
+ */
+export const SHOP_LOCALES = ['ru', 'en'] as const;
+
+/**
+ * Язык по умолчанию. Нужен там, где локали нет и взять её неоткуда: заявка в Telegram
+ * (менеджер читает по-русски независимо от языка покупателя), карта сайта, редирект
+ * упразднённого `/zapchasti/katalog`.
+ */
 export const SHOP_LOCALE = 'ru';
 
-/** Абсолютный адрес с языковым префиксом — для canonical, sitemap и заявок. */
-export function shopUrl(path: string, base: string): string {
-  return `${base}/${SHOP_LOCALE}${path}`;
+export function isShopLocale(value: string): value is (typeof SHOP_LOCALES)[number] {
+  return (SHOP_LOCALES as readonly string[]).includes(value);
+}
+
+/**
+ * Абсолютный адрес с языковым префиксом — для canonical, sitemap и заявок.
+ *
+ * Локаль по умолчанию русская: у большинства вызовов это заявка или карта сайта, где
+ * язык покупателя ни при чём. Страницы, у которых есть английская версия, передают
+ * свою — иначе `canonical` английской страницы указывал бы на русскую, и Google
+ * выбросил бы её из индекса как дубль.
+ */
+export function shopUrl(path: string, base: string, locale: string = SHOP_LOCALE): string {
+  return `${base}/${locale}${path}`;
+}
+
+/**
+ * Canonical и hreflang одной страницы раздела.
+ *
+ * Обязательны оба: без `canonical` на свою локаль английская страница указывала бы
+ * на русскую и выпала бы из индекса как дубль, а без `languages` Google не знает,
+ * что это перевод, и склеивает их сам — как правило не в нашу пользу.
+ *
+ * `x-default` ведёт на русскую: она полнее по текстам разделов и старше по возрасту.
+ */
+export function shopAlternates(
+  path: string,
+  base: string,
+  locale: string,
+): { canonical: string; languages: Record<string, string> } {
+  const current = isShopLocale(locale) ? locale : SHOP_LOCALE;
+  const languages: Record<string, string> = {};
+  for (const one of SHOP_LOCALES) languages[one] = shopUrl(path, base, one);
+  languages['x-default'] = shopUrl(path, base, SHOP_LOCALE);
+
+  return { canonical: shopUrl(path, base, current), languages };
 }
 
 export function partUrl(part: Pick<AutoPart, 'category' | 'brandSlug' | 'modelSlug' | 'slug'>): string {

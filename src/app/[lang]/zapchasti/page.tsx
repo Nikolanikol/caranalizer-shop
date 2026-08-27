@@ -3,7 +3,9 @@ import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { CATEGORIES, getBrands, getTopModels, modelUrl } from '@/lib/shop/catalog';
-import { SHOP_BASE, shopUrl } from '@/lib/shop/urls';
+import { SHOP_BASE, isShopLocale, shopAlternates } from '@/lib/shop/urls';
+import { categoryPlural } from '@/lib/shop/labels';
+import type { ShopLocale } from '@/lib/shop/terms';
 import { SITE_URL } from '@/lib/site';
 import { CatalogView, type CatalogSearchParams } from '@/components/shop/catalog-view';
 
@@ -27,18 +29,32 @@ import { CatalogView, type CatalogSearchParams } from '@/components/shop/catalog
  * описанное исключение из lib/shop/urls.ts, и витрина канонизируется сама на себя,
  * поэтому страницы с фильтрами и номерами в индекс отдельно не уходят.
  */
-export const metadata: Metadata = {
-  title: 'Запчасти с авторазборов Южной Кореи — оптика, зеркала, блоки управления',
-  description:
-    'Оригинальные б/у запчасти с авторазборов Южной Кореи: фары и фонари, боковые зеркала, блоки управления двигателем, АКПП, ABS и кузовной электроникой. Поиск по OEM-артикулу, фотографии каждого экземпляра, доставка по России.',
-  alternates: { canonical: shopUrl('/zapchasti', SITE_URL) },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  const locale: ShopLocale = isShopLocale(lang) ? lang : 'ru';
+  const t = TEXT[locale];
+
+  return {
+    title: t.metaTitle,
+    description: t.metaDescription,
+    alternates: shopAlternates('/zapchasti', SITE_URL, locale),
+  };
+}
 
 export default async function ShopHomePage({
+  params: routeParams,
   searchParams,
 }: {
+  params: Promise<{ lang: string }>;
   searchParams: Promise<CatalogSearchParams>;
 }) {
+  const { lang } = await routeParams;
+  const locale: ShopLocale = isShopLocale(lang) ? lang : 'ru';
+  const t = TEXT[locale];
   const [params, brands, models] = await Promise.all([searchParams, getBrands(), getTopModels(12)]);
   const total = brands.reduce((sum, brand) => sum + brand.count, 0);
 
@@ -52,12 +68,13 @@ export default async function ShopHomePage({
         basePath={SHOP_BASE}
         defaultSort="newest"
         searchParams={params}
-        heading="Запчасти с авторазборов Кореи"
-        intro={`${total} деталей для ${brands.length} марок: оптика, зеркала, блоки управления. Каждый экземпляр сфотографирован отдельно — вы видите ровно ту деталь, которая приедет, и знаете, с какой машины она снята.`}
+        locale={locale}
+        heading={t.heading}
+        intro={t.intro(total, brands.length)}
         extra={
           isFiltered ? null : (
             <section className="mt-12 pt-8 border-t border-border-subtle space-y-4">
-              <h2 className="text-lg font-bold text-text tracking-tight">Чаще всего спрашивают</h2>
+              <h2 className="text-lg font-bold text-text tracking-tight">{t.mostAsked}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
                 {models.map((item) => (
                   <Link
@@ -70,7 +87,7 @@ export default async function ShopHomePage({
                     <span className="min-w-0">
                       <span className="block truncate">{item.name}</span>
                       <span className="block truncate text-[10px] uppercase tracking-widest text-text-dim mt-0.5">
-                        {CATEGORIES[item.category].plural}
+                        {categoryPlural(item.category, locale, CATEGORIES[item.category].plural)}
                       </span>
                     </span>
                     <span className="text-[10px] tabular-nums text-text-dim shrink-0">{item.count}</span>
@@ -85,7 +102,7 @@ export default async function ShopHomePage({
       <section className="border-y border-border-subtle bg-base-darker py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-lg font-bold text-text tracking-tight">Марки автомобилей</h2>
+            <h2 className="text-lg font-bold text-text tracking-tight">{t.makes}</h2>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -114,27 +131,24 @@ export default async function ShopHomePage({
         <div className="max-w-3xl space-y-3">
           <p className="inline-flex items-center gap-2 px-4 py-1.5 rounded bg-elevated border border-border-subtle text-[10px] uppercase tracking-widest text-text-secondary font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-cta" />
-            Прямой выкуп с авторазборок Южной Кореи
+            {t.directBuy}
           </p>
 
-          <h2 className="text-lg font-bold text-text tracking-tight">Первый раз заказываете из Кореи?</h2>
+          <h2 className="text-lg font-bold text-text tracking-tight">{t.firstTime}</h2>
 
           {/*
             Осторожно с `sm:text-base`: в теме объявлен --color-base, поэтому Tailwind
             считает `text-base` ещё и цветом, а адаптивный вариант перебивает класс цвета —
             абзац становится тёмно-синим на тёмно-синем, без ошибки сборки.
           */}
-          <p className="text-sm text-text-secondary leading-relaxed">
-            Заявка на сайте — не оплата. Менеджер сначала подтверждает наличие, присылает дополнительные
-            фотографии и считает доставку, и только потом деталь выкупается.
-          </p>
+          <p className="text-sm text-text-secondary leading-relaxed">{t.notAPayment}</p>
 
           <p>
             <Link
               href="/zapchasti/kak-zakazat"
               className="inline-flex items-center gap-2 text-sm font-bold text-cta hover:underline"
             >
-              Как это работает, оплата и частые вопросы
+              {t.howItWorks}
               <ArrowRight className="w-4 h-4" />
             </Link>
           </p>
@@ -143,3 +157,37 @@ export default async function ShopHomePage({
     </div>
   );
 }
+
+/** Тексты витрины. Проза страницы живёт рядом со страницей — в общий словарь не сносим. */
+const TEXT = {
+  ru: {
+    metaTitle: 'Запчасти с авторазборов Южной Кореи — оптика, зеркала, блоки управления',
+    metaDescription:
+      'Оригинальные б/у запчасти с авторазборов Южной Кореи: фары и фонари, боковые зеркала, блоки управления двигателем, АКПП, ABS и кузовной электроникой. Поиск по OEM-артикулу, фотографии каждого экземпляра, доставка по России.',
+    heading: 'Запчасти с авторазборов Кореи',
+    intro: (total: number, brands: number) =>
+      `${total} деталей для ${brands} марок: оптика, зеркала, блоки управления. Каждый экземпляр сфотографирован отдельно — вы видите ровно ту деталь, которая приедет, и знаете, с какой машины она снята.`,
+    mostAsked: 'Чаще всего спрашивают',
+    makes: 'Марки автомобилей',
+    directBuy: 'Прямой выкуп с авторазборок Южной Кореи',
+    firstTime: 'Первый раз заказываете из Кореи?',
+    notAPayment:
+      'Заявка на сайте — не оплата. Менеджер сначала подтверждает наличие, присылает дополнительные фотографии и считает доставку, и только потом деталь выкупается.',
+    howItWorks: 'Как это работает, оплата и частые вопросы',
+  },
+  en: {
+    metaTitle: 'Used car parts from South Korean salvage yards',
+    metaDescription:
+      'Used original parts from South Korean salvage yards: headlights and tail lights, side mirrors, engine, transmission, ABS and body control modules. Search by OEM number, photos of every single item, worldwide shipping.',
+    heading: 'Used parts from Korean salvage yards',
+    intro: (total: number, brands: number) =>
+      `${total} parts for ${brands} makes: lighting, mirrors, control modules. Every item is photographed on its own — you see the exact part that will arrive, and which car it came off.`,
+    mostAsked: 'Most asked for',
+    makes: 'Car makes',
+    directBuy: 'Bought directly at South Korean salvage yards',
+    firstTime: 'First time ordering from Korea?',
+    notAPayment:
+      'A request on the site is not a payment. The manager first confirms the item is there, sends extra photos and works out the shipping — only then is the part bought.',
+    howItWorks: 'How it works, payment and common questions',
+  },
+} as const;

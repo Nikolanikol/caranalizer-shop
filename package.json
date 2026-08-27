@@ -11,6 +11,7 @@
     "partsfit:coverage": "node scripts/partsfit/report-coverage.mjs",
     "partsfit:details": "node scripts/partsfit/scrape-details.mjs",
     "partsfit:tables": "node scripts/partsfit/build-tables.mjs",
+    "partsfit:terms": "node --experimental-strip-types --no-warnings scripts/partsfit/report-terms.mjs",
     "partsfit:load": "node scripts/partsfit/load-supabase.mjs",
     "partsfit:viewer": "node scripts/partsfit/viewer/server.mjs",
     "partsfit:verify": "node scripts/partsfit/verify-db.mjs",

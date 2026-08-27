@@ -1,10 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useLocale } from 'next-intl';
 import { Check, Copy } from 'lucide-react';
 
 /** Кнопка «скопировать артикул». Клиентская только из-за clipboard. */
 export function CopyOem({ value }: { value: string }) {
+  // Локаль хуком: компонент клиентский и стоит в пяти местах — пропс тянуть дороже.
+  const en = useLocale() === 'en';
   const [copied, setCopied] = useState(false);
 
   if (!value) return null;
@@ -12,7 +15,7 @@ export function CopyOem({ value }: { value: string }) {
   return (
     <button
       type="button"
-      title="Скопировать артикул"
+      title={en ? 'Copy the part number' : 'Скопировать артикул'}
       onClick={() => {
         navigator.clipboard.writeText(value);
         setCopied(true);

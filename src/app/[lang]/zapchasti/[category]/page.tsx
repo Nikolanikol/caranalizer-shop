@@ -2,7 +2,10 @@ import React from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { CATEGORIES, categoryUrl, isCategory } from '@/lib/shop/catalog';
-import { SHOP_LOCALE, shopUrl } from '@/lib/shop/urls';
+import { SHOP_LOCALE, isShopLocale, shopAlternates } from '@/lib/shop/urls';
+import { categoryPlural } from '@/lib/shop/labels';
+import { categoryCopy } from '@/lib/shop/landing-text';
+import type { ShopLocale } from '@/lib/shop/terms';
 import { SITE_URL } from '@/lib/site';
 import { CatalogView, type CatalogSearchParams } from '@/components/shop/catalog-view';
 
@@ -21,16 +24,19 @@ export function generateStaticParams({ params }: { params: { lang: string } }) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ category: string }>;
+  params: Promise<{ lang: string; category: string }>;
 }): Promise<Metadata> {
-  const { category } = await params;
+  const { lang, category } = await params;
   if (!isCategory(category)) return {};
 
+  const locale: ShopLocale = isShopLocale(lang) ? lang : 'ru';
   const info = CATEGORIES[category];
+  const copy = categoryCopy(locale, categoryPlural(category, locale, info.plural), info.description);
+
   return {
-    title: `${info.plural} из Южной Кореи`,
-    description: info.description,
-    alternates: { canonical: shopUrl(categoryUrl(category), SITE_URL) },
+    title: copy.title,
+    description: copy.description,
+    alternates: shopAlternates(categoryUrl(category), SITE_URL, locale),
   };
 }
 
@@ -38,20 +44,23 @@ export default async function CategoryPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ category: string }>;
+  params: Promise<{ lang: string; category: string }>;
   searchParams: Promise<CatalogSearchParams>;
 }) {
-  const { category } = await params;
+  const { lang, category } = await params;
   if (!isCategory(category)) notFound();
 
+  const locale: ShopLocale = isShopLocale(lang) ? lang : 'ru';
   const info = CATEGORIES[category];
+  const copy = categoryCopy(locale, categoryPlural(category, locale, info.plural), info.description);
 
   return (
     <CatalogView
       category={category}
       searchParams={await searchParams}
-      heading={info.plural}
-      intro={info.description}
+      heading={copy.heading}
+      intro={copy.intro}
+      locale={locale}
     />
   );
 }

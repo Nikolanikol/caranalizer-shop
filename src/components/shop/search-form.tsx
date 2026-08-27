@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { Search } from 'lucide-react';
+import type { ShopLocale } from '@/lib/shop/terms';
+import { ui } from '@/lib/shop/ui-text';
 // Роутер из next-intl, а не из next/navigation: иначе переход уедет на /zapchasti
 // без языка и доедет до места только лишним редиректом.
 import { useRouter } from '@/i18n/navigation';
@@ -16,10 +18,13 @@ import { SHOP_BASE } from '@/lib/shop/urls';
 export function SearchForm({
   size = 'normal',
   initialTerm = '',
+  locale = 'ru',
 }: {
   size?: 'normal' | 'large';
   initialTerm?: string;
+  locale?: ShopLocale;
 }) {
+  const t = ui(locale);
   const router = useRouter();
   const [term, setTerm] = useState(initialTerm);
 
@@ -42,17 +47,15 @@ export function SearchForm({
           name="search"
           value={term}
           onChange={(event) => setTerm(event.target.value)}
-          aria-label="Поиск по каталогу"
-          placeholder="Артикул, марка или модель — например, Соната"
+          aria-label={t.searchLabel}
+          placeholder={t.searchPlaceholder}
           className="bg-transparent border-none text-text w-full text-sm outline-none placeholder:text-text-dim"
         />
         {size === 'large' && (
           <button
             type="submit"
             className="ml-3 shrink-0 px-4 py-2 rounded bg-cta hover:bg-cta-hover text-base-darker text-[10px] font-bold uppercase tracking-widest transition-colors cursor-pointer"
-          >
-            Найти
-          </button>
+          >{t.searchSubmit}</button>
         )}
       </div>
     </form>

@@ -2,7 +2,7 @@ import createMiddleware from "next-intl/middleware";
 import { NextRequest, NextResponse } from "next/server";
 import { routing } from "./i18n/routing";
 import { VIN_PATHS } from "./lib/seo";
-import { SHOP_BASE, SHOP_LOCALE } from "./lib/shop/urls";
+import { SHOP_BASE, SHOP_LOCALE, isShopLocale } from "./lib/shop/urls";
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -64,8 +64,26 @@ const GONE_PAGE = `<!doctype html>
  */
 const INTL_LOCALE_HEADER = "X-NEXT-INTL-LOCALE";
 
-/** Единственный путь, который существует под en/ar — страница проверки по VIN. */
+/** Страница проверки по VIN — она под en/ar и живёт по своему слагу. */
 const FOREIGN_KEEP = VIN_PATHS.en;
+
+/**
+ * Правовые страницы и контакты доступны на всех локалях, а не только по-русски.
+ *
+ * Раньше их глотал общий редирект `/en|/ar → страница проверки`, и получалось вот что:
+ * cookie-баннер на английской странице ссылается на политику обработки данных, а по
+ * ссылке — 301 обратно на страницу проверки. То же у согласия в форме заявки раздела
+ * запчастей: галочка ссылается на политику, до которой нельзя дойти. Согласие,
+ * отсылающее к недоступному документу, — это не согласие.
+ *
+ * Английские и арабские тексты у этих страниц есть давно, их просто было не достать.
+ *
+ * Маркетинговые страницы (`/about`, `/faq`, `/how-it-works`, `/guides`) сюда не входят
+ * намеренно: они по-прежнему уводят на страницу проверки. Оговорка: шапка и футер на
+ * иноязычных страницах их всё равно показывают, и эти ссылки остаются редиректом —
+ * чинить надо в навигации, а не здесь.
+ */
+const FOREIGN_LEGAL = ["/privacy", "/terms", "/contact"];
 
 /**
  * Внутреннее имя маршрута страницы проверки — папка в app/[lang].
@@ -110,16 +128,18 @@ export default function middleware(req: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  // Сайт одноязычный, и многоязычна ровно одна страница — проверка по VIN. Всё
-  // остальное под en/ar не существует: уводим на ту единственную страницу, которая
-  // на этом языке есть. 404 здесь был бы честнее по букве, но бесполезнее для
-  // посетителя, а накопленного сигнала у этих адресов нет — за три месяца ни один
-  // из них не собрал в поиске ни одного показа.
+  // Под en/ar существует не всё: проверка по VIN на обоих языках и раздел запчастей
+  // на тех языках, что перечислены в SHOP_LOCALES (сейчас туда добавлен en). Остальное
+  // уводим на ту единственную страницу, которая на этом языке точно есть. 404 был бы
+  // честнее по букве, но бесполезнее для посетителя, а накопленного сигнала у этих
+  // адресов нет — за три месяца ни один не собрал в поиске ни одного показа.
   const foreign = pathname.match(/^\/(en|ar)(\/.*)?$/);
   if (foreign) {
     const locale = foreign[1] as "en" | "ar";
     const rest = foreign[2] ?? "";
-    if (rest !== FOREIGN_KEEP) {
+    const ownShop = isShopLocale(locale) && (rest === SHOP_BASE || rest.startsWith(`${SHOP_BASE}/`));
+    const legal = FOREIGN_LEGAL.includes(rest);
+    if (rest !== FOREIGN_KEEP && !ownShop && !legal) {
       const url = req.nextUrl.clone();
       url.pathname = `/${locale}${FOREIGN_KEEP}`;
       url.search = "";

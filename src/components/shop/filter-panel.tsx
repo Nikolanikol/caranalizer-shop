@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { ChevronDown, Filter } from 'lucide-react';
+import type { ShopLocale } from '@/lib/shop/terms';
+import { ui } from '@/lib/shop/ui-text';
 
 /**
  * Обёртка фильтров для мобильного.
@@ -13,7 +15,15 @@ import { ChevronDown, Filter } from 'lucide-react';
  *
  * Содержимое приходит children и остаётся серверным — клиентское здесь только состояние.
  */
-export function FilterPanel({ activeCount, children }: { activeCount: number; children: React.ReactNode }) {
+export function FilterPanel({
+  activeCount,
+  children,
+  locale = 'ru',
+}: {
+  activeCount: number;
+  children: React.ReactNode;
+  locale?: ShopLocale;
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -26,7 +36,7 @@ export function FilterPanel({ activeCount, children }: { activeCount: number; ch
       >
         <span className="flex items-center gap-2.5">
           <Filter className="w-4 h-4 text-text-secondary" />
-          Фильтры каталога
+          {ui(locale).filters}
           {activeCount > 0 && (
             <span className="px-2 py-0.5 rounded-full bg-cta text-base-darker text-[10px] tabular-nums">
               {activeCount}

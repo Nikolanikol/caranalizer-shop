@@ -9,7 +9,10 @@ import {
   isCategory,
   modelUrl,
 } from '@/lib/shop/catalog';
-import { SHOP_LOCALE, shopUrl } from '@/lib/shop/urls';
+import { SHOP_LOCALE, isShopLocale, shopAlternates } from '@/lib/shop/urls';
+import { categoryPlural, categoryTitle } from '@/lib/shop/labels';
+import { modelCopy } from '@/lib/shop/landing-text';
+import type { ShopLocale } from '@/lib/shop/terms';
 import { SITE_URL } from '@/lib/site';
 import { CatalogView, type CatalogSearchParams } from '@/components/shop/catalog-view';
 
@@ -33,28 +36,36 @@ export async function generateStaticParams({ params }: { params: { lang: string 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ category: string; brand: string; model: string }>;
+  params: Promise<{ lang: string; category: string; brand: string; model: string }>;
 }): Promise<Metadata> {
-  const { category, brand, model } = await params;
+  const { lang, category, brand, model } = await params;
   if (!isCategory(category)) return {};
 
   const brandName = await getBrandBySlug(category, brand);
   const found = await getModelBySlug(category, brand, model);
   if (!brandName || !found) return {};
 
+  const locale: ShopLocale = isShopLocale(lang) ? lang : 'ru';
   const info = CATEGORIES[category];
+  const plural = categoryPlural(category, locale, info.plural);
 
   // Модель не указана — страница существует, чтобы товар не остался без родителя,
   // но в индекс ей нельзя: заголовок и содержимое дублируют страницу марки.
   if (!found.name) {
-    return { title: `${info.plural} ${brandName}`, robots: { index: false, follow: true } };
+    return { title: `${plural} ${brandName}`, robots: { index: false, follow: true } };
   }
 
-  const full = `${brandName} ${found.name}`;
+  const copy = modelCopy(locale, {
+    plural,
+    title: locale === 'en' ? categoryTitle(category, locale) : info.title,
+    brand: brandName,
+    model: found.name,
+  });
+
   return {
-    title: `${info.title} ${full} — оригинал из Кореи`,
-    description: `${info.plural} ${full} с авторазборок Южной Кореи. Поиск по OEM-артикулу, фотографии каждой детали, доставка по России.`,
-    alternates: { canonical: shopUrl(modelUrl(category, brand, model), SITE_URL) },
+    title: copy.title,
+    description: copy.description,
+    alternates: shopAlternates(modelUrl(category, brand, model), SITE_URL, locale),
   };
 }
 
@@ -62,18 +73,24 @@ export default async function ModelPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ category: string; brand: string; model: string }>;
+  params: Promise<{ lang: string; category: string; brand: string; model: string }>;
   searchParams: Promise<CatalogSearchParams>;
 }) {
-  const { category, brand, model } = await params;
+  const { lang, category, brand, model } = await params;
   if (!isCategory(category)) notFound();
 
   const brandName = await getBrandBySlug(category, brand);
   const found = await getModelBySlug(category, brand, model);
   if (!brandName || !found) notFound();
 
+  const locale: ShopLocale = isShopLocale(lang) ? lang : 'ru';
   const info = CATEGORIES[category];
-  const full = found.name ? `${brandName} ${found.name}` : brandName;
+  const copy = modelCopy(locale, {
+    plural: categoryPlural(category, locale, info.plural),
+    title: locale === 'en' ? categoryTitle(category, locale) : info.title,
+    brand: brandName,
+    model: found.name,
+  });
 
   return (
     <CatalogView
@@ -81,12 +98,9 @@ export default async function ModelPage({
       brand={{ name: brandName, slug: brand }}
       model={{ name: found.name, slug: model }}
       searchParams={await searchParams}
-      heading={`${info.plural} ${full}`}
-      intro={
-        found.name
-          ? `${info.plural} ${full} с авторазборок Южной Кореи. Сверьте деталь по фотографиям и OE-номеру — фото показывают именно тот товар, который приедет.`
-          : `${info.plural} ${brandName}, у которых донор не указал модель. Сверяйте по фотографиям и OE-номеру.`
-      }
+      heading={copy.heading}
+      intro={copy.intro}
+      locale={locale}
     />
   );
 }

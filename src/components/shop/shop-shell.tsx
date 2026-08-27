@@ -4,6 +4,8 @@ import { Link } from '@/i18n/navigation';
 // CATEGORIES живёт в серверном слое каталога, пути — в urls: этот файл серверный,
 // поэтому импорт безопасен, но брать адреса из urls дешевле.
 import { CATEGORIES } from '@/lib/shop/catalog';
+import { categoryPlural } from '@/lib/shop/labels';
+import type { ShopLocale } from '@/lib/shop/terms';
 import { SHOP_BASE, categoryUrl } from '@/lib/shop/urls';
 import type { PartCategory } from '@/types/part';
 
@@ -41,9 +43,12 @@ export function ShopHeader({
   intro,
   activeCategory,
   trail,
+  locale = 'ru',
 }: {
   heading: string;
   intro: string;
+  /** Язык страницы: на нём подписываются пилюли типов деталей и служебные ярлыки. */
+  locale?: ShopLocale;
   /** Подсвеченная пилюля. На витрине категории нет — не подсвечена ни одна. */
   activeCategory?: PartCategory;
   /**
@@ -60,7 +65,7 @@ export function ShopHeader({
       <div className="relative max-w-7xl mx-auto space-y-4">
         {trail && trail.length > 0 && (
           <nav
-            aria-label="Хлебные крошки"
+            aria-label={locale === 'en' ? 'Breadcrumbs' : 'Хлебные крошки'}
             className="flex items-center flex-wrap gap-1 text-[10px] font-bold uppercase tracking-widest text-text-muted"
           >
             {trail.map((step, index) => (
@@ -90,7 +95,10 @@ export function ShopHeader({
         {/* Пилюли переносятся, а не прокручиваются: в прокрутке правый край обрезался,
             и было не видно, что список продолжается. Все одиннадцать типов деталей
             должны читаться сразу — это единственная навигация по разделу. */}
-        <nav aria-label="Типы деталей" className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <nav
+          aria-label={locale === 'en' ? 'Part types' : 'Типы деталей'}
+          className="flex flex-wrap items-center gap-1.5 sm:gap-2"
+        >
           <Link
             href={SHOP_BASE}
             className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded text-[10px] font-bold uppercase tracking-wide sm:tracking-widest transition-colors ${
@@ -99,7 +107,7 @@ export function ShopHeader({
                 : 'bg-cta text-base-darker'
             }`}
           >
-            Все запчасти
+            {locale === 'en' ? 'All parts' : 'Все запчасти'}
           </Link>
           {(Object.keys(CATEGORIES) as PartCategory[]).map((key) => (
             <Link
@@ -111,7 +119,7 @@ export function ShopHeader({
                   : 'bg-base-darker border border-border-subtle text-text-secondary hover:text-text'
               }`}
             >
-              {CATEGORIES[key].plural}
+              {categoryPlural(key, locale, CATEGORIES[key].plural)}
             </Link>
           ))}
         </nav>

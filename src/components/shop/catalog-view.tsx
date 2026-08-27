@@ -20,6 +20,9 @@ import { FilterPanel } from './filter-panel';
 import { Pagination } from './pagination';
 import { SearchForm } from './search-form';
 import { ShopFrame, ShopHeader } from './shop-shell';
+import { categoryPlural } from '@/lib/shop/labels';
+import type { ShopLocale } from '@/lib/shop/terms';
+import { ui } from '@/lib/shop/ui-text';
 
 /**
  * Общая витрина: главная, категория, марка и модель — одна и та же страница
@@ -29,11 +32,12 @@ import { ShopFrame, ShopHeader } from './shop-shell';
  * страницы под «фонарь задний BMW 5 Series», и у каждой должен быть свой адрес.
  */
 
-const SORTS: { value: SortBy; label: string }[] = [
-  { value: 'popular', label: 'По умолчанию' },
-  { value: 'newest', label: 'Сначала новые' },
-  { value: 'price_asc', label: 'Сначала дешёвые' },
-  { value: 'price_desc', label: 'Сначала дорогие' },
+/** Порядок и ключ подписи. Сама подпись — в словаре интерфейса: она зависит от языка. */
+const SORTS: { value: SortBy; key: string }[] = [
+  { value: 'popular', key: 'sortPopular' },
+  { value: 'newest', key: 'sortNewest' },
+  { value: 'price_asc', key: 'sortPriceAsc' },
+  { value: 'price_desc', key: 'sortPriceDesc' },
 ];
 
 export interface CatalogSearchParams {
@@ -61,6 +65,7 @@ export async function CatalogView({
   basePath,
   extra,
   defaultSort = 'popular',
+  locale = 'ru',
 }: {
   category?: PartCategory;
   brand?: Segment;
@@ -77,7 +82,10 @@ export async function CatalogView({
    * поступлениями: это её смысл, и раньше она показывала их отдельным блоком.
    */
   defaultSort?: SortBy;
+  /** Язык страницы. Приходит сегментом пути — компонент серверный и сам его не знает. */
+  locale?: ShopLocale;
 }) {
+  const t = ui(locale);
   const sort = (SORTS.find((item) => item.value === searchParams.sort)?.value ?? defaultSort) as SortBy;
 
   // Путь текущей подборки. Всё, что мельче марки и модели, остаётся параметрами запроса.
@@ -100,8 +108,11 @@ export async function CatalogView({
    */
   const steps = category
     ? [
-        { name: 'Запчасти', href: SHOP_BASE },
-        { name: CATEGORIES[category].plural, href: categoryUrl(category) },
+        { name: t.section, href: SHOP_BASE },
+        {
+          name: categoryPlural(category, locale, CATEGORIES[category].plural),
+          href: categoryUrl(category),
+        },
         ...(brand ? [{ name: brand.name, href: brandUrl(category, brand.slug) }] : []),
         // Модель отбрасывается по пустому имени, а не по отсутствию сегмента: у товаров
         // без модели сегмент есть (`prochee`), а имени нет — и ступень выходила пустой,
@@ -147,11 +158,12 @@ export async function CatalogView({
 
   return (
     <>
-      <ShopHeader heading={heading} intro={intro} activeCategory={category} trail={trail} />
+      <ShopHeader heading={heading} intro={intro} activeCategory={category} trail={trail} locale={locale} />
 
       <ShopFrame
         sidebar={
           <FilterPanel
+              locale={locale}
               activeCount={
                 [selectedBrandName, model, searchParams.side, searchParams.position].filter(Boolean).length
               }
@@ -165,22 +177,23 @@ export async function CatalogView({
                 brands={brands}
                 models={models}
                 basePath={basePath}
+                locale={locale}
               />
           </FilterPanel>
         }
       >
         {/* Поиска нет в шапке — он стоит рядом с товарами, здесь и на витрине */}
             <div className="mb-6">
-              <SearchForm initialTerm={searchParams.search ?? ''} />
+              <SearchForm initialTerm={searchParams.search ?? ''} locale={locale} />
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-6 border-b border-border-subtle">
               <p className="text-xs font-bold text-text-muted uppercase tracking-widest">
-                Найдено: <strong className="text-text">{result.total}</strong>
+                {t.found}: <strong className="text-text">{result.total}</strong>
                 {searchParams.search && (
                   <>
                     {' '}
-                    по запросу <strong className="text-text">«{searchParams.search}»</strong>
+                    {t.forQuery} <strong className="text-text">«{searchParams.search}»</strong>
                   </>
                 )}
               </p>
@@ -207,7 +220,7 @@ export async function CatalogView({
                         : 'text-text-muted hover:text-text'
                     }`}
                   >
-                    {item.label}
+                    {t[item.key]}
                   </Link>
                 ))}
               </div>
@@ -218,26 +231,27 @@ export async function CatalogView({
                 <span className="w-14 h-14 rounded bg-base-darker text-text-dim flex items-center justify-center mx-auto border border-border-subtle">
                   <PackageSearch className="w-6 h-6" />
                 </span>
-                <h2 className="text-sm font-black uppercase tracking-widest text-text">Ничего не найдено</h2>
+                <h2 className="text-sm font-black uppercase tracking-widest text-text">{t.nothingFound}</h2>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted max-w-md mx-auto leading-relaxed">
-                  Попробуйте другой артикул или сбросьте фильтры.
+                  {t.nothingFoundHint}
                 </p>
                 <Link
                   href={base}
                   className="inline-block px-6 py-3 rounded bg-base-darker hover:bg-surface text-text-secondary text-[10px] font-bold uppercase tracking-widest border border-border-subtle transition-colors"
                 >
-                  Сбросить фильтры
+                  {t.resetFilters}
                 </Link>
               </div>
             ) : (
               <div className="space-y-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                   {result.items.map((part) => (
-                    <ProductCard key={partKey(part)} part={part} />
+                    <ProductCard key={partKey(part)} part={part} locale={locale} />
                   ))}
                 </div>
 
                 <Pagination
+                  locale={locale}
                   page={result.page}
                   totalPages={result.totalPages}
                   base={base}

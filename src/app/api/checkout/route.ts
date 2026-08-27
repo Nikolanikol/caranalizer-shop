@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { submitLead } from '@/lib/leads';
 import { messengerLines } from '@/lib/messenger-links';
-import { formatUsd } from '@/lib/shop/pricing';
+import { getPricesKrwByCartId } from '@/lib/shop/catalog';
+import { formatUsd, priceRub, priceUsd, type Rates } from '@/lib/shop/pricing';
 import { getRates } from '@/lib/shop/rates';
 
 /**
@@ -11,22 +12,49 @@ import { getRates } from '@/lib/shop/rates';
  * Раньше именно этот роут требовал `TELEGRAM_WORK_CHAT_ID` и не читал `TELEGRAM_CHAT_ID`,
  * тогда как две другие формы — наоборот. На окружении, настроенном под исходный
  * caranalizer, оформление заказа отвечало 503 на каждую попытку.
+ *
+ * **Цену считает сервер, а не браузер.** До этого `priceRub` приходил из тела запроса
+ * и печатался как есть: подделанный запрос присылал «1 ₽ за штуку», и менеджер выставлял
+ * счёт по этой цифре. Теперь воны дочитываются из базы по ключу позиции, рубли и доллары
+ * считает `pricing.ts` по курсу ЦБ, а присланные числа используются только для сверки —
+ * расхождение попадает в заявку отдельной строкой.
  */
 
 interface CheckoutItem {
+  /**
+   * Ключ позиции корзины. У выбранного экземпляра это `product_no` донора, у товара
+   * из списка — путь товара. По нему сервер и достаёт настоящую цену.
+   */
+  id?: string;
   /** Полный путь товара. Слаг не годится: он уникален только внутри марки и модели. */
   url?: string;
   title?: string;
   oem?: string;
   quantity?: unknown;
+  /** Цена, показанная покупателю. Только для сверки — в счёт идёт цена из базы. */
   priceRub?: unknown;
 }
 
 /** Позиций в сообщении: остальное менеджер смотрит в базе, чтобы Telegram не обрезал. */
 const MAX_ITEMS_IN_MESSAGE = 30;
 
+/**
+ * Сколько позиций вообще разбираем. Тело запроса подделывается, и без границы
+ * присланный массив на сто тысяч строк ушёл бы в запрос к базе целиком.
+ */
+const MAX_ITEMS = 100;
+
+/** Больше одной детали в заявке бывает, сотня одинаковых фар — нет. */
+const MAX_QUANTITY = 99;
+
+/**
+ * Способы оплаты дублируются в четырёх местах — это одна и та же оферта:
+ * форма в `cart-drawer.tsx`, эти подписи, текст на `dostavka-i-oplata`
+ * и блок `PAYMENTS` на `kak-zakazat`. Править надо все четыре.
+ */
 const PAYMENT_LABELS: Record<string, string> = {
   qwikpay: 'QwikPay / Золотая Корона',
+  swift: 'SWIFT-перевод',
   invoice_ur: 'Инвойс на юрлицо',
   paypal: 'PayPal',
 };
@@ -37,16 +65,51 @@ function num(value: unknown): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function rub(value: unknown): string {
-  return `${num(value).toLocaleString('ru-RU')} ₽`;
+/** Количество из тела запроса: целое, не меньше одного и не больше сотни. */
+function quantityOf(value: unknown): number {
+  return Math.min(MAX_QUANTITY, Math.max(1, Math.round(num(value))));
 }
 
-/**
- * «5 000 ₽ (≈ $60)». Курс берётся здесь, а не приходит из браузера: тело запроса
- * подделывается, а сумма в заявке — то, по чему менеджер выставляет счёт.
- */
-function withUsd(value: unknown, rubPerUsd: number): string {
-  return `${rub(value)} (${formatUsd(Math.round(num(value) / rubPerUsd / 10) * 10)})`;
+function rub(value: number): string {
+  return `${value.toLocaleString('ru-RU')} ₽`;
+}
+
+/** «5 000 ₽ (≈ $60)» — обе валюты посчитаны сервером из вон, а не переведены одна в другую. */
+function money(valueRub: number, valueUsd: number): string {
+  return `${rub(valueRub)} (${formatUsd(valueUsd)})`;
+}
+
+/** Позиция заявки с ценой, посчитанной на сервере. `null` — такой позиции нет в каталоге. */
+interface PricedItem {
+  item: CheckoutItem;
+  quantity: number;
+  rub: number | null;
+  usd: number | null;
+}
+
+function priceItems(items: CheckoutItem[], prices: Map<string, number>, rates: Rates): PricedItem[] {
+  return items.map((item) => {
+    const krw = item.id ? prices.get(item.id) : undefined;
+    return {
+      item,
+      quantity: quantityOf(item.quantity),
+      rub: krw === undefined ? null : priceRub(krw, rates),
+      usd: krw === undefined ? null : priceUsd(krw, rates),
+    };
+  });
+}
+
+/** Строка позиции для менеджера. Непроверенная цена подписывается, а не подставляется. */
+function itemLine(priced: PricedItem, index: number): string {
+  const { item, quantity, rub: perRub, usd: perUsd } = priced;
+  const price =
+    perRub === null || perUsd === null
+      ? '⚠️ цены нет — позиция не найдена в каталоге'
+      : money(perRub, perUsd);
+  return (
+    `${index + 1}. ${item.title ?? '—'}\n   OEM: ${item.oem || '—'}\n   ${item.url ?? ''}\n   ` +
+    `${quantity} шт. × ${price}`
+  );
 }
 
 export async function POST(request: Request) {
@@ -64,7 +127,7 @@ export async function POST(request: Request) {
 
   const { customer = {}, goodsRub = 0, consent = false } = payload;
   // Тело запроса — не наш код: массив может оказаться не массивом.
-  const items = Array.isArray(payload.items) ? payload.items : [];
+  const items = (Array.isArray(payload.items) ? payload.items : []).slice(0, MAX_ITEMS);
 
   if (!customer.name?.trim() || !customer.phone?.trim() || items.length === 0) {
     return NextResponse.json(
@@ -81,18 +144,42 @@ export async function POST(request: Request) {
     );
   }
 
-  const { rubPerUsd } = await getRates();
+  const rates = await getRates();
+
+  let prices: Map<string, number>;
+  try {
+    prices = await getPricesKrwByCartId(items.map((item) => item.id ?? ''));
+  } catch (error) {
+    // Заявку из-за базы не теряем: она уйдёт без подтверждённых цен, и это будет видно.
+    console.error('[/api/checkout] цены из каталога', error);
+    prices = new Map();
+  }
+
+  const priced = priceItems(items, prices, rates);
+  const verified = priced.filter((entry) => entry.rub !== null && entry.usd !== null);
+  const unverified = priced.length - verified.length;
+
+  // Итог складывается из округлённых цен строк — ровно как в корзине: покупатель
+  // проверяет сумму глазами, и она обязана сойтись в обеих валютах.
+  const totalRub = verified.reduce((sum, entry) => sum + entry.rub! * entry.quantity, 0);
+  const totalUsd = verified.reduce((sum, entry) => sum + entry.usd! * entry.quantity, 0);
+
+  // Присланная сумма в счёт не идёт, но расхождение с ней менеджеру знать надо.
+  const claimedRub = num(goodsRub);
+  const mismatch = unverified === 0 && Math.round(claimedRub) !== Math.round(totalRub);
+
   const orderNumber = `KP-${Date.now().toString().slice(-6)}`;
   const payment = customer.payment ? PAYMENT_LABELS[customer.payment] ?? customer.payment : null;
 
-  const itemLines = items
-    .slice(0, MAX_ITEMS_IN_MESSAGE)
-    .map(
-      (item, i) =>
-        `${i + 1}. ${item.title ?? '—'}\n   OEM: ${item.oem || '—'}\n   ${item.url ?? ''}\n   ` +
-        `${num(item.quantity)} шт. × ${withUsd(item.priceRub, rubPerUsd)}`,
-    );
-  const rest = items.length - MAX_ITEMS_IN_MESSAGE;
+  const itemLines = priced.slice(0, MAX_ITEMS_IN_MESSAGE).map(itemLine);
+  const rest = priced.length - MAX_ITEMS_IN_MESSAGE;
+
+  const warnings = [
+    mismatch &&
+      `⚠️ В браузере показано ${rub(Math.round(claimedRub))} — сумма не сходится, счёт выставлять по расчёту выше.`,
+    unverified > 0 &&
+      `⚠️ Позиций без цены: ${unverified}. Их нет в каталоге по присланному ключу — проверить вручную.`,
+  ].filter(Boolean) as string[];
 
   try {
     const { ok } = await submitLead({
@@ -107,8 +194,11 @@ export async function POST(request: Request) {
         `Заявка ${orderNumber} из каталога запчастей`,
         `Город: ${customer.city || '—'}, адрес: ${customer.address || '—'}`,
         payment && `Оплата: ${payment}`,
-        `Итого за детали: ${withUsd(goodsRub, rubPerUsd)}`,
-        ...items.map((item) => `• ${item.title ?? '—'} — OEM ${item.oem || '—'}, ${num(item.quantity)} шт.`),
+        `Итого за детали: ${money(totalRub, totalUsd)}`,
+        ...priced.map(
+          (entry) => `• ${entry.item.title ?? '—'} — OEM ${entry.item.oem || '—'}, ${entry.quantity} шт.`,
+        ),
+        ...warnings,
       ]
         .filter(Boolean)
         .join('\n'),
@@ -130,8 +220,9 @@ export async function POST(request: Request) {
         ...itemLines,
         rest > 0 && `…и ещё ${rest} позиций — уточните у клиента`,
         '',
-        `💰 Итого за детали: ${withUsd(goodsRub, rubPerUsd)}`,
+        `💰 Итого за детали: ${money(totalRub, totalUsd)}`,
         '🚚 Доставка: рассчитать по городу',
+        ...warnings,
       ],
     });
 
