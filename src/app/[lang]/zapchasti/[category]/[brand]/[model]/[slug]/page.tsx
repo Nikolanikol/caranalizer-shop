@@ -19,7 +19,7 @@ import { SHOP_LOCALE, isShopLocale, oemUrl, shopAlternates, shopUrl } from '@/li
 import { categoryPlural, partTitle } from '@/lib/shop/labels';
 import { POSITION_EN, SIDE_EN, type ShopLocale, term } from '@/lib/shop/terms';
 import { ui } from '@/lib/shop/ui-text';
-import { formatPartPrice, priceRub } from '@/lib/shop/pricing';
+import { formatPartPrice, priceUsd } from '@/lib/shop/pricing';
 import { getRates } from '@/lib/shop/rates';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 import { VIN_PATHS } from '@/lib/seo';
@@ -149,16 +149,17 @@ export default async function ProductPage({
         /*
          * У детали несколько экземпляров с разной ценой, поэтому AggregateOffer,
          * а не Offer: цена в разметке обязана совпадать с тем, что видит покупатель,
-         * а он видит вилку. Валюта — рубли: доллар на сайте справочный.
+         * а он видит вилку. Валюта — доллар: с 28.08.2026 это цена оферты, рубля
+         * на витрине больше нет.
          */
         offers:
           part.offersCount > 1
             ? {
                 '@type': 'AggregateOffer',
                 url: shopUrl(partUrl(part), SITE_URL),
-                priceCurrency: 'RUB',
-                lowPrice: priceRub(part.priceKrw, rates),
-                highPrice: priceRub(part.priceKrwMax, rates),
+                priceCurrency: 'USD',
+                lowPrice: priceUsd(part.priceKrw, rates),
+                highPrice: priceUsd(part.priceKrwMax, rates),
                 offerCount: part.offersCount,
                 availability: part.inStock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder',
                 seller: { '@type': 'Organization', name: SITE_NAME },
@@ -166,8 +167,8 @@ export default async function ProductPage({
             : {
                 '@type': 'Offer',
                 url: shopUrl(partUrl(part), SITE_URL),
-                priceCurrency: 'RUB',
-                price: priceRub(part.priceKrw, rates),
+                priceCurrency: 'USD',
+                price: priceUsd(part.priceKrw, rates),
                 availability: part.inStock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder',
                 seller: { '@type': 'Organization', name: SITE_NAME },
               },

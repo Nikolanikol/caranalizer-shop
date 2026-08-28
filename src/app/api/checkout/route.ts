@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { submitLead } from '@/lib/leads';
 import { messengerLines } from '@/lib/messenger-links';
 import { getPricesKrwByCartId } from '@/lib/shop/catalog';
-import { formatUsd, priceRub, priceUsd, type Rates } from '@/lib/shop/pricing';
+import { formatRubApprox, formatUsd, priceRub, priceUsd, type Rates } from '@/lib/shop/pricing';
 import { getRates } from '@/lib/shop/rates';
 
 /**
@@ -13,11 +13,16 @@ import { getRates } from '@/lib/shop/rates';
  * тогда как две другие формы — наоборот. На окружении, настроенном под исходный
  * caranalizer, оформление заказа отвечало 503 на каждую попытку.
  *
- * **Цену считает сервер, а не браузер.** До этого `priceRub` приходил из тела запроса
- * и печатался как есть: подделанный запрос присылал «1 ₽ за штуку», и менеджер выставлял
- * счёт по этой цифре. Теперь воны дочитываются из базы по ключу позиции, рубли и доллары
- * считает `pricing.ts` по курсу ЦБ, а присланные числа используются только для сверки —
+ * **Цену считает сервер, а не браузер.** До этого цена приходила из тела запроса
+ * и печаталась как есть: подделанный запрос присылал «1 ₽ за штуку», и менеджер выставлял
+ * счёт по этой цифре. Теперь воны дочитываются из базы по ключу позиции, доллары
+ * считает `pricing.ts` по курсу ЦБ, а присланное используется только для сверки —
  * расхождение попадает в заявку отдельной строкой.
+ *
+ * **Цена оферты — доллар** (с 28.08.2026), и сверяемся мы по нему. Рубль в заявке
+ * остался справочным, со знаком «≈»: менеджер ведёт и российских покупателей, и рублёвый
+ * ориентир ему полезен. Но договорённость с покупателем — та, что он видел на сайте,
+ * то есть долларовая.
  */
 
 interface CheckoutItem {
@@ -31,8 +36,8 @@ interface CheckoutItem {
   title?: string;
   oem?: string;
   quantity?: unknown;
-  /** Цена, показанная покупателю. Только для сверки — в счёт идёт цена из базы. */
-  priceRub?: unknown;
+  /** Цена, показанная покупателю, в долларах. Только для сверки — в счёт идёт цена из базы. */
+  priceUsd?: unknown;
 }
 
 /** Позиций в сообщении: остальное менеджер смотрит в базе, чтобы Telegram не обрезал. */
@@ -58,13 +63,13 @@ function quantityOf(value: unknown): number {
   return Math.min(MAX_QUANTITY, Math.max(1, Math.round(num(value))));
 }
 
-function rub(value: number): string {
-  return `${value.toLocaleString('ru-RU')} ₽`;
-}
 
-/** «5 000 ₽ (≈ $60)» — обе валюты посчитаны сервером из вон, а не переведены одна в другую. */
+/**
+ * «$60 (≈ 5 000 ₽)» — доллар цена, рубль ориентир. Обе посчитаны сервером из вон,
+ * а не переведены одна в другую.
+ */
 function money(valueRub: number, valueUsd: number): string {
-  return `${rub(valueRub)} (${formatUsd(valueUsd)})`;
+  return `${formatUsd(valueUsd)} (${formatRubApprox(valueRub)})`;
 }
 
 /** Позиция заявки с ценой, посчитанной на сервере. `null` — такой позиции нет в каталоге. */
@@ -104,7 +109,7 @@ export async function POST(request: Request) {
   let payload: {
     customer?: Record<string, string>;
     items?: CheckoutItem[];
-    goodsRub?: number;
+    goodsUsd?: number;
     consent?: boolean;
   };
   try {
@@ -113,7 +118,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: 'Некорректный запрос' }, { status: 400 });
   }
 
-  const { customer = {}, goodsRub = 0, consent = false } = payload;
+  const { customer = {}, goodsUsd = 0, consent = false } = payload;
   // Тело запроса — не наш код: массив может оказаться не массивом.
   const items = (Array.isArray(payload.items) ? payload.items : []).slice(0, MAX_ITEMS);
 
@@ -153,8 +158,9 @@ export async function POST(request: Request) {
   const totalUsd = verified.reduce((sum, entry) => sum + entry.usd! * entry.quantity, 0);
 
   // Присланная сумма в счёт не идёт, но расхождение с ней менеджеру знать надо.
-  const claimedRub = num(goodsRub);
-  const mismatch = unverified === 0 && Math.round(claimedRub) !== Math.round(totalRub);
+  // Сверяем по доллару: это цена оферты, её покупатель и видел.
+  const claimedUsd = num(goodsUsd);
+  const mismatch = unverified === 0 && Math.round(claimedUsd) !== Math.round(totalUsd);
 
   const orderNumber = `KP-${Date.now().toString().slice(-6)}`;
 
@@ -171,7 +177,7 @@ export async function POST(request: Request) {
 
   const warnings = [
     mismatch &&
-      `⚠️ В браузере показано ${rub(Math.round(claimedRub))} — сумма не сходится, счёт выставлять по расчёту выше.`,
+      `⚠️ В браузере показано ${formatUsd(Math.round(claimedUsd))} — сумма не сходится, счёт выставлять по расчёту выше.`,
     unverified > 0 &&
       `⚠️ Позиций без цены: ${unverified}. Их нет в каталоге по присланному ключу — проверить вручную.`,
   ].filter(Boolean) as string[];

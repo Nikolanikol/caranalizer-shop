@@ -5,7 +5,7 @@ import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { CheckCircle2, Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import type { Value } from 'react-phone-number-input';
-import { formatRub, formatUsd, priceRub, priceUsd } from '@/lib/shop/pricing';
+import { formatUsd, priceUsd } from '@/lib/shop/pricing';
 import { partUrl } from '@/lib/shop/urls';
 import { partTitle } from '@/lib/shop/labels';
 import type { ShopLocale } from '@/lib/shop/terms';
@@ -44,8 +44,7 @@ export function CartDrawer() {
   if (!isOpen) return null;
 
   // Итог складывается из тех же округлённых цен, что стоят в строках: покупатель
-  // проверяет сумму глазами, и она обязана сойтись в обеих валютах.
-  const goodsRub = items.reduce((sum, item) => sum + priceRub(item.part.priceKrw, rates) * item.quantity, 0);
+  // проверяет сумму глазами, и она обязана сойтись.
   const goodsUsd = items.reduce((sum, item) => sum + priceUsd(item.part.priceKrw, rates) * item.quantity, 0);
 
   const submit = async (event: React.FormEvent) => {
@@ -69,9 +68,9 @@ export function CartDrawer() {
             title: item.part.titleRu,
             oem: item.part.oemNumber,
             quantity: item.quantity,
-            priceRub: priceRub(item.part.priceKrw, rates),
+            priceUsd: priceUsd(item.part.priceKrw, rates),
           })),
-          goodsRub,
+          goodsUsd,
           consent,
         }),
       });
@@ -167,11 +166,7 @@ export function CartDrawer() {
                         )}
                         <div className="text-xs text-text font-bold line-clamp-2 leading-snug">{partTitle(part, locale)}</div>
                         <div className="text-[11px] text-text-secondary font-bold uppercase tracking-widest">
-                          {formatRub(priceRub(part.priceKrw, rates))} / {t.perItem}
-                          <span className="text-text-muted normal-case tracking-normal">
-                            {' '}
-                            ({formatUsd(priceUsd(part.priceKrw, rates))})
-                          </span>
+                          {formatUsd(priceUsd(part.priceKrw, rates))} / {t.perItem}
                         </div>
 
                         <div className="flex items-center gap-3 pt-2">
@@ -363,12 +358,7 @@ export function CartDrawer() {
                 </div>
                 <div className="flex justify-between text-base font-black text-text pt-3 border-t border-border-subtle">
                   <span>{t.total}:</span>
-                  <span className="font-mono text-right">
-                    {formatRub(goodsRub)}
-                    <span className="block text-[11px] font-bold text-text-muted normal-case tracking-normal">
-                      {formatUsd(goodsUsd)}
-                    </span>
-                  </span>
+                  <span className="font-mono text-right">{formatUsd(goodsUsd)}</span>
                 </div>
               </div>
 

@@ -3,7 +3,7 @@ import { Link } from '@/i18n/navigation';
 import { ImageOff } from 'lucide-react';
 import type { AutoPart } from '@/types/part';
 import { partUrl } from '@/lib/shop/catalog';
-import { formatPartPrice, formatPartPriceUsd } from '@/lib/shop/pricing';
+import { formatPartPrice } from '@/lib/shop/pricing';
 import { getRates } from '@/lib/shop/rates';
 import { CONDITION_CLASS, conditionLabel, partDescriptor, partHeading, partTitle } from '@/lib/shop/labels';
 import type { ShopLocale } from '@/lib/shop/terms';
@@ -98,12 +98,9 @@ export async function ProductCard({ part, locale = 'ru' }: { part: AutoPart; loc
         </div>
 
         <div className="mt-auto">
-          <div className="flex items-baseline flex-wrap gap-x-2 gap-y-1 mb-2">
+          <div className="mb-2">
             <span className="text-[28px] font-bold text-text tracking-tight leading-none">
               {formatPartPrice(part.priceKrw, rates)}
-            </span>
-            <span className="text-sm font-bold text-text-muted leading-none">
-              {formatPartPriceUsd(part.priceKrw, rates)}
             </span>
           </div>
           <div className="text-xs text-text-muted mb-6 font-medium">{t.shippingExtra}</div>

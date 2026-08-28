@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Check, Fingerprint, Truck } from 'lucide-react';
 import type { AutoPart, Offer } from '@/types/part';
 import type { Rates } from '@/lib/shop/pricing';
-import { formatPartPrice, formatPartPriceUsd } from '@/lib/shop/pricing';
+import { formatPartPrice } from '@/lib/shop/pricing';
 import { CONDITION_CLASS, conditionLabel, partTitle } from '@/lib/shop/labels';
 import {
   COMPLETENESS_EN,
@@ -83,12 +83,9 @@ export function OfferPicker({
 
         <div className="bg-elevated rounded p-5 border border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-baseline flex-wrap gap-x-3 gap-y-1">
+            <div>
               <span className="text-3xl font-black text-text tracking-tight leading-none">
                 {formatPartPrice(active.priceKrw, rates)}
-              </span>
-              <span className="text-base font-bold text-text-muted leading-none">
-                {formatPartPriceUsd(active.priceKrw, rates)}
               </span>
             </div>
             <p className="text-[9px] text-text-muted font-bold uppercase tracking-widest mt-2">
