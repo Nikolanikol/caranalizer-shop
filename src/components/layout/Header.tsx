@@ -5,7 +5,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { Container } from "@/components/ui/container";
 import { SHOP_BASE, isShopLocale } from "@/lib/shop/urls";
 import { CartButton } from "@/components/shop/cart-button";
-import { ShopLanguageSwitcher } from "@/components/shop/shop-language-switcher";
+import { LocaleToggle } from "./LocaleToggle";
 import { MobileNav } from "./MobileNav";
 
 // «Проверка авто» теперь обычный пункт меню, а не жёлтая CTA-кнопка справа: услуга
@@ -57,14 +57,13 @@ export function Header() {
         </nav>
 
         {/*
-          Переключатель языков в шапке есть, но только внутри раздела запчастей —
-          `ShopLanguageSwitcher` за его пределами не рисуется вовсе. Общего переключателя
-          здесь по-прежнему нет и быть не должно: сайт вокруг раздела одноязычный,
-          и в шапке такой переключатель предлагал языки для страниц, которых на них
-          не существует. У страницы проверки по VIN свой большой переключатель на ней самой.
+          Переключатель языков вернулся в шапку: сайт открыт на английском целиком,
+          и довод «предлагает языки для несуществующих страниц» перестал действовать.
+          `LocaleToggle` сам не рисуется на странице проверки по VIN — там свой,
+          крупный и на три языка.
         */}
         <div className="flex items-center gap-3">
-          <ShopLanguageSwitcher />
+          <LocaleToggle />
           <CartButton />
           <MobileNav />
         </div>

@@ -17,7 +17,9 @@ import {
   type AutoPart,
   type Facet,
 } from "@/lib/shop/catalog";
-import { SHOP_BASE, categoryUrl, modelUrl } from "@/lib/shop/urls";
+import { SHOP_BASE, categoryUrl, isShopLocale, modelUrl } from "@/lib/shop/urls";
+import { categoryPlural } from "@/lib/shop/labels";
+import type { ShopLocale } from "@/lib/shop/terms";
 import type { PartCategory } from "@/types/part";
 import { SearchForm } from "@/components/shop/search-form";
 import { ProductCard } from "@/components/shop/product-card";
@@ -35,25 +37,25 @@ export async function generateMetadata({
   const { lang } = await params;
 
   /*
-   * Русский заголовок теперь про каталог: главная стала входом в раздел запчастей.
-   * Иноязычные оставлены про проверку по VIN — там каталога нет и не будет,
-   * а middleware всё равно уводит /en и /ar на страницу проверки.
+   * Русский и английский заголовки — про каталог: главная стала входом в раздел
+   * запчастей, и с 28.08.2026 раздел есть на обоих языках. Арабский оставлен про
+   * проверку по VIN: каталога на нём нет, и middleware уводит `/ar` на неё.
    */
   const titles: Record<string, string> = {
     ru: "Запчасти с авторазборов Южной Кореи — оптика, зеркала, блоки управления",
-    en: "Korean Car Check — Free Encar & KBChachacha Report | Caranalizer",
+    en: "Used car parts from South Korean salvage yards — worldwide shipping",
     ar: "فحص السيارات من كوريا — تقرير مجاني Encar وKBChachacha | Caranalizer",
   };
   const descriptions: Record<string, string> = {
     ru: "Оригинальные б/у запчасти с авторазборов Южной Кореи: фары и фонари, зеркала, блоки управления. Поиск по OEM-артикулу, фото каждого экземпляра, VIN донорской машины. Плюс бесплатная проверка авто из Кореи по VIN.",
-    en: "Send an Encar, KBChachacha or Kcar listing link — free history check: accidents, insurance payouts, mileage, factory specs by VIN.",
+    en: "Used genuine parts from South Korean salvage yards: headlights and tail lights, mirrors, control modules. Search by OEM number, photos of every single item, donor car VIN. Plus a free Korean car history check.",
     ar: "أرسل رابط إعلان من Encar أو KBChachacha أو Kcar — فحص مجاني للتاريخ: الحوادث، مدفوعات التأمين، المسافة، المواصفات حسب VIN.",
   };
 
   return {
     title: titles[lang],
     description: descriptions[lang],
-    alternates: mainAlternates(),
+    alternates: mainAlternates("", lang),
     openGraph: {
       title: titles[lang],
       description: descriptions[lang],
@@ -130,6 +132,13 @@ function HomeContent({
   const tg = useTranslations("guides");
   const tc = useTranslations("check");
   const locale = useLocale() as GuideLocale;
+  /*
+   * Язык каталога и язык сайта — не одно и то же: раздел живёт на `SHOP_LOCALES`,
+   * сайт на трёх локалях. На арабской главной каталожные блоки подписываются
+   * по-русски, но её самой не существует — middleware уводит `/ar` на проверку.
+   */
+  const shopLocale: ShopLocale = isShopLocale(locale) ? locale : "ru";
+  const h = HOME[shopLocale];
   const guideTeasers = GUIDES.filter((g) => HOME_GUIDE_SLUGS.includes(g.slug));
 
   // Куда ведут «запчасти» на этой странице — карточка услуги и кнопка в блоке внизу.
@@ -168,7 +177,7 @@ function HomeContent({
         "@type": "SearchAction",
         target: {
           "@type": "EntryPoint",
-          urlTemplate: `https://caranalizer.com/ru${SHOP_BASE}?search={search_term_string}`,
+          urlTemplate: `https://caranalizer.com/${shopLocale}${SHOP_BASE}?search={search_term_string}`,
         },
         "query-input": "required name=search_term_string",
       },
@@ -205,24 +214,24 @@ function HomeContent({
         <div className="relative z-10 text-center max-w-[800px] px-6 py-16">
           <div className="inline-flex items-center gap-2 px-5 py-2 bg-elevated/80 border border-border rounded-full font-[family-name:var(--font-heading)] text-xs font-medium uppercase tracking-[0.08em] text-primary mb-8 opacity-0 animate-[fadeInUp_0.6s_ease_forwards_0.2s]">
             <span className="w-1.5 h-1.5 bg-primary rounded-full animate-[pulse_2s_ease_infinite]" />
-            Б/у оригинал · доставка по России
+            {h.badge}
           </div>
 
-          {/* Тексты здесь по-русски, а не через переводы: каталог одноязычный, и главная
-              теперь про него. Тот же приём уже принят для `partsBanner.*` и `nav.parts`. */}
+          {/* Каталожные тексты — строками в HOME внизу файла, а не через next-intl:
+              язык раздела приходит пропсом, и `useTranslations` тут был бы вторым
+              источником правды. Тот же приём уже принят в самом разделе. */}
           <h1 className="font-[family-name:var(--font-heading)] text-[clamp(32px,5vw,64px)] font-bold leading-[1.1] tracking-tight uppercase mb-6 opacity-0 animate-[fadeInUp_0.6s_ease_forwards_0.4s]">
-            Запчасти с авторазборов{" "}
-            <span className="text-primary">Южной Кореи</span>
+            {h.h1a}{" "}
+            <span className="text-primary">{h.h1b}</span>
           </h1>
 
           <p className="text-[clamp(16px,2vw,20px)] text-text-muted max-w-[600px] mx-auto mb-8 leading-relaxed opacity-0 animate-[fadeInUp_0.6s_ease_forwards_0.6s]">
-            {total.toLocaleString("ru")} деталей для {brandCount} марок: оптика, зеркала, блоки управления.
-            Каждый экземпляр сфотографирован отдельно — вы видите ровно ту деталь, которая приедет.
+            {h.lead(total.toLocaleString(shopLocale === "en" ? "en-US" : "ru"), brandCount)}
           </p>
 
           {/* Поиск в самом верху: приходят с артикулом на руках, а не листать каталог. */}
           <div className="max-w-[560px] mx-auto mb-8 opacity-0 animate-[fadeInUp_0.6s_ease_forwards_0.7s]">
-            <SearchForm size="large" />
+            <SearchForm size="large" locale={shopLocale} />
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center opacity-0 animate-[fadeInUp_0.6s_ease_forwards_0.8s]">
@@ -230,7 +239,7 @@ function HomeContent({
               href={SHOP_BASE}
               className="inline-flex items-center justify-center gap-2.5 px-10 py-[18px] bg-primary text-white font-[family-name:var(--font-heading)] text-[15px] font-semibold uppercase tracking-[0.05em] rounded-[10px] shadow-[0_0_25px_rgba(59,130,246,0.3)] hover:bg-primary-hover hover:shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden"
             >
-              Смотреть каталог
+              {h.ctaCatalog}
               <ArrowRight className="w-5 h-5" />
             </Link>
             <Link
@@ -269,10 +278,10 @@ function HomeContent({
         <Container>
           <div className="flex flex-wrap items-baseline justify-between gap-3 mb-6">
             <h2 className="font-[family-name:var(--font-heading)] text-[clamp(22px,3vw,32px)] font-bold tracking-tight uppercase">
-              Что есть в наличии
+              {h.inStock}
             </h2>
             <Link href={SHOP_BASE} className="text-sm font-bold text-cta hover:underline">
-              Весь каталог →
+              {h.allCatalog}
             </Link>
           </div>
 
@@ -283,7 +292,7 @@ function HomeContent({
                 href={categoryUrl(key)}
                 className="px-4 py-3 rounded bg-elevated border border-border-subtle text-sm text-text-secondary hover:text-cta hover:border-cta/40 transition-colors"
               >
-                {CATEGORIES[key].plural}
+                {categoryPlural(key, shopLocale, CATEGORIES[key].plural)}
               </Link>
             ))}
           </div>
@@ -296,16 +305,16 @@ function HomeContent({
           <Container>
             <div className="flex flex-wrap items-baseline justify-between gap-3 mb-6">
               <h2 className="font-[family-name:var(--font-heading)] text-[clamp(22px,3vw,32px)] font-bold tracking-tight uppercase">
-                Свежие поступления
+                {h.fresh}
               </h2>
               <Link href={`${SHOP_BASE}?sort=newest`} className="text-sm font-bold text-cta hover:underline">
-                Показать все →
+                {h.showAll}
               </Link>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
               {fresh.map((part) => (
-                <ProductCard key={part.id} part={part} />
+                <ProductCard key={part.id} part={part} locale={shopLocale} />
               ))}
             </div>
           </Container>
@@ -318,7 +327,7 @@ function HomeContent({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
             <div>
               <h2 className="font-[family-name:var(--font-heading)] text-[clamp(22px,3vw,32px)] font-bold tracking-tight uppercase mb-6">
-                Марки
+                {h.makes}
               </h2>
               <div className="flex flex-wrap gap-2">
                 {brands.map((brand) => (
@@ -336,7 +345,7 @@ function HomeContent({
 
             <div>
               <h2 className="font-[family-name:var(--font-heading)] text-[clamp(22px,3vw,32px)] font-bold tracking-tight uppercase mb-6">
-                Чаще всего спрашивают
+                {h.mostAsked}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {models.map((item) => (
@@ -350,7 +359,7 @@ function HomeContent({
                       {/* Тип детали обязателен: без него одна машина стоит в списке
                           дважды — по разу на категорию — и ссылки неотличимы. */}
                       <span className="block truncate text-[10px] uppercase tracking-widest text-text-dim mt-0.5">
-                        {CATEGORIES[item.category].plural}
+                        {categoryPlural(item.category, shopLocale, CATEGORIES[item.category].plural)}
                       </span>
                     </span>
                     <span className="text-[10px] tabular-nums text-text-dim shrink-0">{item.count}</span>
@@ -585,3 +594,45 @@ function HomeContent({
     </>
   );
 }
+
+/**
+ * Каталожные тексты главной. Всё остальное на этой странице идёт через next-intl
+ * (`home`, `check`, `guides`) — там переводы были всегда, включая английские.
+ * Каталожный блок появился 25.08.2026 строками, когда раздел был одноязычным;
+ * теперь у него два языка, но источник остался тот же — иначе получилось бы
+ * два места правды на одну страницу.
+ *
+ * Русское «доставка по России» оставлено как есть: это её аудитория, и обезличивать
+ * текст ради симметрии языков незачем. Английский говорит про доставку по миру —
+ * так оно и есть.
+ */
+const HOME = {
+  ru: {
+    badge: "Б/у оригинал · доставка по России",
+    h1a: "Запчасти с авторазборов",
+    h1b: "Южной Кореи",
+    lead: (total: string, brands: number) =>
+      `${total} деталей для ${brands} марок: оптика, зеркала, блоки управления. Каждый экземпляр сфотографирован отдельно — вы видите ровно ту деталь, которая приедет.`,
+    ctaCatalog: "Смотреть каталог",
+    inStock: "Что есть в наличии",
+    allCatalog: "Весь каталог →",
+    fresh: "Свежие поступления",
+    showAll: "Показать все →",
+    makes: "Марки",
+    mostAsked: "Чаще всего спрашивают",
+  },
+  en: {
+    badge: "Used genuine · worldwide shipping",
+    h1a: "Used car parts from",
+    h1b: "South Korea",
+    lead: (total: string, brands: number) =>
+      `${total} parts for ${brands} makes: lighting, mirrors, control modules. Every item is photographed on its own — you see the exact part that will arrive.`,
+    ctaCatalog: "Browse the catalog",
+    inStock: "What we have in stock",
+    allCatalog: "Full catalog →",
+    fresh: "New arrivals",
+    showAll: "Show all →",
+    makes: "Makes",
+    mostAsked: "Most asked for",
+  },
+} as const;

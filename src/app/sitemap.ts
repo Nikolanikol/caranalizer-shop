@@ -12,12 +12,13 @@ import {
 import { oemUrl } from "@/lib/shop/urls";
 import { SHOP_LOCALE, SHOP_LOCALES } from "@/lib/shop/urls";
 import { SITE_URL as BASE } from "@/lib/site";
-import { MAIN_LOCALE, VIN_PATHS, mainUrl, type VinLocale } from "@/lib/seo";
+import { MAIN_LOCALE, SITE_LOCALES, VIN_PATHS, mainUrl, type VinLocale } from "@/lib/seo";
 import type { PartCategory } from "@/types/part";
 
 /**
- * Одноязычные страницы: существуют только на русском, hreflang им не положен.
- * Проверка по VIN идёт отдельным списком ниже — она единственная многоязычная.
+ * Страницы сайта. Существуют на языках из `SITE_LOCALES` — по записи на каждый,
+ * с полным hreflang. Проверка по VIN идёт отдельным списком ниже: она есть ещё
+ * и на арабском, и путь у каждой локали свой.
  *
  * `/privacy` и `/terms` здесь нет намеренно: они закрыты `robots: index: false`.
  */
@@ -39,8 +40,22 @@ const STATIC_PAGES: { path: string; freq: "daily" | "weekly" | "monthly"; priori
 // No lastModified: a "now" timestamp is meaningless to Google (it ignores
 // always-fresh dates) and GSC flags it as invalid when it lands in the future
 // relative to the crawl time.
-function entry(path: string, freq: "daily" | "weekly" | "monthly", priority: number) {
-  return { url: mainUrl(path), changeFrequency: freq, priority };
+function entries(
+  path: string,
+  freq: "daily" | "weekly" | "monthly",
+  priority: number
+): MetadataRoute.Sitemap {
+  const languages = {
+    ...Object.fromEntries(SITE_LOCALES.map((l) => [l, `${BASE}/${l}${path}`])),
+    "x-default": mainUrl(path),
+  };
+
+  return SITE_LOCALES.map((locale) => ({
+    url: `${BASE}/${locale}${path}`,
+    changeFrequency: freq,
+    priority,
+    alternates: { languages },
+  }));
 }
 
 /**
@@ -135,7 +150,7 @@ async function shopPages(): Promise<MetadataRoute.Sitemap> {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
-    ...STATIC_PAGES.map((page) => entry(page.path, page.freq, page.priority)),
+    ...STATIC_PAGES.flatMap((page) => entries(page.path, page.freq, page.priority)),
     ...vinEntries(),
     ...(await shopPages()),
   ];

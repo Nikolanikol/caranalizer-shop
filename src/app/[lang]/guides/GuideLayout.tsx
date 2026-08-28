@@ -283,7 +283,7 @@ export function guideMetadata(slug: string, lang: string) {
   return {
     title,
     description,
-    alternates: mainAlternates(path),
+    alternates: mainAlternates(path, lang),
     openGraph: { title, description, url: mainUrl(path) },
   };
 }
