@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   try {
     const { ok } = await submitLead({
       source: "contact",
-      title: "📬 CARANALIZER — обратная связь",
+      title: "📬 Обратная связь",
       name,
       phone,
       messenger,

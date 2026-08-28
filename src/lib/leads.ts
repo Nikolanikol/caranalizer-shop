@@ -20,6 +20,23 @@ export type LeadSource = 'check' | 'report' | 'contact' | 'shop-checkout';
 const CHATS = ['TELEGRAM_CHAT_ID', 'TELEGRAM_WORK_CHAT_ID'] as const;
 
 /**
+ * Метка площадки в заголовке заявки.
+ *
+ * Чат общий с kmotors, и без метки заявки двух площадок неразличимы — менеджер
+ * определял их по формулировкам. В базе такая метка была всегда (колонка `site`
+ * в `leads`), а в Telegram её не было.
+ *
+ * Ставится здесь, а не в заголовках роутов, ровно по той причине, по которой заведён
+ * этот модуль: три заголовка из четырёх метку носили руками, а самый ценный — заказ
+ * из корзины — её не имел. Теперь новая форма получает метку тем, что пользуется
+ * `submitLead`, и забыть её нельзя.
+ *
+ * Решётка не для красоты: Telegram делает хештег кликабельным, и по нему в общем
+ * чате отбираются все наши заявки разом.
+ */
+const SITE_TAG = '#caranalizer';
+
+/**
  * Проверка окружения на входе в модуль, а не внутри обработчика.
  *
  * «Падение при старте» в буквальном смысле для serverless невозможно — процесса,
@@ -74,7 +91,11 @@ export interface LeadRecord {
 
 export interface LeadInput extends LeadRecord {
   source: LeadSource;
-  /** Первая строка сообщения. Уже с эмодзи, без экранирования — его сделает модуль. */
+  /**
+   * Первая строка сообщения. Уже с эмодзи, без экранирования — его сделает модуль.
+   * Метку площадки сюда не дописывать: её ставит `submitLead` сам, иначе она
+   * задвоится.
+   */
   title: string;
   /**
    * Тело сообщения строками. Пустые и `null` отбрасываются, поэтому необязательные
@@ -108,7 +129,8 @@ export interface LeadResult {
 export async function submitLead(input: LeadInput): Promise<LeadResult> {
   const { token, chatIds } = requireEnv();
 
-  const body = [`<b>${escapeHtml(input.title)}</b>`, '', ...input.lines.filter(Boolean).map(escapeHtml)];
+  const header = `${SITE_TAG} · ${input.title}`;
+  const body = [`<b>${escapeHtml(header)}</b>`, '', ...input.lines.filter(Boolean).map(escapeHtml)];
   const text = clamp(body.join('\n'));
 
   const results = await Promise.allSettled(

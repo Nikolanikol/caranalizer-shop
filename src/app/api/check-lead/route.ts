@@ -22,8 +22,8 @@ interface CheckLeadPayload {
 }
 
 const TITLES: Record<Extract<LeadSource, "check" | "report">, string> = {
-  check: "🔎 CARANALIZER — бесплатная проверка",
-  report: "📄 CARANALIZER — заявка на полный отчёт по VIN",
+  check: "🔎 Бесплатная проверка",
+  report: "📄 Заявка на полный отчёт по VIN",
 };
 
 const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/i;
