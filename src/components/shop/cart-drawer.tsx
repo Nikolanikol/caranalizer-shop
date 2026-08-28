@@ -44,9 +44,26 @@ export function CartDrawer() {
 
   if (!isOpen) return null;
 
+  /*
+   * Что показывать. Выводится из состояния, а не хранится отдельно: экран «заявка
+   * принята» держится ровно до тех пор, пока корзина пуста.
+   *
+   * Без этого повторный заказ в одну сессию был невозможен. После отправки `step`
+   * оставался `success` навсегда: покупатель клал вторую деталь, открывал корзину
+   * и видел «ЗАЯВКА KP-… ПРИНЯТА» при непустом счётчике позиций. Товар лежал,
+   * а добраться до него можно было только перезагрузкой страницы.
+   */
+  const view: Step = step === 'success' && items.length > 0 ? 'cart' : step;
+
   // Итог складывается из тех же округлённых цен, что стоят в строках: покупатель
   // проверяет сумму глазами, и она обязана сойтись.
   const goodsUsd = items.reduce((sum, item) => sum + priceUsd(item.part.priceKrw, rates) * item.quantity, 0);
+
+  /** Закрытие с экрана успеха сбрасывает шаг: иначе он всплывёт при следующем открытии. */
+  const closeDrawer = () => {
+    if (step === 'success') setStep('cart');
+    close();
+  };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -90,7 +107,7 @@ export function CartDrawer() {
     }
   };
 
-  const title = step === 'cart' ? t.titleCart : step === 'checkout' ? t.titleCheckout : t.titleDone;
+  const title = view === 'cart' ? t.titleCart : view === 'checkout' ? t.titleCheckout : t.titleDone;
 
   return (
     /*
@@ -100,7 +117,7 @@ export function CartDrawer() {
       Корзина — модальное окно, ей и положено быть выше постоянных элементов страницы.
     */
     <div className="fixed inset-0 z-[60] overflow-hidden">
-      <div onClick={close} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+      <div onClick={closeDrawer} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
 
       <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
         <div className="w-screen max-w-md bg-base border-l border-border-subtle text-text-secondary flex flex-col shadow-2xl">
@@ -119,7 +136,7 @@ export function CartDrawer() {
 
             <button
               type="button"
-              onClick={close}
+              onClick={closeDrawer}
               aria-label={t.closeCart}
               className="p-1.5 rounded bg-black/50 border border-border text-text-muted hover:text-text hover:bg-black transition-colors cursor-pointer"
             >
@@ -128,7 +145,7 @@ export function CartDrawer() {
           </div>
 
           <div className="p-5 overflow-y-auto flex-1 space-y-4 custom-scrollbar">
-            {step === 'cart' &&
+            {view === 'cart' &&
               (items.length === 0 ? (
                 <div className="text-center py-16 space-y-4">
                   <span className="w-12 h-12 rounded bg-elevated border border-border-subtle text-text-dim flex items-center justify-center mx-auto">
@@ -139,7 +156,7 @@ export function CartDrawer() {
                   </p>
                   <button
                     type="button"
-                    onClick={close}
+                    onClick={closeDrawer}
                     className="px-5 py-3 rounded bg-elevated hover:bg-surface text-text text-[10px] uppercase tracking-widest font-bold cursor-pointer transition-colors"
                   >
                     {t.backToCatalog}
@@ -207,7 +224,7 @@ export function CartDrawer() {
                 </div>
               ))}
 
-            {step === 'checkout' && (
+            {view === 'checkout' && (
               <form id="checkout-form" onSubmit={submit} className="space-y-4">
                 <div className="bg-elevated p-4 rounded border border-border-subtle space-y-1.5">
                   <p className="text-[10px] font-bold text-text uppercase tracking-widest">
@@ -329,7 +346,7 @@ export function CartDrawer() {
               </form>
             )}
 
-            {step === 'success' && (
+            {view === 'success' && (
               <div className="text-center py-6 space-y-5">
                 <span className="w-14 h-14 bg-elevated text-success rounded border border-border flex items-center justify-center mx-auto">
                   <CheckCircle2 className="w-6 h-6" />
@@ -340,7 +357,7 @@ export function CartDrawer() {
                 </p>
                 <button
                   type="button"
-                  onClick={close}
+                  onClick={closeDrawer}
                   className="px-5 py-3 rounded bg-elevated hover:bg-surface text-text text-[10px] uppercase tracking-widest font-bold cursor-pointer transition-colors"
                 >
                   {t.backToCatalog}
@@ -349,7 +366,7 @@ export function CartDrawer() {
             )}
           </div>
 
-          {items.length > 0 && step !== 'success' && (
+          {items.length > 0 && view !== 'success' && (
             <div className="p-5 border-t border-border-subtle bg-base-darker space-y-4">
               <div className="space-y-2 text-[11px] font-bold uppercase tracking-widest text-text-muted">
                 <div className="flex justify-between">
@@ -364,7 +381,7 @@ export function CartDrawer() {
                 </div>
               </div>
 
-              {step === 'cart' ? (
+              {view === 'cart' ? (
                 <button
                   type="button"
                   onClick={() => {
