@@ -6,6 +6,7 @@ import { Container } from "@/components/ui/container";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PhoneInput } from "@/components/ui/PhoneInput";
+import { MessengerSelector } from "@/components/ui/MessengerSelector";
 import { CheckCircle } from "lucide-react";
 import type { Value } from "react-phone-number-input";
 
@@ -15,6 +16,13 @@ export function ContactClient() {
   const [name, setName] = useState("");
   // E.164 из PhoneInput — из него на сервере строятся ссылки wa.me / t.me
   const [phone, setPhone] = useState<Value>();
+  /*
+   * «Как вам ответить» — тот же выбор, что в корзине и в форме проверки. Без него
+   * менеджер гадал, куда писать: номер есть, а мессенджер за ним может быть любой,
+   * и у покупателя из-за рубежа это чаще WhatsApp.
+   */
+  const [messenger, setMessenger] = useState("whatsapp");
+  const [tgUsername, setTgUsername] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -28,12 +36,14 @@ export function ContactClient() {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, message }),
+        body: JSON.stringify({ name, phone, messenger, tgUsername, message }),
       });
       if (res.ok) {
         setSuccess(true);
         setName("");
         setPhone(undefined);
+        setMessenger("whatsapp");
+        setTgUsername("");
         setMessage("");
       }
     } catch {} finally {
@@ -72,6 +82,13 @@ export function ContactClient() {
               </label>
               <PhoneInput value={phone} onChange={setPhone} required />
             </div>
+            <MessengerSelector
+              messenger={messenger}
+              onMessengerChange={setMessenger}
+              tgUsername={tgUsername}
+              onTgUsernameChange={setTgUsername}
+              label={t("messengerLabel")}
+            />
             <div>
               <label className="block text-sm text-text-muted mb-1.5">
                 {t("message")}

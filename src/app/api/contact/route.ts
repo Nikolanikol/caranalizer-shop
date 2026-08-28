@@ -10,6 +10,10 @@ import { messengerLines } from "@/lib/messenger-links";
 interface ContactPayload {
   name?: string;
   phone?: string;
+  /** «Как вам ответить»: whatsapp или telegram. Всё остальное считаем WhatsApp. */
+  messenger?: string;
+  /** Ник в Telegram — спрашивается только когда выбран Telegram. */
+  tgUsername?: string;
   message?: string;
 }
 
@@ -23,6 +27,8 @@ export async function POST(req: NextRequest) {
 
   const name = body.name?.trim();
   const phone = body.phone?.trim();
+  const messenger = body.messenger === "telegram" ? "telegram" : "whatsapp";
+  const tgUsername = body.tgUsername?.trim() || null;
   const message = body.message?.trim();
 
   if (!name || !phone) {
@@ -35,11 +41,15 @@ export async function POST(req: NextRequest) {
       title: "📬 CARANALIZER — обратная связь",
       name,
       phone,
+      messenger,
+      tgUsername,
       message: message || null,
       lines: [
         `👤 Имя: ${name}`,
         `📞 Телефон: ${phone}`,
-        ...messengerLines({ phone }),
+        `💬 Отвечать в: ${messenger === "telegram" ? "Telegram" : "WhatsApp"}`,
+        tgUsername && `✈️ Telegram: ${tgUsername}`,
+        ...messengerLines({ phone, messenger, tgUsername: tgUsername ?? undefined }),
         message && `💬 Сообщение: ${message}`,
       ],
     });

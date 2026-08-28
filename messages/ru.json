@@ -121,6 +121,7 @@
     "name": "Ваше имя",
     "namePlaceholder": "Введите ваше имя",
     "phone": "Телефон",
+    "messengerLabel": "Как вам ответить?",
     "phonePlaceholder": "+7 (999) 123-45-67",
     "message": "Сообщение",
     "messagePlaceholder": "Опишите ваш запрос или вопрос",

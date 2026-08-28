@@ -121,6 +121,7 @@
     "name": "Your Name",
     "namePlaceholder": "Enter your name",
     "phone": "Phone",
+    "messengerLabel": "How should we reply?",
     "phonePlaceholder": "+1 (555) 123-4567",
     "message": "Message",
     "messagePlaceholder": "Describe your request or question",
