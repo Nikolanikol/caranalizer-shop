@@ -47,18 +47,6 @@ const MAX_ITEMS = 100;
 /** Больше одной детали в заявке бывает, сотня одинаковых фар — нет. */
 const MAX_QUANTITY = 99;
 
-/**
- * Способы оплаты дублируются в четырёх местах — это одна и та же оферта:
- * форма в `cart-drawer.tsx`, эти подписи, текст на `dostavka-i-oplata`
- * и блок `PAYMENTS` на `kak-zakazat`. Править надо все четыре.
- */
-const PAYMENT_LABELS: Record<string, string> = {
-  qwikpay: 'QwikPay / Золотая Корона',
-  swift: 'SWIFT-перевод',
-  invoice_ur: 'Инвойс на юрлицо',
-  paypal: 'PayPal',
-};
-
 /** Приходит из браузера, то есть чему угодно. Числа приводим сами. */
 function num(value: unknown): number {
   const parsed = Number(value);
@@ -169,7 +157,14 @@ export async function POST(request: Request) {
   const mismatch = unverified === 0 && Math.round(claimedRub) !== Math.round(totalRub);
 
   const orderNumber = `KP-${Date.now().toString().slice(-6)}`;
-  const payment = customer.payment ? PAYMENT_LABELS[customer.payment] ?? customer.payment : null;
+
+  /*
+   * Мессенджер приходит выбором («как вам ответить»), а не наличием ника: покупатель
+   * из-за рубежа чаще на WhatsApp, и прежнее поле с одним «@username» молча
+   * предполагало Telegram.
+   */
+  const messenger = customer.messenger === 'telegram' ? 'telegram' : 'whatsapp';
+  const tgUsername = customer.tgUsername?.trim() || null;
 
   const itemLines = priced.slice(0, MAX_ITEMS_IN_MESSAGE).map(itemLine);
   const rest = priced.length - MAX_ITEMS_IN_MESSAGE;
@@ -188,12 +183,11 @@ export async function POST(request: Request) {
       name: customer.name.trim(),
       phone: customer.phone.trim(),
       vin: customer.vin || null,
-      messenger: customer.telegram ? 'telegram' : null,
-      tgUsername: customer.telegram || null,
+      messenger,
+      tgUsername,
       message: [
         `Заявка ${orderNumber} из каталога запчастей`,
-        `Город: ${customer.city || '—'}, адрес: ${customer.address || '—'}`,
-        payment && `Оплата: ${payment}`,
+        `Страна доставки: ${customer.country || '—'}`,
         `Итого за детали: ${money(totalRub, totalUsd)}`,
         ...priced.map(
           (entry) => `• ${entry.item.title ?? '—'} — OEM ${entry.item.oem || '—'}, ${entry.quantity} шт.`,
@@ -205,23 +199,18 @@ export async function POST(request: Request) {
       lines: [
         `👤 Клиент: ${customer.name.trim()}`,
         `📞 Телефон: ${customer.phone.trim()}`,
-        customer.telegram && `✈️ Telegram: ${customer.telegram}`,
-        ...messengerLines({
-          phone: customer.phone,
-          messenger: customer.telegram ? 'telegram' : undefined,
-          tgUsername: customer.telegram,
-        }),
-        `📍 Город: ${customer.city || '—'}`,
-        `🏠 Адрес: ${customer.address || '—'}`,
+        `💬 Отвечать в: ${messenger === 'telegram' ? 'Telegram' : 'WhatsApp'}`,
+        tgUsername && `✈️ Telegram: ${tgUsername}`,
+        ...messengerLines({ phone: customer.phone, messenger, tgUsername: tgUsername ?? undefined }),
+        `🌍 Страна доставки: ${customer.country || '—'}`,
         customer.vin && `🚗 VIN: ${customer.vin}`,
-        payment && `💳 Оплата: ${payment}`,
         '',
         '📦 Товары:',
         ...itemLines,
         rest > 0 && `…и ещё ${rest} позиций — уточните у клиента`,
         '',
         `💰 Итого за детали: ${money(totalRub, totalUsd)}`,
-        '🚚 Доставка: рассчитать по городу',
+        '🚚 Доставка: рассчитать по стране получателя',
         ...warnings,
       ],
     });

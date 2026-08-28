@@ -3,12 +3,14 @@
 import React, { useState } from 'react';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { Building2, CheckCircle2, CreditCard, Landmark, Minus, Plus, QrCode, ShoppingCart, Trash2, X } from 'lucide-react';
+import { CheckCircle2, Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
+import type { Value } from 'react-phone-number-input';
 import { formatRub, formatUsd, priceRub, priceUsd } from '@/lib/shop/pricing';
 import { partUrl } from '@/lib/shop/urls';
-import { RUSSIAN_CITIES } from '@/lib/shop/delivery';
 import { partTitle } from '@/lib/shop/labels';
 import type { ShopLocale } from '@/lib/shop/terms';
+import { PhoneInput } from '@/components/ui/PhoneInput';
+import { MessengerSelector } from '@/components/ui/MessengerSelector';
 import { useCart } from './cart-context';
 
 type Step = 'cart' | 'checkout' | 'success';
@@ -26,18 +28,14 @@ export function CartDrawer() {
   const t = TEXT[locale];
 
   const [step, setStep] = useState<Step>('cart');
-  /*
-   * Город: по-русски выбор из списка со сроками, по-английски — свободная строка.
-   * Список городов российский, а отправляем мы по всему миру: покупателю из Италии
-   * пришлось бы выбрать «Москва», и менеджер получил бы заявку с чужим городом.
-   */
-  const [city, setCity] = useState(locale === 'en' ? '' : RUSSIAN_CITIES[0].name);
   const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [telegram, setTelegram] = useState('');
-  const [address, setAddress] = useState('');
+  /** E.164 из PhoneInput — из него сервер строит ссылки wa.me и t.me. */
+  const [phone, setPhone] = useState<Value>();
+  const [messenger, setMessenger] = useState('whatsapp');
+  const [tgUsername, setTgUsername] = useState('');
+  /** Страна, а не город: отправляем по всему миру, точный адрес спрашивает менеджер. */
+  const [country, setCountry] = useState('');
   const [vin, setVin] = useState('');
-  const [payment, setPayment] = useState<'qwikpay' | 'swift' | 'invoice_ur' | 'paypal'>('qwikpay');
   const [consent, setConsent] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,6 +50,8 @@ export function CartDrawer() {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+    // PhoneInput не даёт браузеру проверить обязательность сам: значение живёт в стейте.
+    if (!fullName.trim() || !phone || !country.trim()) return;
     setIsSubmitting(true);
     setError('');
 
@@ -60,7 +60,7 @@ export function CartDrawer() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customer: { name: fullName, phone, telegram, city, address, vin, payment },
+          customer: { name: fullName, phone, messenger, tgUsername, country, vin },
           items: items.map((item) => ({
             // Ключ, по которому сервер дочитывает цену из базы: присланной он не верит.
             id: item.part.id,
@@ -222,74 +222,61 @@ export function CartDrawer() {
                 </div>
 
                 <label className="block space-y-1">
-                  <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">{t.fullName}</span>
+                  <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">
+                    {t.fullName} *
+                  </span>
                   <input
                     type="text"
                     value={fullName}
                     onChange={(event) => setFullName(event.target.value)}
+                    placeholder={t.namePlaceholder}
                     required
                     className="w-full bg-elevated border border-border-subtle rounded px-3 py-2.5 text-xs text-text focus:outline-none focus:border-cta placeholder-text-dim transition-colors"
                   />
                 </label>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="block space-y-1">
-                    <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">{t.phone}</span>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(event) => setPhone(event.target.value)}
-                      placeholder={t.phonePlaceholder}
-                      required
-                      className="w-full bg-elevated border border-border-subtle rounded px-3 py-2.5 text-xs text-text focus:outline-none focus:border-cta placeholder-text-dim transition-colors"
-                    />
-                  </label>
-                  <label className="block space-y-1">
-                    <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">Telegram</span>
-                    <input
-                      type="text"
-                      value={telegram}
-                      onChange={(event) => setTelegram(event.target.value)}
-                      placeholder="@username"
-                      className="w-full bg-elevated border border-border-subtle rounded px-3 py-2.5 text-xs text-text focus:outline-none focus:border-cta placeholder-text-dim transition-colors"
-                    />
-                  </label>
+                {/*
+                  Телефон через общий PhoneInput — с выбором страны и в формате E.164.
+                  Прежнее поле было обычной строкой с подсказкой «+7 999 000-00-00»:
+                  покупателю из Италии оно диктовало российский формат, а из E.164
+                  сервер строит ссылки wa.me и t.me, по которым менеджер и пишет.
+                */}
+                <div className="space-y-1">
+                  <span className="block text-[9px] font-bold text-text-muted uppercase tracking-widest">
+                    {t.phone} *
+                  </span>
+                  <PhoneInput value={phone} onChange={setPhone} required />
                 </div>
 
-                <label className="block space-y-1">
-                  <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">{t.city}</span>
-                  {locale === 'en' ? (
-                    <input
-                      type="text"
-                      value={city}
-                      onChange={(event) => setCity(event.target.value)}
-                      required
-                      placeholder="Italy, Milan"
-                      className="w-full bg-elevated border border-border-subtle rounded px-3 py-2.5 text-xs text-text focus:outline-none focus:border-cta placeholder-text-dim transition-colors"
-                    />
-                  ) : (
-                    <select
-                      value={city}
-                      onChange={(event) => setCity(event.target.value)}
-                      className="w-full bg-elevated border border-border-subtle rounded px-3 py-2.5 text-xs text-text focus:outline-none focus:border-cta transition-colors cursor-pointer"
-                    >
-                      {RUSSIAN_CITIES.map((item) => (
-                        <option key={item.name} value={item.name}>
-                          {item.name} — {item.days}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </label>
+                {/*
+                  «Как вам ответить» вместо поля Telegram. Мессенджер — это способ связи,
+                  а не имя пользователя: покупатель из-за рубежа чаще на WhatsApp, и поле
+                  с одним «@username» молча предполагало Telegram.
+                */}
+                <MessengerSelector
+                  messenger={messenger}
+                  onMessengerChange={setMessenger}
+                  tgUsername={tgUsername}
+                  onTgUsernameChange={setTgUsername}
+                  label={t.howToReply}
+                />
 
+                {/*
+                  Страна, а не город из списка. Список был российский, а отправляем мы
+                  по всему миру: покупателю из Италии пришлось бы выбрать «Москва»,
+                  и менеджер получил бы заявку с чужим городом. Адрес ПВЗ СДЭК убран
+                  по той же причине — точный адрес менеджер спрашивает при расчёте
+                  доставки, до этого он не нужен.
+                */}
                 <label className="block space-y-1">
                   <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">
-                    {t.address}
+                    {t.country} *
                   </span>
                   <input
                     type="text"
-                    value={address}
-                    onChange={(event) => setAddress(event.target.value)}
+                    value={country}
+                    onChange={(event) => setCountry(event.target.value)}
+                    placeholder={t.countryPlaceholder}
                     required
                     className="w-full bg-elevated border border-border-subtle rounded px-3 py-2.5 text-xs text-text focus:outline-none focus:border-cta placeholder-text-dim transition-colors"
                   />
@@ -297,57 +284,24 @@ export function CartDrawer() {
 
                 <label className="block space-y-1">
                   <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">
-                    {t.vin}
+                    {t.vin} <span className="text-text-dim normal-case">({t.optional})</span>
                   </span>
                   <input
                     type="text"
                     value={vin}
                     onChange={(event) => setVin(event.target.value.toUpperCase())}
+                    placeholder="KMHXX00XXXXX000000"
                     maxLength={17}
                     className="w-full bg-elevated border border-border-subtle rounded px-3 py-2.5 text-xs text-text font-mono tracking-widest focus:outline-none focus:border-cta placeholder-text-dim transition-colors"
                   />
                 </label>
 
-                <fieldset className="space-y-2">
-                  <legend className="text-[9px] font-bold text-text-muted uppercase tracking-widest mb-2">
-                    {t.payment}
-                  </legend>
-                  {(
-                    [
-                      // Способы должны совпадать с PAYMENT_LABELS в api/checkout, с текстом
-                      // на /zapchasti/dostavka-i-oplata и с блоком PAYMENTS на /zapchasti/kak-zakazat:
-                      // это одна и та же оферта в четырёх местах.
-                      //
-                      // На сервер уходит `value`, а не подпись, поэтому перевод подписи
-                      // контракт не задевает: в заявке менеджер увидит русский вариант
-                      // из PAYMENT_LABELS независимо от языка покупателя.
-                      { value: 'qwikpay', label: t.payQwikpay, icon: QrCode },
-                      { value: 'swift', label: t.paySwift, icon: Landmark },
-                      { value: 'invoice_ur', label: t.payInvoice, icon: Building2 },
-                      { value: 'paypal', label: 'PayPal', icon: CreditCard },
-                    ] as const
-                  ).map(({ value, label, icon: Icon }) => (
-                    <label
-                      key={value}
-                      className="flex items-center gap-3 p-3 bg-elevated rounded border border-border-subtle cursor-pointer hover:bg-surface transition-colors"
-                    >
-                      <input
-                        type="radio"
-                        name="payment"
-                        checked={payment === value}
-                        onChange={() => setPayment(value)}
-                        className="accent-cta w-3 h-3"
-                      />
-                      <Icon className="w-3.5 h-3.5 text-text-muted" />
-                      <span className="text-[10px] uppercase font-bold tracking-wide text-text-secondary">{label}</span>
-                    </label>
-                  ))}
-                </fieldset>
-
                 {/*
-                  152-ФЗ: заявка увозит ФИО, телефон, адрес и VIN, поэтому согласие обязательно
-                  и должно быть осознанным. Галочку по умолчанию не ставим — предзаполненное
-                  согласие согласием не считается.
+                  152-ФЗ: заявка увозит имя, телефон, страну и VIN, поэтому согласие
+                  обязательно и должно быть осознанным. Галочку по умолчанию не ставим —
+                  предзаполненное согласие согласием не считается. На форме kmotors,
+                  с которой снята эта раскладка, галочки нет; у нас она остаётся: сервер
+                  проверяет согласие и без него заявку не примет.
                 */}
                 <label className="flex items-start gap-3 p-3 bg-elevated rounded border border-border-subtle cursor-pointer">
                   <input
@@ -471,17 +425,19 @@ const TEXT = {
     remove: 'Удалить',
     directBuy: 'Прямой выкуп с авторазборок Южной Кореи',
     notAPayment: 'Это заявка, а не оплата. Менеджер свяжется и подтвердит наличие и итоговую сумму',
-    fullName: 'ФИО получателя',
+    fullName: 'Ваше имя',
+    namePlaceholder: 'Иван Иванов',
     phone: 'Телефон',
-    city: 'Город получения',
-    address: 'Адрес ПВЗ СДЭК или улица',
-    vin: 'VIN автомобиля — сверим перед выкупом',
-    payment: 'Удобный способ оплаты',
+    howToReply: 'Как вам ответить?',
+    country: 'Страна доставки',
+    countryPlaceholder: 'Например, Казахстан',
+    vin: 'VIN-номер автомобиля',
+    optional: 'необязательно',
     consentBefore: 'Согласен на обработку персональных данных в соответствии с',
     consentPolicy: 'политикой',
     consentAfter: '. Данные нужны, чтобы связаться и оформить отправку.',
     shipping: 'Доставка',
-    shippingHint: 'менеджер рассчитает по вашему городу',
+    shippingHint: 'менеджер рассчитает по вашему адресу',
     total: 'Итого за детали',
     checkout: 'Оформить заявку',
     back: 'Назад',
@@ -490,11 +446,7 @@ const TEXT = {
     submitFailed: 'Не удалось отправить заявку',
     accepted: (order: string) => `Заявка ${order} принята`,
     acceptedHint: 'Менеджер свяжется с вами, подтвердит наличие и пришлёт фото детали перед отправкой.',
-    payQwikpay: 'QwikPay / Золотая Корона',
-    paySwift: 'SWIFT-перевод',
-    payInvoice: 'Инвойс на юрлицо',
     perItem: 'шт',
-    phonePlaceholder: '+7 999 000-00-00',
   },
   en: {
     titleCart: 'Parts cart',
@@ -511,12 +463,14 @@ const TEXT = {
     directBuy: 'Bought directly at South Korean salvage yards',
     notAPayment:
       'This is a request, not a payment. The manager will get in touch and confirm the item and the final amount',
-    fullName: 'Full name',
+    fullName: 'Your name',
+    namePlaceholder: 'John Smith',
     phone: 'Phone',
-    city: 'Country and city',
-    address: 'Delivery address',
-    vin: 'Car VIN — we will check before buying',
-    payment: 'Preferred payment method',
+    howToReply: 'How should we reply?',
+    country: 'Delivery country',
+    countryPlaceholder: 'For example, Kazakhstan',
+    vin: 'Car VIN',
+    optional: 'optional',
     consentBefore: 'I agree to the processing of my personal data in line with the',
     consentPolicy: 'privacy policy',
     consentAfter: '. We need the details to reach you and arrange the shipment.',
@@ -531,11 +485,6 @@ const TEXT = {
     accepted: (order: string) => `Request ${order} received`,
     acceptedHint:
       'The manager will get in touch, confirm the item is there and send photos before dispatch.',
-    payQwikpay: 'QwikPay / Zolotaya Korona',
-    paySwift: 'SWIFT transfer',
-    payInvoice: 'Invoice for a company',
     perItem: 'item',
-    // Международный формат: подсказка с российским кодом сбивала бы покупателя из Италии.
-    phonePlaceholder: '+39 000 000 0000',
   },
 } as const;
