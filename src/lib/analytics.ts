@@ -21,9 +21,41 @@ function track(event: string, params: Record<string, unknown>) {
   window.gtag("event", event, params);
 }
 
-/** Успешно отправленная форма (бесплатная проверка, отчёт по VIN, контакты). */
-export function trackLead(source: "check" | "report" | "contact") {
+/**
+ * Успешно отправленная форма. Значения те же, что у `LeadSource` в `lib/leads.ts`,
+ * — по ним заявки уже разложены в базе, и сходиться они должны с точностью до штуки.
+ */
+export function trackLead(source: "check" | "report" | "contact" | "shop-checkout") {
   track("generate_lead", { lead_source: source });
+}
+
+/*
+ * Воронка раздела запчастей: посмотрел → положил в корзину → открыл форму → отправил.
+ *
+ * Имена событий стандартные для GA4, поэтому воронка собирается там сама, без настройки.
+ * **Цену и валюту не передаём намеренно** — решение владельца: в отчётах нужны штуки,
+ * а суммы и так лежат в заявках. Отчёты GA4 по выручке останутся пустыми, и это ожидаемо,
+ * а не недоделка. Понадобятся деньги — добавлять `value` и `currency: 'USD'` во все
+ * четыре события разом, иначе воронка посчитает выручку по части шагов.
+ *
+ * Электронная коммерция Яндекс.Метрики при этом не заполняется: она ждёт свой формат
+ * в `dataLayer` (`{ ecommerce: { add: { products: [...] } } }`), а мы шлём события gtag.
+ * Без цены её ценность невелика, поэтому второй формат не заводим.
+ */
+
+/** Открыта страница детали. */
+export function trackViewItem(params: { id: string; oem: string; category: string }) {
+  track("view_item", { item_id: params.id, item_oem: params.oem, item_category: params.category });
+}
+
+/** Экземпляр положен в корзину. `id` — `product_no` донора, он же ключ корзины. */
+export function trackAddToCart(params: { id: string; oem: string; category: string }) {
+  track("add_to_cart", { item_id: params.id, item_oem: params.oem, item_category: params.category });
+}
+
+/** Покупатель перешёл от корзины к форме заявки. */
+export function trackBeginCheckout(items: number) {
+  track("begin_checkout", { items });
 }
 
 /** Клик по внешней ссылке на K-Axis (kmotors.shop). */

@@ -3,6 +3,7 @@
 import React from 'react';
 import { ShoppingCart } from 'lucide-react';
 import type { AutoPart, Offer } from '@/types/part';
+import { trackAddToCart } from '@/lib/analytics';
 import { useCart } from './cart-context';
 
 /**
@@ -50,7 +51,11 @@ export function AddToCart({
   return (
     <button
       type="button"
-      onClick={() => add(chosen)}
+      onClick={() => {
+        add(chosen);
+        // `chosen.id` — ключ корзины: у выбранного экземпляра это `product_no` донора.
+        trackAddToCart({ id: chosen.id, oem: chosen.oemNumber, category: chosen.category });
+      }}
       className={`w-full flex items-center justify-center gap-2 bg-cta hover:bg-cta-hover text-base-darker font-bold rounded-lg transition-colors cursor-pointer ${
         size === 'large' ? 'py-4 text-base' : 'py-3.5 text-sm'
       }`}

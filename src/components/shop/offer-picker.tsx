@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Check, Fingerprint, Truck } from 'lucide-react';
 import type { AutoPart, Offer } from '@/types/part';
 import type { Rates } from '@/lib/shop/pricing';
@@ -16,6 +16,7 @@ import {
   terms,
 } from '@/lib/shop/terms';
 import { ui } from '@/lib/shop/ui-text';
+import { trackViewItem } from '@/lib/analytics';
 import { Gallery } from './gallery';
 import { AddToCart } from './add-to-cart';
 import { CopyOem } from './copy-oem';
@@ -51,6 +52,15 @@ export function OfferPicker({
   const title = partTitle(part, locale);
   const offers = part.offers ?? [];
   const [activeId, setActiveId] = useState(offers[0]?.id ?? '');
+
+  /*
+   * `view_item` шлём отсюда, а не со страницы: страница серверная, а событие
+   * обязано уйти из браузера. Ключ — деталь, а не экземпляр: переключение
+   * экземпляров внутри карточки просмотром новой детали не является.
+   */
+  useEffect(() => {
+    trackViewItem({ id: part.id, oem: part.oemNumber, category: part.category });
+  }, [part.id, part.oemNumber, part.category]);
   const active = offers.find((offer) => offer.id === activeId) ?? offers[0];
 
   // Экземпляров может не быть только если данные разъехались: страница детали

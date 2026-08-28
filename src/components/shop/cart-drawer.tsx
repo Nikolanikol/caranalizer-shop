@@ -11,6 +11,7 @@ import { partTitle } from '@/lib/shop/labels';
 import type { ShopLocale } from '@/lib/shop/terms';
 import { PhoneInput } from '@/components/ui/PhoneInput';
 import { MessengerSelector } from '@/components/ui/MessengerSelector';
+import { trackBeginCheckout, trackLead } from '@/lib/analytics';
 import { useCart } from './cart-context';
 
 type Step = 'cart' | 'checkout' | 'success';
@@ -78,6 +79,7 @@ export function CartDrawer() {
       const data = await response.json();
       if (!response.ok || !data.success) throw new Error(data.error || t.submitFailed);
 
+      trackLead('shop-checkout');
       setOrderNumber(data.orderNumber);
       setStep('success');
       clear();
@@ -365,7 +367,10 @@ export function CartDrawer() {
               {step === 'cart' ? (
                 <button
                   type="button"
-                  onClick={() => setStep('checkout')}
+                  onClick={() => {
+                    trackBeginCheckout(items.length);
+                    setStep('checkout');
+                  }}
                   className="w-full py-4 rounded bg-cta hover:bg-cta-hover text-base-darker font-black text-[11px] uppercase tracking-widest cursor-pointer transition-colors"
                 >
                   {t.checkout}

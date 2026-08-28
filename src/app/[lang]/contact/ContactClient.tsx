@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { PhoneInput } from "@/components/ui/PhoneInput";
 import { MessengerSelector } from "@/components/ui/MessengerSelector";
 import { CheckCircle } from "lucide-react";
+import { trackLead } from "@/lib/analytics";
 import type { Value } from "react-phone-number-input";
 
 export function ContactClient() {
@@ -39,6 +40,9 @@ export function ContactClient() {
         body: JSON.stringify({ name, phone, messenger, tgUsername, message }),
       });
       if (res.ok) {
+        // Вызов был забыт: тип `trackLead` принимал "contact" с самого начала,
+        // а событие отсюда не уходило — в GA форма контактов не существовала.
+        trackLead("contact");
         setSuccess(true);
         setName("");
         setPhone(undefined);
