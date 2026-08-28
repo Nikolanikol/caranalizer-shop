@@ -6,7 +6,7 @@ import { Link } from '@/i18n/navigation';
 import { CATEGORIES } from '@/lib/shop/catalog';
 import { categoryPlural } from '@/lib/shop/labels';
 import type { ShopLocale } from '@/lib/shop/terms';
-import { SHOP_BASE, categoryUrl } from '@/lib/shop/urls';
+import { SHOP_BASE, WHEELS_BASE, categoryUrl } from '@/lib/shop/urls';
 import type { PartCategory } from '@/types/part';
 
 /**
@@ -42,6 +42,7 @@ export function ShopHeader({
   heading,
   intro,
   activeCategory,
+  activeWheels = false,
   trail,
   locale = 'ru',
 }: {
@@ -51,6 +52,13 @@ export function ShopHeader({
   locale?: ShopLocale;
   /** Подсвеченная пилюля. На витрине категории нет — не подсвечена ни одна. */
   activeCategory?: PartCategory;
+  /**
+   * Диски — второй донор, и в реестре типов деталей их нет: у них ни партномера,
+   * ни стороны, ни иерархии марка/модель. Поэтому пилюля отдельным флагом,
+   * а не двенадцатым ключом `CATEGORIES` — иначе они попали бы в карту сайта,
+   * в пререндер маршрутов запчастей и в фильтр каталога, которому не принадлежат.
+   */
+  activeWheels?: boolean;
   /**
    * Путь до страницы. Последняя ступень — сама страница, у неё адреса нет.
    *
@@ -102,7 +110,7 @@ export function ShopHeader({
           <Link
             href={SHOP_BASE}
             className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded text-[10px] font-bold uppercase tracking-wide sm:tracking-widest transition-colors ${
-              activeCategory
+              activeCategory || activeWheels
                 ? 'bg-base-darker border border-border-subtle text-text-secondary hover:text-text'
                 : 'bg-cta text-base-darker'
             }`}
@@ -122,6 +130,18 @@ export function ShopHeader({
               {categoryPlural(key, locale, CATEGORIES[key].plural)}
             </Link>
           ))}
+          {/* Диски стоят последними и с тем же оформлением: для покупателя это такой же
+              раздел товара, и выделять его нечем — разница в источнике, а не в товаре. */}
+          <Link
+            href={WHEELS_BASE}
+            className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded text-[10px] font-bold uppercase tracking-wide sm:tracking-widest transition-colors ${
+              activeWheels
+                ? 'bg-cta text-base-darker'
+                : 'bg-base-darker border border-border-subtle text-text-secondary hover:text-text'
+            }`}
+          >
+            {locale === 'en' ? 'Wheels' : 'Диски'}
+          </Link>
         </nav>
       </div>
     </div>

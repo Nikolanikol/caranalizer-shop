@@ -18,6 +18,13 @@ const nextConfig: NextConfig = {
         hostname: "ecimg.cafe24img.com",
         pathname: "/**",
       },
+      // Фотографии дисков лежат у второго донора (skywheel.kr) и тоже хотлинкаются:
+      // проверены все 420, отдаются с чужим Referer.
+      {
+        protocol: "https",
+        hostname: "www.skywheel.kr",
+        pathname: "/**",
+      },
     ],
   },
   async headers() {

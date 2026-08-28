@@ -12,6 +12,7 @@
 
 import 'server-only';
 import { createServerClient } from '@/lib/supabase';
+import { isWheelCartId, wheelCartId, wheelIdFromCart } from './urls';
 import type { AutoPart, Offer, PartCategory } from '@/types/part';
 
 export type { AutoPart };
@@ -743,13 +744,24 @@ export async function getPricesKrwByCartId(ids: string[]): Promise<Map<string, n
   const prices = new Map<string, number>();
   if (!unique.length) return prices;
 
+  // Диски лежат у второго донора, в своих таблицах, и ключ у них с префиксом `wheel-`.
+  // Без этой ветки заказ диска уходил бы менеджеру с пометкой «цены нет — позиция
+  // не найдена в каталоге»: сервер намеренно не верит цене из браузера и дочитывает
+  // её сам, а искал бы только среди запчастей.
+  const wheelIds = unique.filter(isWheelCartId).map(wheelIdFromCart);
+  const partIds = unique.filter((id) => !isWheelCartId(id));
+
   const db = createServerClient();
-  const [products, offers] = await Promise.all([
-    db.from('partsfit_products').select('id, price_krw_min').in('id', unique),
-    db.from('partsfit_offers').select('id, price_krw').in('id', unique),
+  const [products, offers, wheels] = await Promise.all([
+    db.from('partsfit_products').select('id, price_krw_min').in('id', partIds),
+    db.from('partsfit_offers').select('id, price_krw').in('id', partIds),
+    wheelIds.length
+      ? db.from('skywheel_wheels').select('id, price_krw').in('id', wheelIds)
+      : Promise.resolve({ data: [], error: null }),
   ]);
   if (products.error) throw new Error(`Каталог, цены товаров: ${products.error.message}`);
   if (offers.error) throw new Error(`Каталог, цены экземпляров: ${offers.error.message}`);
+  if (wheels.error) throw new Error(`Каталог, цены дисков: ${wheels.error.message}`);
 
   for (const row of (products.data ?? []) as { id: string; price_krw_min: number }[]) {
     prices.set(row.id, row.price_krw_min);
@@ -757,6 +769,15 @@ export async function getPricesKrwByCartId(ids: string[]): Promise<Map<string, n
   // Экземпляр перекрывает товар: он конкретнее, и именно его положили в корзину.
   for (const row of (offers.data ?? []) as { id: string; price_krw: number }[]) {
     prices.set(row.id, row.price_krw);
+  }
+  // Ключ возвращаем в том виде, в каком он пришёл из корзины, — с префиксом:
+  // вызывающий ищет по нему же.
+  //
+  // Диск без цены продажи («по запросу») в карту не кладём вовсе: вызывающий отличает
+  // ненайденную позицию по `undefined`, а `null` прошёл бы эту проверку и превратился
+  // в NaN в сумме заявки. Положить такой товар в корзину витрина и так не даёт.
+  for (const row of (wheels.data ?? []) as { id: string; price_krw: number | null }[]) {
+    if (row.price_krw !== null) prices.set(wheelCartId(row.id), row.price_krw);
   }
   return prices;
 }

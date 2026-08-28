@@ -6,7 +6,7 @@ import { Link } from '@/i18n/navigation';
 import { CheckCircle2, Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import type { Value } from 'react-phone-number-input';
 import { formatUsd, priceUsd } from '@/lib/shop/pricing';
-import { partUrl } from '@/lib/shop/urls';
+import { isWheelCartId, partUrl, wheelUrl } from '@/lib/shop/urls';
 import { partTitle } from '@/lib/shop/labels';
 import type { ShopLocale } from '@/lib/shop/terms';
 import { PhoneInput } from '@/components/ui/PhoneInput';
@@ -81,7 +81,10 @@ export function CartDrawer() {
           items: items.map((item) => ({
             // Ключ, по которому сервер дочитывает цену из базы: присланной он не верит.
             id: item.part.id,
-            url: partUrl(item.part),
+            // У диска нет иерархии «категория/марка/модель», по которой строится путь
+            // детали: его адрес — раздел плюс слаг. Без этой развилки менеджер получал
+            // бы в заявке ссылку на несуществующую страницу.
+            url: isWheelCartId(item.part.id) ? wheelUrl(item.part.slug) : partUrl(item.part),
             // В заявку название уходит по-русски всегда: её читает русскоязычный менеджер.
             title: item.part.titleRu,
             oem: item.part.oemNumber,

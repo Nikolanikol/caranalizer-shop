@@ -114,6 +114,38 @@ export function shopAlternates(
   return { canonical: shopUrl(path, base, current), languages };
 }
 
+/**
+ * Раздел дисков — второй донор (skywheel.kr).
+ *
+ * Сегмент `diski` статический, поэтому Next разбирает его раньше динамического
+ * `[category]`, и столкновения с `/zapchasti/<категория>/<марка>` нет — ровно как
+ * у страницы артикула `oem`.
+ *
+ * Иерархии под ним нет намеренно: у диска не бывает стороны и позиции, а марка
+ * и диаметр — это фильтр, а не уровень вложенности. Товаров сто двадцать,
+ * и разводить их по страницам марок значило бы наплодить адресов с одной карточкой.
+ */
+export const WHEELS_BASE = `${SHOP_BASE}/diski`;
+
+export function wheelUrl(slug: string): string {
+  return `${WHEELS_BASE}/${slug}`;
+}
+
+/**
+ * Ключ диска в корзине.
+ *
+ * Префикс обязателен. У партсфита ключ корзины — `product_no` донора, у диска —
+ * `wr_id` объявления, и оба числовые строки. Сегодня они не пересекаются, но это
+ * везение, а не устройство: сервер дочитывает цену из базы по этому ключу, и совпадение
+ * означало бы счёт по цене чужого товара. Проверять пересечение при каждом скрапе
+ * никто не станет — дешевле развести пространства имён раз и навсегда.
+ */
+export const wheelCartId = (id: string): string => `wheel-${id}`;
+
+export const isWheelCartId = (id: string): boolean => id.startsWith('wheel-');
+
+export const wheelIdFromCart = (id: string): string => id.replace(/^wheel-/, '');
+
 export function partUrl(part: Pick<AutoPart, 'category' | 'brandSlug' | 'modelSlug' | 'slug'>): string {
   return `${SHOP_BASE}/${part.category}/${part.brandSlug}/${part.modelSlug}/${part.slug}`;
 }
@@ -143,12 +175,15 @@ export function catalogUrl(params: {
   model?: string;
   side?: string;
   position?: string;
+  /** Только у дисков: диаметр в дюймах и «новое/б-у». У детали таких признаков нет. */
+  diameter?: string;
+  condition?: string;
   search?: string;
   sort?: string;
   page?: number;
 }): string {
   const query = new URLSearchParams();
-  for (const key of ['brand', 'model', 'side', 'position', 'search', 'sort'] as const) {
+  for (const key of ['brand', 'model', 'side', 'position', 'diameter', 'condition', 'search', 'sort'] as const) {
     const value = params[key];
     if (value) query.set(key, value);
   }

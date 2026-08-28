@@ -15,6 +15,11 @@
     "partsfit:load": "node scripts/partsfit/load-supabase.mjs",
     "partsfit:viewer": "node scripts/partsfit/viewer/server.mjs",
     "partsfit:verify": "node scripts/partsfit/verify-db.mjs",
+    "skywheel:scrape": "node scripts/skywheel/scrape.mjs",
+    "skywheel:classify": "node scripts/skywheel/classify.mjs",
+    "skywheel:tables": "node scripts/skywheel/build-tables.mjs",
+    "skywheel:load": "node scripts/skywheel/load-supabase.mjs",
+    "skywheel:verify": "node scripts/skywheel/verify-db.mjs",
     "db:start": "supabase start",
     "db:reset": "supabase db reset",
     "db:stop": "supabase stop"

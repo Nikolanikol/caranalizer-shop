@@ -55,6 +55,14 @@ next-env.d.ts
 /data/partsfit/*
 !/data/partsfit/index/
 
+# То же для skywheel.kr, и по более острой причине: это доска объявлений, позиция
+# живёт до продажи и исчезает без следа. index.json — единственное место, где остаётся
+# firstSeen и lastSeen, то есть история наличия. items.json и wheels.json выводятся
+# из него скрапом и классификатором.
+!/data/skywheel/
+/data/skywheel/*
+!/data/skywheel/index.json
+
 # Выгрузки Search Console — снимки на дату, а не исходники.
 # src/data/raw_parts.json сюда НЕ добавлять: скрипта, который его создаёт, в репозитории
 # нет, и без него catalog.json перестанет собираться заново.

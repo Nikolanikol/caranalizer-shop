@@ -117,8 +117,14 @@ export default async function ProductPage({
 
   if (!part || !isCategory(path.category)) notFound();
 
+  // Категорию берём из пути, а не из товара: `AutoPart.category` шире типа детали —
+  // в нём есть ещё и диски со второго донора, у которых ни этой страницы,
+  // ни иерархии марка/модель не существует. На этом маршруте категория пришла
+  // сегментом и уже сужена проверкой выше.
+  const category = path.category;
+
   const similar = await getSimilarParts(part, 4);
-  const info = CATEGORIES[part.category];
+  const info = CATEGORIES[category];
   const rates = await getRates();
   const title = partTitle(part, locale);
 
@@ -126,10 +132,10 @@ export default async function ProductPage({
   // её ступень тогда просто пропускается, а не показывается пустой.
   const trail = [
     { name: t.section, href: SHOP_BASE },
-    { name: categoryPlural(part.category, locale, info.plural), href: categoryUrl(part.category) },
-    { name: part.brand, href: brandUrl(part.category, part.brandSlug) },
+    { name: categoryPlural(category, locale, info.plural), href: categoryUrl(category) },
+    { name: part.brand, href: brandUrl(category, part.brandSlug) },
     ...(part.model
-      ? [{ name: part.model, href: modelUrl(part.category, part.brandSlug, part.modelSlug) }]
+      ? [{ name: part.model, href: modelUrl(category, part.brandSlug, part.modelSlug) }]
       : []),
   ];
 
@@ -242,7 +248,7 @@ export default async function ProductPage({
                 <CopyOem value={part.oemNumber} />
               </span>
               <Link
-                href={brandUrl(part.category, part.brandSlug)}
+                href={brandUrl(category, part.brandSlug)}
                 className="px-3 py-1.5 rounded bg-elevated text-text-secondary text-[10px] uppercase tracking-widest font-bold border border-border-subtle hover:text-cta transition-colors"
               >
                 {part.brand} {part.model}
@@ -291,7 +297,7 @@ export default async function ProductPage({
               {locale === 'en' ? `Other parts for ${part.brand}` : `Другие детали для ${part.brand}`}
             </h2>
             <Link
-              href={brandUrl(part.category, part.brandSlug)}
+              href={brandUrl(category, part.brandSlug)}
               className="text-sm font-bold text-cta hover:underline"
             >
               {locale === 'en' ? `Show all ${part.brand}` : `Показать все ${part.brand}`}
