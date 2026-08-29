@@ -69,6 +69,13 @@ create index if not exists partsfit_customers_created_idx on partsfit_customers 
 grant select, update on partsfit_customers to authenticated;
 grant all    on partsfit_customers to service_role;
 
+-- И явный отзыв у `anon`. Не перестраховка: на боевой базе умолчания не такие,
+-- как на локальном стеке. Локально таблица из миграции не получает анонимному ключу
+-- ничего (проверка отвечает 401), а на проде тот же запрос вернул 200 с пустым
+-- списком — то есть право на чтение там выдаётся новым таблицам само, и закрывает
+-- данные только RLS. Для таблицы с почтами и телефонами одного рубежа мало.
+revoke all on table partsfit_customers from anon;
+
 alter table partsfit_customers enable row level security;
 
 drop policy if exists partsfit_customers_select_own on partsfit_customers;
