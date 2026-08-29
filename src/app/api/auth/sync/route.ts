@@ -27,15 +27,16 @@ import type { Customer } from '@/types/customer';
  * следа о причине. Ровно так и вышло на проде: ключ там не был задан никогда,
  * а заметили мы это только когда завели первую таблицу, закрытую от анонима.
  *
- * Падение при первой загрузке модуля с именем переменной в сообщении — тот же приём,
- * что в `lib/leads.ts`. Роут один, и без ключа он работать не может по определению.
+ * Проверка стоит **внутри обработчика**, а не в теле модуля. Соблазн был обратный —
+ * упасть при загрузке, как обещает комментарий в `lib/leads.ts`, — но образ собирается
+ * без серверных переменных: Dockerfile передаёт только `NEXT_PUBLIC_*`. Проверка
+ * в теле модуля уронила бы сборку на шаге сбора данных о маршрутах, то есть сломала бы
+ * деплой ради диагностики. `lib/leads.ts`, вопреки своему комментарию, проверяет
+ * ровно так же — по вызову.
  */
-if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error(
-    'Профиль покупателя не сохранить: не задан SUPABASE_SERVICE_ROLE_KEY. ' +
-      'Анонимный ключ на partsfit_customers прав не имеет — это не настройка, а защита.'
-  );
-}
+const MISSING_KEY =
+  'Профиль покупателя не сохранить: не задан SUPABASE_SERVICE_ROLE_KEY. ' +
+  'Анонимный ключ на partsfit_customers прав не имеет — это не настройка, а защита.';
 
 const LOCALES = ['ru', 'en', 'ar'];
 
@@ -87,6 +88,11 @@ function toCustomer(row: Row): Customer {
 }
 
 export async function POST(request: Request) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('[/api/auth/sync]', MISSING_KEY);
+    return NextResponse.json({ error: MISSING_KEY }, { status: 500 });
+  }
+
   const user = await userFromRequest(request);
   if (!user) {
     return NextResponse.json({ error: 'Нужен вход' }, { status: 401 });
