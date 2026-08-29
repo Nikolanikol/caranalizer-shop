@@ -71,6 +71,8 @@ export function AuthForm() {
   const [googleReady, setGoogleReady] = useState<boolean | null>(null);
   /** Экран «письмо отправлено»: и после регистрации, и после запроса нового пароля. */
   const [sent, setSent] = useState<'confirm' | 'reset' | null>(null);
+  /** Код из письма — запасной путь к ссылке. */
+  const [code, setCode] = useState('');
 
   const destination = safeNext(next);
 
@@ -114,6 +116,11 @@ export function AuthForm() {
     if (text.includes('password should be')) return t.errWeak;
     if (text.includes('rate limit') || text.includes('too many')) return t.errRate;
     if (text.includes('redirect')) return t.errRedirect;
+    // GoTrue отдаёт 500 «Error sending confirmation email», когда почтовик отказал:
+    // не подтверждён домен отправителя, закрыт порт, не принят ключ. Человеку про это
+    // знать нечего, а вот про рабочий обходной путь — Google — знать надо.
+    if (text.includes('sending') && text.includes('email')) return t.errMail;
+    if (text.includes('token') || text.includes('otp') || text.includes('expired')) return t.errCode;
     return message;
   };
 
@@ -200,6 +207,45 @@ export function AuthForm() {
     }
   };
 
+  /**
+   * Вход по коду из письма.
+   *
+   * Не украшение: ссылка в письме работает только в том браузере, где начали
+   * регистрацию — при PKCE секрет остаётся в его хранилище. Человек, открывший
+   * письмо на телефоне после регистрации на компьютере, по ссылке получит отказ.
+   * Код проверяется на сервере и потому работает откуда угодно.
+   *
+   * Само письмо код предлагает всегда — это стандартный шаблон GoTrue. Без формы
+   * получалось, что мы обещаем способ, которого у нас нет.
+   */
+  const submitCode = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError('');
+    setBusy(true);
+    try {
+      const { error: failure } = await getAuthClient().auth.verifyOtp({
+        email,
+        token: code.trim(),
+        type: sent === 'reset' ? 'recovery' : 'signup',
+      });
+      if (failure) throw failure;
+
+      // После кода восстановления сессия есть, но пароля у человека нет — ведём
+      // его туда, где он его задаст, а не в кабинет.
+      if (sent === 'reset') {
+        setSent(null);
+        setMode('reset');
+        setPassword('');
+        return;
+      }
+      router.replace(destination);
+    } catch (failure) {
+      setError(explain(failure instanceof Error ? failure.message : String(failure)));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (sent) {
     return (
       <div className="rounded-2xl border border-border bg-surface p-6 text-center sm:p-8">
@@ -209,6 +255,26 @@ export function AuthForm() {
           {sent === 'confirm' ? t.sentConfirm : t.sentReset} <b className="text-text">{email}</b>
         </p>
         <p className="mt-3 text-sm text-text-dim">{t.sentSpam}</p>
+
+        <form onSubmit={submitCode} className="mt-6 border-t border-border-subtle pt-6 text-start">
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-text">{t.codeLabel}</span>
+            <Input
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="000000"
+              required
+            />
+          </label>
+          <p className="mt-1.5 text-xs text-text-dim">{t.codeHint}</p>
+          {error && <p className="mt-3 rounded-lg bg-error/10 px-3 py-2 text-sm text-error">{error}</p>}
+          <Button type="submit" disabled={busy || code.trim().length < 6} className="mt-4 w-full">
+            {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+            {t.codeSubmit}
+          </Button>
+        </form>
       </div>
     );
   }
@@ -462,6 +528,10 @@ const TEXT = {
     sentConfirm: 'Подтвердите адрес по ссылке из письма на',
     sentReset: 'Ссылка для смены пароля отправлена на',
     sentSpam: 'Если письма нет через пару минут — проверьте папку «Спам».',
+    codeLabel: 'Или введите код из письма',
+    codeHint: 'Шесть цифр. Понадобится, если письмо открыто на другом устройстве — ссылка работает только в этом браузере.',
+    codeSubmit: 'Подтвердить по коду',
+    errCode: 'Код не подошёл или устарел. Запросите письмо заново.',
     errInvalid: 'Неверная почта или пароль.',
     errNotConfirmed: 'Адрес не подтверждён — откройте ссылку из письма.',
     errTaken: 'Такая почта уже зарегистрирована. Войдите или восстановите пароль.',
@@ -469,6 +539,7 @@ const TEXT = {
     errRate: 'Слишком много попыток. Попробуйте через несколько минут.',
     errMismatch: 'Пароли не совпадают.',
     errRedirect: 'Вход через Google пока не настроен для этого домена. Напишите нам, мы починим.',
+    errMail: 'Письмо отправить не удалось — почта на нашей стороне сейчас недоступна. Войдите через Google: это быстрее и работает.',
   },
   en: {
     login: 'Sign in',
@@ -510,6 +581,10 @@ const TEXT = {
     sentConfirm: 'Confirm your address with the link we sent to',
     sentReset: 'A password reset link is on its way to',
     sentSpam: 'No email after a couple of minutes? Check the spam folder.',
+    codeLabel: 'Or enter the code from the email',
+    codeHint: 'Six digits. Needed if you opened the email on another device — the link only works in this browser.',
+    codeSubmit: 'Confirm with code',
+    errCode: 'Wrong or expired code. Request a new email.',
     errInvalid: 'Wrong email or password.',
     errNotConfirmed: 'Address not confirmed — open the link from the email first.',
     errTaken: 'That email is already registered. Sign in or reset the password.',
@@ -517,5 +592,6 @@ const TEXT = {
     errRate: 'Too many attempts. Try again in a few minutes.',
     errMismatch: 'Passwords do not match.',
     errRedirect: 'Google sign-in is not configured for this domain yet. Drop us a line and we will fix it.',
+    errMail: 'We could not send the email — our mail service is unavailable right now. Use Google instead: it is faster and works.',
   },
 } as const;
