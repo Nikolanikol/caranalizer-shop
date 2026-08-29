@@ -12,6 +12,7 @@ import { Toaster } from "sonner";
 import { MessengerButtons } from "@/components/MessengerButtons";
 import { KmotorsTopBar } from "@/components/KmotorsTopBar";
 import { CartProvider } from "@/components/shop/cart-context";
+import { AuthProvider } from "@/components/auth/auth-context";
 import { getRates } from "@/lib/shop/rates";
 import { CartDrawer } from "@/components/shop/cart-drawer";
 
@@ -89,15 +90,22 @@ export default async function LangLayout({
           CartDrawer сидит на z-[60] и потому не конфликтует с cookie-баннером
           и кнопками мессенджеров: на z-50 оба, и они рендерятся позже.
         */}
-        <CartProvider rates={rates}>
-          <KmotorsTopBar />
-          <Header />
-          <main id="main-content" className="flex-1">{children}</main>
-          <Footer />
-          <CookieBanner />
-          <MessengerButtons />
-          <CartDrawer />
-        </CartProvider>
+        {/*
+          Провайдер входа стоит выше шапки: кнопка «Войти» и кабинет живут в ней.
+          Он клиентский и сессию читает из localStorage — статику страниц это
+          не ломает, в отличие от cookie, за которыми пришлось бы идти на сервер.
+        */}
+        <AuthProvider>
+          <CartProvider rates={rates}>
+            <KmotorsTopBar />
+            <Header />
+            <main id="main-content" className="flex-1">{children}</main>
+            <Footer />
+            <CookieBanner />
+            <MessengerButtons />
+            <CartDrawer />
+          </CartProvider>
+        </AuthProvider>
         <Toaster theme="dark" position="top-center" richColors />
       </NextIntlClientProvider>
 

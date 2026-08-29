@@ -62,3 +62,16 @@ export function trackBeginCheckout(items: number) {
 export function trackKmotorsClick(placement: string) {
   track("kmotors_click", { placement });
 }
+
+/**
+ * Регистрация и вход. Имена стандартные для GA4 — отчёт по ним собирается сам.
+ * `method` различает Google и почту: у них разная доля брошенных форм, и без него
+ * не видно, какой способ работает.
+ */
+export function trackSignUp(method: "google" | "email") {
+  track("sign_up", { method });
+}
+
+export function trackLogin(method: "google" | "email") {
+  track("login", { method });
+}

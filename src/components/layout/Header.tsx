@@ -5,6 +5,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { Container } from "@/components/ui/container";
 import { SHOP_BASE, isShopLocale } from "@/lib/shop/urls";
 import { CartButton } from "@/components/shop/cart-button";
+import { AccountButton } from "@/components/auth/account-button";
 import { LocaleToggle } from "./LocaleToggle";
 import { MobileNav } from "./MobileNav";
 
@@ -65,6 +66,7 @@ export function Header() {
         <div className="flex items-center gap-3">
           <LocaleToggle />
           <CartButton />
+          <AccountButton />
           <MobileNav />
         </div>
       </Container>

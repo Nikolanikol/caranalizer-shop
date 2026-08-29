@@ -4,21 +4,41 @@
     {
       "name": "dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 3000,
       "autoPort": true
     },
     {
       "name": "caranalizer-review",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["start", "--", "-p", "3799"],
+      "runtimeArgs": [
+        "start",
+        "--",
+        "-p",
+        "3799"
+      ],
       "port": 3799
     },
     {
       "name": "partsfit-viewer",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "partsfit:viewer"],
+      "runtimeArgs": [
+        "run",
+        "partsfit:viewer"
+      ],
       "port": 4123
+    },
+    {
+      "name": "prod-3900",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "start:prod"
+      ],
+      "port": 3900
     }
   ]
 }
