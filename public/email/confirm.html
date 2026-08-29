@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Confirm your email</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f4f5f7;">
+    <!-- Preheader: строка, которую почтовый клиент показывает рядом с темой. Без неё
+         в списке писем видно начало разметки. Прячется, но читается роботом. -->
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
+      Confirm your email address to finish creating your Caranalizer account.
+    </div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                 style="max-width:560px;background:#ffffff;border-radius:12px;border:1px solid #e4e6eb;">
+            <tr>
+              <td style="padding:32px 32px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+                <div style="font-size:20px;font-weight:700;color:#0f172a;letter-spacing:-0.01em;">
+                  <span style="color:#2563eb;">Car</span>analizer
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:24px 32px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+                <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#0f172a;font-weight:700;">
+                  Confirm your email address
+                </h1>
+                <p style="margin:0;font-size:15px;line-height:1.6;color:#475569;">
+                  You are one step away from your account. Confirm this address, and you will be
+                  signed in right away.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:24px 32px 0;" align="center">
+                <table role="presentation" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="border-radius:8px;background:#2563eb;">
+                      <a href="{{ .ConfirmationURL }}"
+                         style="display:inline-block;padding:14px 28px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">
+                        Confirm email address
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:24px 32px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+                <!-- Код нужен не для симметрии: ссылка открывается только в том браузере,
+                     где начали регистрацию. Открыл письмо на телефоне — вводит код. -->
+                <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#475569;">
+                  Opening this email on another device? The button above works only in the browser
+                  where you signed up. Enter this code on the site instead:
+                </p>
+                <div style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:24px;font-weight:700;letter-spacing:0.18em;color:#0f172a;background:#f1f5f9;border-radius:8px;padding:14px;text-align:center;">
+                  {{ .Token }}
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:24px 32px 32px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+                <p style="margin:0;font-size:13px;line-height:1.6;color:#94a3b8;">
+                  If you did not create an account, ignore this email — nothing will happen.
+                  If the link stops working, request a new one on the site.
+                </p>
+              </td>
+            </tr>
+          </table>
+
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+            <tr>
+              <td style="padding:20px 32px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;text-align:center;">
+                <!-- Отправитель на домене kmotors.shop, а сайт — caranalizer.com. Человек
+                     это видит, и объяснить надо в самом письме, иначе выглядит подделкой. -->
+                <p style="margin:0;font-size:12px;line-height:1.6;color:#94a3b8;">
+                  Caranalizer — used original parts from Korean dismantlers.<br />
+                  Sent from kmotors.shop, the domain we share with our sister store K-Axis.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
