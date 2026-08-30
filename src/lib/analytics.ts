@@ -75,3 +75,16 @@ export function trackSignUp(method: "google" | "email") {
 export function trackLogin(method: "google" | "email") {
   track("login", { method });
 }
+
+/**
+ * Разбор VIN на странице проверки.
+ *
+ * `stage` различает два слоя: `full` — расширенная проверка по реестрам (вошедший),
+ * `locked` — упёрся в гейт. Второе значение и есть смысл события: по нему видно,
+ * сколько людей доходит до VIN и не регистрируется, а это единственный способ понять,
+ * окупается гейт или отпугивает. Базовый разбор не считается вовсе — он происходит
+ * в браузере без запроса, и события на каждый набранный номер были бы шумом.
+ */
+export function trackVinDecode(stage: "full" | "locked") {
+  track("vin_decode", { vin_stage: stage });
+}

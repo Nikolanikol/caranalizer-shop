@@ -5,6 +5,7 @@ import { Container } from "@/components/ui/container";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { KmotorsBanner } from "@/components/KmotorsBanner";
 import { CheckLeadForm } from "./CheckLeadForm";
+import { VinDecoder } from "./VinDecoder";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { ReportExampleAccordion } from "./ReportExampleAccordion";
 import type { GuideLocale } from "@/lib/guides";
@@ -45,7 +46,15 @@ export async function generateMetadata({
 }
 
 const WHAT_ICONS = [Gauge, Coins, Wrench, Droplets, ShieldAlert, Car, Users, FileText];
-const COMPARE_ROWS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+/*
+ * Строк тринадцать, а было девять. Причина не в объёме: с 30.08.2026 бесплатная
+ * проверка — самообслуживание, и прежняя левая колонка врала в шести строках
+ * («факт ДТП — кратко», «такси — флаг», «тотал — флаг» — декодер этого не знает).
+ * Зато того, что он ДАЁТ — марка, год, снятие с учёта на экспорт, пробег перед
+ * снятием, цвет и габариты, — в таблице не было вовсе, и бесплатный слой выглядел
+ * пустым. Теперь обе колонки описывают то, что действительно отдаётся.
+ */
+const COMPARE_ROWS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
 export default async function VinCheckPage({ params }: { params: Promise<{ lang: string }> }) {
   // Язык сообщаем next-intl явно: иначе `useTranslations` ниже читает заголовки запроса,
@@ -134,6 +143,16 @@ function VinCheckContent() {
                 </div>
               ))}
             </div>
+          </div>
+        </Container>
+      </section>
+
+      {/* Декодер. Стоит сразу за героем: базовый разбор бесплатный и мгновенный,
+          и он показывает, что мы про машину что-то знаем, раньше любой формы. */}
+      <section id="decoder" className="py-14 sm:py-16 border-b border-border-subtle scroll-mt-16">
+        <Container>
+          <div className="max-w-2xl mx-auto">
+            <VinDecoder />
           </div>
         </Container>
       </section>
@@ -318,7 +337,7 @@ function VinCheckContent() {
               </h2>
               <p className="text-text-secondary">{t("formSub")}</p>
             </div>
-            <CheckLeadForm defaultSource="report" />
+            <CheckLeadForm />
           </div>
         </Container>
       </section>

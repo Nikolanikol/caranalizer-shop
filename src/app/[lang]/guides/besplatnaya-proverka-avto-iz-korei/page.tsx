@@ -40,10 +40,10 @@ const CONTENT: Record<GuideLocale, GuideContent> = {
         ],
       },
       {
-        h: "Наш бесплатный мини-отчёт",
+        h: "Что можно проверить у нас бесплатно",
         p: [
-          "Мы делаем базовую проверку бесплатно: история ДТП и выплат, реальный пробег по базе техосмотров, заводская комплектация по VIN и явные красные флаги (утопление, такси, залог).",
-          "Отчёт приходит в WhatsApp или Telegram в течение рабочего дня. Форма — прямо под этой статьёй.",
+          "Марку, страну сборки и год выпуска декодер на странице проверки показывает сразу, как только введён номер, — без заявки и без ожидания.",
+          "После бесплатной регистрации открывается корейский реестр снятых с учёта на экспорт: снята ли машина, с каким пробегом её сдали, цвет, топливо, объём и дата первой регистрации. Пять проверок в сутки.",
         ],
       },
       {
@@ -88,9 +88,10 @@ const CONTENT: Record<GuideLocale, GuideContent> = {
         ],
       },
       {
-        h: "Our free mini-report",
+        h: "What you can check with us for free",
         p: [
-          "We run the basic check for free: accident and payout history, real mileage from inspection records, factory specs by VIN and red flags (flood, taxi, lien). The report arrives in WhatsApp or Telegram within a business day — the form is right below this article.",
+          "Make, country of assembly and model year appear the moment you enter the number on the check page — no request, no waiting.",
+          "After free registration the Korean export deregistration registry opens up: whether the car was deregistered, the mileage it was handed over at, colour, fuel, displacement and the first registration date. Five checks a day.",
         ],
       },
     ],
@@ -118,9 +119,10 @@ const CONTENT: Record<GuideLocale, GuideContent> = {
         ],
       },
       {
-        h: "تقريرنا المصغر المجاني",
+        h: "ما يمكنك فحصه لدينا مجاناً",
         p: [
-          "نجري الفحص الأساسي مجاناً: تاريخ الحوادث والمدفوعات، والمسافة الحقيقية، والمواصفات حسب VIN، والأعلام الحمراء. يصل التقرير عبر واتساب أو تيليجرام خلال يوم عمل — النموذج أسفل هذه المقالة.",
+          "تظهر الماركة وبلد التجميع وسنة الصنع فور إدخال الرقم في صفحة الفحص — بلا طلب وبلا انتظار.",
+          "وبعد تسجيل مجاني يُفتح سجل الشطب الكوري للتصدير: هل شُطبت السيارة، وبأي مسافة مقطوعة سُلِّمت، واللون والوقود والسعة وتاريخ أول تسجيل. خمسة فحوصات يومياً.",
         ],
       },
     ],
@@ -147,8 +149,9 @@ function GuideContent({ locale }: { locale: GuideLocale }) {
   return (
     <>
       <GuideLayout slug={SLUG} lang={locale} content={CONTENT[locale]} />
-      {/* Форма прямо на странице — этот запрос («бесплатно проверить») самый горячий */}
-      <section id="free-check" className="pb-20 scroll-mt-16">
+      {/* Форма прямо на странице: бесплатную проверку человек делает сам на странице
+          проверки, здесь заказывают полный отчёт. */}
+      <section id="report" className="pb-20 scroll-mt-16">
         <Container className="max-w-2xl">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold font-[family-name:var(--font-heading)] mb-3">

@@ -7,7 +7,7 @@ import { ScrollReveal } from "@/components/ScrollReveal";
 import { GUIDES, type GuideLocale } from "@/lib/guides";
 import { partsDestination } from "@/lib/parts-destination";
 import { kmotorsUrl } from "@/lib/kmotors";
-import { mainAlternates, mainUrl } from "@/lib/seo";
+import { mainAlternates, mainUrl, VIN_PATHS, type VinLocale } from "@/lib/seo";
 import { setRequestLocale } from "next-intl/server";
 import {
   CATEGORIES,
@@ -132,6 +132,13 @@ function HomeContent({
   const tg = useTranslations("guides");
   const tc = useTranslations("check");
   const locale = useLocale() as GuideLocale;
+
+  /*
+   * Путь страницы проверки зависит от языка: у неё свой слаг на каждой локали
+   * (`VIN_PATHS`), а `/en/proverka-avto-po-vin` — рабочий, но неканонический адрес.
+   * Хардкодить русский путь нельзя, иначе англоязычный посетитель уедет на дубль.
+   */
+  const vinPath = VIN_PATHS[locale as VinLocale] ?? VIN_PATHS.ru;
   /*
    * Язык каталога и язык сайта — не одно и то же: раздел живёт на `SHOP_LOCALES`,
    * сайт на трёх локалях. На арабской главной каталожные блоки подписываются
@@ -242,8 +249,13 @@ function HomeContent({
               {h.ctaCatalog}
               <ArrowRight className="w-5 h-5" />
             </Link>
+            {/*
+              Ведёт на страницу проверки, а не к форме внизу этой же страницы.
+              Раньше кнопка «бесплатная проверка» открывала заявку менеджеру — теперь
+              проверку человек делает сам, и его место там, где стоит декодер.
+            */}
             <Link
-              href="#free-check"
+              href={vinPath}
               className="inline-flex items-center justify-center gap-2.5 px-10 py-[18px] bg-transparent text-text border-[1.5px] border-border font-[family-name:var(--font-heading)] text-[15px] font-semibold uppercase tracking-[0.05em] rounded-[10px] hover:border-primary hover:text-primary hover:-translate-y-0.5 transition-all duration-300"
             >
               {t("ctaCheck")}
@@ -371,7 +383,7 @@ function HomeContent({
         </Container>
       </section>
 
-      <section id="free-check" className="relative py-20 bg-base-darker border-y border-border scroll-mt-16">
+      <section id="report" className="relative py-20 bg-base-darker border-y border-border scroll-mt-16">
         <Container>
           <div className="max-w-2xl mx-auto">
             <div className="text-center mb-8">
@@ -400,8 +412,10 @@ function HomeContent({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {(
               [
-                { icon: ShieldCheck, n: 1, href: "#free-check", external: false },
-                { icon: FileSearch, n: 2, href: "/proverka-avto-po-vin", external: false },
+                // Обе плитки ведут на страницу проверки: первая — прямо к декодеру,
+                // вторая — на страницу целиком, где ниже форма полного отчёта.
+                { icon: ShieldCheck, n: 1, href: `${vinPath}#decoder`, external: false },
+                { icon: FileSearch, n: 2, href: vinPath, external: false },
                 {
                   icon: Car,
                   n: 3,

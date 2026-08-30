@@ -11,27 +11,24 @@ import { KmotorsBanner } from "@/components/KmotorsBanner";
 import { CheckCircle } from "lucide-react";
 import type { Value } from "react-phone-number-input";
 
-type LeadSource = "check" | "report";
-
 const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/i;
 const LISTING_RE = /^(https?:\/\/)?([a-z0-9-]+\.)*(encar\.com|kbchachacha\.com|kcar\.com)\//i;
 
-export function CheckLeadForm({
-  defaultSource = "check",
-}: {
-  /** С какого варианта открывать форму. Дальше выбор делает посетитель. */
-  defaultSource?: LeadSource;
-} = {}) {
+/**
+ * Заявка на полный отчёт по VIN.
+ *
+ * Выбора «бесплатная проверка / полный отчёт» здесь больше нет — решение владельца
+ * 30.08.2026. Бесплатную проверку человек теперь делает сам на странице проверки:
+ * декодер разбирает номер и ходит в корейский реестр экспорта, и просить ради этого
+ * заявку у менеджера значит отнимать время у обоих. Форма осталась там, где человека
+ * нельзя обслужить автоматически, — под полный отчёт.
+ *
+ * Отсюда следствие для аналитики: `source` у всех заявок отсюда теперь `report`,
+ * а бесплатный поток виден не в заявках, а в событии `vin_decode` (`lib/analytics`).
+ * Значение `check` в `LeadSource` остаётся: по нему разложены прежние заявки в базе.
+ */
+export function CheckLeadForm() {
   const t = useTranslations("check");
-  const tr = useTranslations("report");
-
-  /**
-   * Страницы бесплатной проверки и полного отчёта склеены в одну, но воронка
-   * осталась раздельной: `source` уходит в заявку, и по нему видно, за чем пришли.
-   * Склеить его в одно значение значило бы потерять единственный признак, по
-   * которому эти два потока отличаются.
-   */
-  const [source, setSource] = useState<LeadSource>(defaultSource);
 
   const [link, setLink] = useState("");
   const [name, setName] = useState("");
@@ -62,11 +59,11 @@ export function CheckLeadForm({
           messenger,
           tgUsername,
           comment,
-          source,
+          source: "report",
         }),
       });
       if (res.ok) {
-        trackLead(source);
+        trackLead("report");
         setSuccess(true);
       }
     } catch {
@@ -96,32 +93,6 @@ export function CheckLeadForm({
       onSubmit={handleSubmit}
       className="bg-elevated border border-border-subtle rounded-2xl p-6 sm:p-8 space-y-4"
     >
-      {/* Что заказываем. Названия берём из таблицы сравнения — они там уже выверены. */}
-      <div role="radiogroup" aria-label={tr("compareTitle")} className="grid grid-cols-2 gap-2">
-        {([
-          ["check", tr("colFree")],
-          ["report", tr("colFull")],
-        ] as const).map(([value, label]) => {
-          const active = source === value;
-          return (
-            <button
-              key={value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => setSource(value)}
-              className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
-                active
-                  ? "border-primary bg-primary/10 text-text"
-                  : "border-border bg-base/40 text-text-secondary hover:border-primary/50 hover:text-text cursor-pointer"
-              }`}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
-
       <div>
         <label className="block text-sm text-text-muted mb-1.5">{t("fieldLink")}</label>
         <Input
