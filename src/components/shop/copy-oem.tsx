@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useLocale } from 'next-intl';
 import { Check, Copy } from 'lucide-react';
+import { copyText } from '@/lib/clipboard';
 
 /** Кнопка «скопировать артикул». Клиентская только из-за clipboard. */
 export function CopyOem({ value }: { value: string }) {
@@ -16,8 +17,10 @@ export function CopyOem({ value }: { value: string }) {
     <button
       type="button"
       title={en ? 'Copy the part number' : 'Скопировать артикул'}
-      onClick={() => {
-        navigator.clipboard.writeText(value);
+      onClick={async () => {
+        // Через общий модуль: прямой вызов clipboard роняет обработчик там,
+        // где объекта нет (встроенные браузеры мессенджеров, старый Android).
+        if (!(await copyText(value))) return;
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }}
