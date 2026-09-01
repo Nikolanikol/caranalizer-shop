@@ -33,7 +33,19 @@ const POSITIONS = [
   { key: 'positionInner', value: 'Внутренний (в крышку багажника)' },
 ];
 
+/**
+ * Что тащим за собой при переходе по любому фильтру.
+ *
+ * Марка и модель попадают сюда **только на витрине**, где пути под них не существует
+ * и они живут параметрами. На посадочных страницах они лежат сегментами адреса,
+ * и дублировать их ещё и параметром нельзя — фильтр применился бы дважды.
+ *
+ * Без них тут было так: на витрине с выбранными Peugeot 308 клик по «Любая сторона»
+ * уводил на голый `/ru/zapchasti` — марка и модель молча пропадали.
+ */
 interface Query {
+  brand?: string;
+  model?: string;
   side?: string;
   position?: string;
   search?: string;
@@ -69,6 +81,7 @@ export function FilterSidebar({
   brand,
   model,
   selectedBrandName,
+  selectedModelName,
   query,
   brands,
   models,
@@ -79,6 +92,12 @@ export function FilterSidebar({
   brand?: Segment;
   model?: Segment;
   selectedBrandName?: string;
+  /**
+   * Имя выбранной модели — единственный признак выбора на витрине: сегмента адреса
+   * там нет, и `model` приходит пустым. Пара к `selectedBrandName`, которая у марки
+   * была с самого начала, а у модели её просто забыли завести.
+   */
+  selectedModelName?: string;
   query: Query;
   brands: Facet[];
   models: Facet[];
@@ -99,15 +118,22 @@ export function FilterSidebar({
   // Без категории пути под марку не существует, поэтому она остаётся параметром —
   // но параметром на текущем адресе, а не на корне раздела.
   const hrefForBrand = (facet: Facet) =>
-    category ? brandUrl(category, facet.slug) : catalogUrl({ base, brand: facet.name });
+    category ? brandUrl(category, facet.slug) : catalogUrl({ base, ...query, brand: facet.name, model: '' });
   const hrefForModel = (facet: Facet) =>
     category && brand
       ? modelUrl(category, brand.slug, facet.slug)
-      : catalogUrl({ base, brand: selectedBrandName, model: facet.name });
+      : catalogUrl({ base, ...query, brand: selectedBrandName, model: facet.name });
 
-  const allBrandsHref = category ? categoryUrl(category) : base;
+  // Смена марки обязана сбрасывать модель: «308» у другой марки не существует,
+  // и адрес с чужой парой отдал бы пустую выдачу.
+  const allBrandsHref = category ? categoryUrl(category) : catalogUrl({ base, ...query, brand: '', model: '' });
   const allModelsHref =
-    category && brand ? brandUrl(category, brand.slug) : catalogUrl({ base, brand: selectedBrandName });
+    category && brand
+      ? brandUrl(category, brand.slug)
+      : catalogUrl({ base, ...query, brand: selectedBrandName, model: '' });
+
+  // Модель выбрана либо сегментом пути (посадочные), либо параметром (витрина).
+  const modelChosen = Boolean(model ?? selectedModelName);
 
   const hasFilters = Boolean(query.side || query.position || query.search);
 
@@ -153,14 +179,21 @@ export function FilterSidebar({
         <section className="space-y-2">
           <h3 className="text-sm font-bold text-text">{t.model}</h3>
           <div className="max-h-[320px] overflow-y-auto custom-scrollbar pr-1">
-            <Option href={allModelsHref} active={!model}>
+            <Option href={allModelsHref} active={!modelChosen}>
               {t.allModels}
             </Option>
             {models.map((facet) => (
               <Option
                 key={facet.slug}
                 href={hrefForModel(facet)}
-                active={model?.slug === facet.slug}
+                /*
+                 * На посадочных сверяем слаг — он пришёл сегментом и точен. На витрине
+                 * сегмента нет, и остаётся имя: ровно так же, как у марки выше.
+                 * Пока этой второй ветки не было, подсветка на витрине не двигалась
+                 * вовсе — «Все модели» горели всегда, и клик выглядел проигнорированным,
+                 * хотя выдача под ним честно фильтровалась.
+                 */
+                active={model ? model.slug === facet.slug : selectedModelName === facet.name}
                 count={facet.count}
               >
                 {facet.name}

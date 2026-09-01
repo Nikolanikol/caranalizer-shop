@@ -143,13 +143,31 @@ export async function CatalogView({
   });
 
   const selectedBrandName = brand?.name ?? searchParams.brand;
+  /*
+   * То же самое для модели, и заводится оно ровно по той же причине, что у марки:
+   * на витрине сегмента адреса нет, выбор приезжает параметром. Пары не было, и фильтр
+   * по модели там не подсвечивался вовсе — «Все модели» горели при любом выборе.
+   *
+   * `brand ? undefined` повторяет условие из `findParts` выше: на посадочной странице
+   * марки параметр `model` в выдаче не участвует, и показывать его выбранным нельзя.
+   */
+  const selectedModelName = model?.name ?? (brand ? undefined : searchParams.model);
   const [brands, models] = await Promise.all([
     getBrands(category),
     selectedBrandName ? getModels(selectedBrandName, category) : Promise.resolve([]),
   ]);
 
-  // Параметры, которые надо сохранять при переходе по фильтрам и страницам.
+  /*
+   * Параметры, которые надо сохранять при переходе по фильтрам, сортировке и страницам.
+   *
+   * Марка и модель лежат здесь же, а не дописываются у каждой ссылки отдельно. Раньше
+   * их добавляли руками — и у сортировки с пагинацией добавляли, а у боковой панели
+   * забыли: на витрине клик по стороне или позиции уводил на голый `/ru/zapchasti`
+   * и молча терял выбранные марку с моделью. Один источник вместо трёх копий.
+   */
   const query = {
+    brand: brand ? undefined : searchParams.brand,
+    model: brand ? undefined : searchParams.model,
     side: searchParams.side,
     position: searchParams.position,
     search: searchParams.search,
@@ -165,7 +183,8 @@ export async function CatalogView({
           <FilterPanel
               locale={locale}
               activeCount={
-                [selectedBrandName, model, searchParams.side, searchParams.position].filter(Boolean).length
+                [selectedBrandName, selectedModelName, searchParams.side, searchParams.position].filter(Boolean)
+                  .length
               }
             >
               <FilterSidebar
@@ -173,6 +192,7 @@ export async function CatalogView({
                 brand={brand}
                 model={model}
                 selectedBrandName={selectedBrandName}
+                selectedModelName={selectedModelName}
                 query={query}
                 brands={brands}
                 models={models}
@@ -210,8 +230,6 @@ export async function CatalogView({
                     href={catalogUrl({
                       base,
                       ...query,
-                      brand: brand ? undefined : searchParams.brand,
-                      model: brand ? undefined : searchParams.model,
                       sort: item.value === defaultSort ? '' : item.value,
                     })}
                     className={`px-3 py-2 rounded text-[10px] font-bold uppercase tracking-widest transition-colors ${
@@ -255,11 +273,7 @@ export async function CatalogView({
                   page={result.page}
                   totalPages={result.totalPages}
                   base={base}
-                  query={{
-                    ...query,
-                    brand: brand ? undefined : searchParams.brand,
-                    model: brand ? undefined : searchParams.model,
-                  }}
+                  query={query}
                 />
               </div>
             )}
