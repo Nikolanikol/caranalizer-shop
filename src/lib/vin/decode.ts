@@ -32,6 +32,20 @@ export type VinInfo = {
  *
  * Двухзначные ключи не опечатка: у части американских заводов совпадает только начало,
  * и поиск ниже сначала пробует три знака, потом два.
+ *
+ * Корейская марка — не то же самое, что корейская сборка, и пропуск здесь стоил
+ * пустой карточки живому посетителю. 31.08.2026 человек ввёл `5XXGT4L31LG441304` —
+ * Kia Optima с завода в Джорджии — и не увидел ни марки, ни страны: кодов заводов
+ * Hyundai и Kia вне Кореи в таблице не было вовсе, хотя это ровно наша аудитория.
+ * Добавлены `5XX`/`5XY` (Kia Georgia), `5NP`/`5NM` (Hyundai Alabama), `3KM`/`3KP`
+ * (Kia Mexico) и недостающие корейские `KMF`, `KMT`, `KMU`, `KPH`, `KL1`, `KL8`.
+ *
+ * Такая машина при этом никогда не найдётся в корейском реестре экспорта — она
+ * из Кореи не вывозилась. Это факт о машине, а не наш сбой, и путать их нельзя.
+ *
+ * Коды сверены со справочником NHTSA (`vpic.nhtsa.dot.gov/api/vehicles/DecodeWMI/<код>`),
+ * а не выписаны по памяти: в поле `make` лежит то, что увидит покупатель, и марка
+ * невпопад хуже пустого места. Тем же запросом проверять и следующее пополнение.
  */
 const WMI: Record<string, { make: string; country: string }> = {
   // Корея
@@ -45,6 +59,12 @@ const WMI: Record<string, { make: string; country: string }> = {
   KPA: { make: 'SsangYong (KG Mobility)', country: 'South Korea' },
   KPT: { make: 'SsangYong (KG Mobility)', country: 'South Korea' },
   KNM: { make: 'Renault Samsung', country: 'South Korea' },
+  KMF: { make: 'Hyundai', country: 'South Korea' },
+  KMT: { make: 'Hyundai', country: 'South Korea' },
+  KMU: { make: 'Hyundai', country: 'South Korea' },
+  KPH: { make: 'Hyundai', country: 'South Korea' },
+  KL1: { make: 'Chevrolet / GM Korea', country: 'South Korea' },
+  KL8: { make: 'Chevrolet / GM Korea', country: 'South Korea' },
   // Германия и остальная Европа
   WAU: { make: 'Audi', country: 'Germany' },
   WBA: { make: 'BMW', country: 'Germany' },
@@ -156,6 +176,8 @@ const WMI: Record<string, { make: string; country: string }> = {
   '2FM': { make: 'Ford', country: 'Canada' },
   '2FT': { make: 'Ford', country: 'Canada' },
   '3FA': { make: 'Ford', country: 'Mexico' },
+  '3KM': { make: 'Kia', country: 'Mexico' },
+  '3KP': { make: 'Kia', country: 'Mexico' },
   '4F2': { make: 'Mazda', country: 'USA' },
   '4F4': { make: 'Mazda', country: 'USA' },
   '4S3': { make: 'Subaru', country: 'USA' },
@@ -168,7 +190,11 @@ const WMI: Record<string, { make: string; country: string }> = {
   '5J6': { make: 'Honda', country: 'USA' },
   '5L': { make: 'Lincoln', country: 'USA' },
   '5N1': { make: 'Nissan', country: 'USA' },
+  '5NM': { make: 'Hyundai', country: 'USA' },
+  '5NP': { make: 'Hyundai', country: 'USA' },
   '5T1': { make: 'Toyota', country: 'USA' },
+  '5XX': { make: 'Kia', country: 'USA' },
+  '5XY': { make: 'Kia', country: 'USA' },
   '5Y2': { make: 'Pontiac', country: 'USA' },
 };
 
