@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/PhoneInput';
 import { SHOP_BASE } from '@/lib/shop/urls';
+import { VinHistory } from './VinHistory';
 
 /**
  * Кабинет. Пока в нём только контакты покупателя — заявки к аккаунту не привязаны:
@@ -85,6 +86,7 @@ export function AccountClient() {
   };
 
   return (
+    <>
     <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8">
       <h1 className="mb-1 text-xl font-bold text-text">{t.title}</h1>
       <p className="mb-6 text-sm text-text-secondary">{user.email}</p>
@@ -141,6 +143,9 @@ export function AccountClient() {
         </button>
       </div>
     </div>
+
+    <VinHistory locale={locale} />
+    </>
   );
 }
 
