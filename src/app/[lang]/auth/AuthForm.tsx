@@ -35,6 +35,44 @@ function safeNext(value: string | null): string {
 
 const MODES: Mode[] = ['login', 'register', 'forgot', 'reset'];
 
+/**
+ * GoTrue отдаёт 500 «Error sending confirmation email», когда почтовик отказал:
+ * не подтверждён домен отправителя, закрыт порт, не принят ключ.
+ *
+ * Признак вынесен из `explain`, потому что нужен дважды: человеку показать понятный
+ * текст, а в чат — тревогу. Разъедься они — тревога перестала бы приходить молча,
+ * и заметили бы это только следующим разбором пула.
+ */
+function isMailFailure(message: string): boolean {
+  const text = message.toLowerCase();
+  return text.includes('sending') && text.includes('email');
+}
+
+/**
+ * Сказать серверу, что человек начал регистрацию.
+ *
+ * Зачем вообще: `signUp` идёт из браузера прямо в GoTrue, и сервер о начатой
+ * регистрации не узнаёт никак. Замер 01.09.2026 показал цену этой слепоты — 13 человек
+ * оставили нам почту между 10.06 и 16.08.2026 и застряли на неотправленном письме,
+ * а увидели мы их только разбором `auth.users` три месяца спустя.
+ *
+ * Ответа не ждём и ошибку глотаем: уведомление — наша забота, а не клиента, и падать
+ * из-за него регистрация не должна. `keepalive` нужен потому, что следом бывает переход
+ * по маршруту — без него браузер вправе оборвать запрос на полпути.
+ *
+ * Тело — не факт, а ключ поиска: роут перепроверяет всё у GoTrue служебным ключом.
+ */
+function notifySignup(body: { stage: 'started' | 'mail-failed'; email: string; userId?: string }): void {
+  void fetch('/api/auth/signup-notify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    keepalive: true,
+  }).catch(() => {
+    /* Молчим намеренно: см. комментарий выше. */
+  });
+}
+
 export function AuthForm() {
   const locale = useLocale() === 'en' ? 'en' : 'ru';
   const t = TEXT[locale];
@@ -57,7 +95,14 @@ export function AuthForm() {
   const [password2, setPassword2] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [consent, setConsent] = useState(false);
-  const [marketingOk, setMarketingOk] = useState(false);
+  /*
+   * Галочка проставлена заранее — решение владельца 31.08.2026. Оговорка, которая
+   * обязана здесь остаться: предзаполненное согласие на рассылку по GDPR согласием
+   * не считается (там прямо про pre-ticked boxes), и раздел открыт на весь мир.
+   * Вход через Google это не затрагивает: формы он не видит, и `marketing_ok`
+   * у него остаётся false — менять умолчание в базе значило бы подписать человека молча.
+   */
+  const [marketingOk, setMarketingOk] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   /**
@@ -116,10 +161,9 @@ export function AuthForm() {
     if (text.includes('password should be')) return t.errWeak;
     if (text.includes('rate limit') || text.includes('too many')) return t.errRate;
     if (text.includes('redirect')) return t.errRedirect;
-    // GoTrue отдаёт 500 «Error sending confirmation email», когда почтовик отказал:
-    // не подтверждён домен отправителя, закрыт порт, не принят ключ. Человеку про это
-    // знать нечего, а вот про рабочий обходной путь — Google — знать надо.
-    if (text.includes('sending') && text.includes('email')) return t.errMail;
+    // Почтовик отказал. Человеку про причину знать нечего, а вот про рабочий обходной
+    // путь — Google — знать надо. Тревога об этом же уходит в чат, см. `isMailFailure`.
+    if (isMailFailure(message)) return t.errMail;
     if (text.includes('token') || text.includes('otp') || text.includes('expired')) return t.errCode;
     return message;
   };
@@ -181,8 +225,14 @@ export function AuthForm() {
         trackSignUp('email');
         // Сессия сразу — только если подтверждение почты выключено. Иначе человек
         // ждёт письма, и обещать ему вход нельзя.
-        if (data.session) router.replace(destination);
-        else setSent('confirm');
+        if (data.session) {
+          // Уведомлять о начале незачем: вход уже состоялся, и о нём отчитается
+          // `/api/auth/sync` сообщением «зарегистрировался и вошёл».
+          router.replace(destination);
+        } else {
+          notifySignup({ stage: 'started', email: email.trim(), userId: data.user?.id });
+          setSent('confirm');
+        }
         return;
       }
 
@@ -201,7 +251,17 @@ export function AuthForm() {
       if (failure) throw failure;
       router.replace('/account');
     } catch (failure) {
-      setError(explain(failure instanceof Error ? failure.message : String(failure)));
+      // Бросить можно и не Error — `failure.message` вслепую уронил бы сам обработчик.
+      const message = failure instanceof Error ? failure.message : String(failure);
+      /*
+       * Аккаунт GoTrue при отказе почтовика всё равно заводит — это не догадка:
+       * все 13 потерянных регистраций лежат в `auth.users` неподтверждёнными. Значит
+       * роуту есть что перепроверить, и тревога уйдёт с настоящим адресом.
+       */
+      if (mode === 'register' && isMailFailure(message)) {
+        notifySignup({ stage: 'mail-failed', email: email.trim() });
+      }
+      setError(explain(message));
     } finally {
       setBusy(false);
     }

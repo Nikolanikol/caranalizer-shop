@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import { userFromRequest } from '@/lib/auth/server';
+import { notifySignupJoined } from '@/lib/auth/signup-notify';
 import type { Customer } from '@/types/customer';
 
 /**
@@ -142,16 +143,52 @@ export async function POST(request: Request) {
     last_seen_at: new Date().toISOString(),
   };
 
-  const { data, error } = await supabase
-    .from('partsfit_customers')
-    .upsert(row, { onConflict: 'id' })
-    .select('*')
-    .single<Row>();
+  /*
+   * Создание и обновление разведены намеренно, хотя upsert справился бы с обоими.
+   *
+   * Причина — уведомление «зарегистрировался и вошёл»: оно должно уйти РОВНО один раз
+   * на человека, а признак «строки не было» из чтения выше для этого не годится. Роут
+   * зовётся при каждом входе, и два одновременных первых входа (две открытые вкладки:
+   * supabase-js рассылает SIGNED_IN по всем) прочитали бы пусто оба и уведомили дважды.
+   * Ловится это только базой: успешный INSERT означает, что строку завёл именно
+   * этот запрос, а конфликт по первичному ключу — что кто-то успел раньше.
+   *
+   * Поймано на проверке 01.09.2026: в dev StrictMode монтирует провайдер дважды,
+   * и на одну регистрацию пришло два одинаковых сообщения.
+   */
+  let data: Row | null = null;
+  let created = false;
 
-  if (error || !data) {
-    console.error('[/api/auth/sync]', error);
-    return NextResponse.json({ error: 'Не удалось сохранить профиль' }, { status: 500 });
+  if (!existing) {
+    const insert = await supabase.from('partsfit_customers').insert(row).select('*').single<Row>();
+    // Конфликт (23505) — штатный исход гонки, а не поломка: строку завела соседняя
+    // вкладка, и дальше идём общим путём обновления, но уже молча.
+    if (!insert.error && insert.data) {
+      data = insert.data;
+      created = true;
+    }
   }
+
+  if (!data) {
+    const upsert = await supabase
+      .from('partsfit_customers')
+      .upsert(row, { onConflict: 'id' })
+      .select('*')
+      .single<Row>();
+
+    if (upsert.error || !upsert.data) {
+      console.error('[/api/auth/sync]', upsert.error);
+      return NextResponse.json({ error: 'Не удалось сохранить профиль' }, { status: 500 });
+    }
+    data = upsert.data;
+  }
+
+  /*
+   * Ждём отправку, а не отпускаем в фон: на serverless незавершённая работа после
+   * ответа может быть просто убита вместе с процессом. `notifySignupJoined` своих
+   * исключений наружу не выпускает, так что задержка — единственная плата.
+   */
+  if (created) await notifySignupJoined(user, data);
 
   return NextResponse.json({ customer: toCustomer(data) });
 }
