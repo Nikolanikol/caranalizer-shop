@@ -1,4 +1,5 @@
 import React from 'react';
+import { CardGridSkeleton } from '@/components/shop/skeletons';
 
 /**
  * Состояние загрузки для всего раздела запчастей.
@@ -11,6 +12,15 @@ import React from 'react';
  * Скелет повторяет раскладку каталога — низкую шапку, боковой фильтр и сетку
  * карточек с тем же `h-64` под фотографию, — поэтому подстановка настоящего
  * содержимого не сдвигает страницу, а заполняет уже занятые места.
+ *
+ * Сетка карточек приехала из `components/shop/skeletons.tsx`: та же сетка нужна
+ * и здесь, и в `catalog-view.tsx` под `<Suspense>`. Две копии разъехались бы
+ * на первой правке отступов.
+ *
+ * **Этот файл закрывает только смену маршрута.** Клик по фильтру меняет параметры
+ * запроса, и на такой переход `loading.tsx` не срабатывает вовсе — это проверено
+ * замером, а не выведено из документации. Тот случай закрывают `LinkPending`
+ * и `<Suspense>` в `catalog-view.tsx`.
  *
  * Один файл на раздел: он лежит выше всех его маршрутов, значит закрывает и витрину,
  * и каталог, и категории, и посадочные марок с моделями, и карточку товара.
@@ -57,19 +67,7 @@ export default function ShopLoading() {
 
           <div className="flex-1 w-full space-y-6">
             <div className="h-12 rounded-lg bg-elevated" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="rounded-lg border border-border-subtle overflow-hidden">
-                  {/* h-64 — ровно столько занимает фотография в ProductCard */}
-                  <div className="h-64 bg-base-darker" />
-                  <div className="p-4 space-y-2">
-                    <div className="h-4 w-3/4 rounded bg-elevated" />
-                    <div className="h-3 w-1/2 rounded bg-elevated/60" />
-                    <div className="h-5 w-1/3 rounded bg-elevated" />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <CardGridSkeleton />
           </div>
         </div>
       </div>

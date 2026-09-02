@@ -11,6 +11,8 @@
  */
 
 import 'server-only';
+import { unstable_cache } from 'next/cache';
+import { FACETS_TTL } from './cache';
 import { createServerClient } from '@/lib/supabase';
 import type { Wheel, WheelGrade, WheelKind, WheelQuantity } from '@/types/wheel';
 
@@ -170,7 +172,12 @@ export async function getWheelSlugs(): Promise<string[]> {
 }
 
 /** Марки и диаметры для фильтра — со счётчиками, как в фильтре запчастей. */
-export async function getWheelFacets(): Promise<{
+export const getWheelFacets = unstable_cache(_getWheelFacets, ['skywheel-facets'], {
+  revalidate: FACETS_TTL,
+  tags: ['skywheel-facets'],
+});
+
+async function _getWheelFacets(): Promise<{
   brands: { slug: string; name: string; count: number }[];
   diameters: { value: number; count: number }[];
 }> {

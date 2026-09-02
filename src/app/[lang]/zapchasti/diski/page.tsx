@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { PackageSearch } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
@@ -6,9 +6,11 @@ import { SITE_URL } from '@/lib/site';
 import type { ShopLocale } from '@/lib/shop/terms';
 import { ui } from '@/lib/shop/ui-text';
 import { SHOP_BASE, WHEELS_BASE, catalogUrl, isShopLocale, shopAlternates } from '@/lib/shop/urls';
-import { findWheels, getWheelFacets } from '@/lib/shop/wheels';
+import { WHEELS_PER_PAGE, findWheels, getWheelFacets } from '@/lib/shop/wheels';
 import { FilterPanel } from '@/components/shop/filter-panel';
+import { LinkPending } from '@/components/shop/link-pending';
 import { Pagination } from '@/components/shop/pagination';
+import { ResultsSkeleton, ResultsToolbar } from '@/components/shop/results';
 import { ShopFrame, ShopHeader } from '@/components/shop/shop-shell';
 import { WheelCard } from '@/components/shop/wheel-card';
 
@@ -25,6 +27,13 @@ import { WheelCard } from '@/components/shop/wheel-card';
  *
  * Маршрут динамический (`ƒ`): он принимает `searchParams`. Это та же неизбежная плата
  * за фильтр в адресе, что и у четырёх листинговых маршрутов каталога.
+ *
+ * **Отклик на клик по фильтру устроен ровно как в каталоге, и это не совпадение.**
+ * Донор второй и таблицы у него свои, но для покупателя это один раздел: панель над
+ * выдачей, скелет и подпись для скринридера приезжают из общего
+ * `components/shop/results.tsx`, индикатор клика — из общего `link-pending.tsx`.
+ * Копию здесь не заводить: она разъедется с каталогом на первой же правке, и две
+ * одинаковые с виду страницы поведут себя по-разному.
  */
 
 const TEXT = {
@@ -88,6 +97,126 @@ export async function generateMetadata({
   };
 }
 
+/** Что тащим за собой при переходе по фильтру, сортировке и страницам. */
+interface WheelQuery {
+  brand?: string;
+  diameter?: string;
+  condition?: string;
+  sort?: string;
+}
+
+/**
+ * Ссылки сортировки. Отдельным компонентом затем, что рисуются дважды: в готовой выдаче
+ * и в скелете под ней. От данных они не зависят — порядок известен из адреса, — и обязаны
+ * стоять на одном месте в обоих случаях, иначе приход товаров дёргал бы ряд по вертикали.
+ */
+function WheelSortLinks({
+  keep,
+  sort,
+  locale,
+}: {
+  keep: WheelQuery;
+  sort: string;
+  locale: ShopLocale;
+}) {
+  const copy = TEXT[locale];
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {(
+        [
+          ['', copy.big],
+          ['price-asc', copy.cheap],
+          ['price-desc', copy.expensive],
+        ] as const
+      ).map(([value, label]) => (
+        <Link
+          key={value || 'default'}
+          href={catalogUrl({ base: WHEELS_BASE, ...keep, sort: value || undefined })}
+          className={`relative overflow-hidden px-3 py-2 rounded text-[10px] font-bold uppercase tracking-widest transition-colors ${
+            sort === value
+              ? 'bg-base-darker text-text border border-border'
+              : 'text-text-muted hover:text-text'
+          }`}
+        >
+          {label}
+          <LinkPending />
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Сама выдача. Отдельным компонентом ровно затем, что здесь стоит единственный медленный
+ * `await` страницы: под `<Suspense>` он перестаёт задерживать оболочку, и на его месте
+ * появляется скелет. Пока `findWheels` ждали в теле страницы, отдавать было нечего.
+ */
+async function WheelResults({
+  query,
+  keep,
+  sort,
+  locale,
+}: {
+  query: WheelSearchParams;
+  keep: WheelQuery;
+  sort: string;
+  locale: ShopLocale;
+}) {
+  const t = ui(locale);
+
+  const result = await findWheels({
+    brand: query.brand,
+    diameter: Number(query.diameter) || undefined,
+    condition: query.condition === 'new' || query.condition === 'used' ? query.condition : undefined,
+    sort,
+    page: Number(query.page) || 1,
+  });
+
+  return (
+    <>
+      <ResultsToolbar>
+        <p className="text-xs font-bold text-text-muted uppercase tracking-widest">
+          {t.found}: <strong className="text-text">{result.total}</strong>
+        </p>
+
+        <WheelSortLinks keep={keep} sort={sort} locale={locale} />
+      </ResultsToolbar>
+
+      {result.wheels.length === 0 ? (
+        <div className="bg-elevated border border-border-subtle rounded p-12 text-center space-y-4">
+          <span className="w-14 h-14 rounded bg-base-darker text-text-dim flex items-center justify-center mx-auto border border-border-subtle">
+            <PackageSearch className="w-6 h-6" />
+          </span>
+          <h2 className="text-sm font-black uppercase tracking-widest text-text">{t.nothingFound}</h2>
+          <Link
+            href={WHEELS_BASE}
+            className="inline-block px-6 py-3 rounded bg-base-darker hover:bg-surface text-text-secondary text-[10px] font-bold uppercase tracking-widest border border-border-subtle transition-colors"
+          >
+            {t.resetFilters}
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+            {result.wheels.map((wheel) => (
+              <WheelCard key={wheel.id} wheel={wheel} locale={locale} />
+            ))}
+          </div>
+
+          <Pagination
+            locale={locale}
+            page={result.page}
+            totalPages={result.pages}
+            base={WHEELS_BASE}
+            query={keep}
+          />
+        </div>
+      )}
+    </>
+  );
+}
+
 export default async function WheelsPage({
   params,
   searchParams,
@@ -98,26 +227,19 @@ export default async function WheelsPage({
   const { lang } = await params;
   const locale: ShopLocale = isShopLocale(lang) ? lang : 'ru';
   const copy = TEXT[locale];
-  const t = ui(locale);
   const query = await searchParams;
-
-  const diameter = Number(query.diameter) || undefined;
-  const condition = query.condition === 'new' || query.condition === 'used' ? query.condition : undefined;
   const sort = query.sort ?? '';
 
-  const [result, facets] = await Promise.all([
-    findWheels({
-      brand: query.brand,
-      diameter,
-      condition,
-      sort,
-      page: Number(query.page) || 1,
-    }),
-    getWheelFacets(),
-  ]);
+  /*
+   * Фасеты ждём здесь, а не под `<Suspense>`: они рисуют сам фильтр, а прятать фильтр
+   * под скелет на каждый клик хуже, чем подождать. Ждать при этом почти не приходится —
+   * `getWheelFacets` кэширован в `wheels.ts` на час: от выбранной марки, диаметра
+   * и сортировки он не зависит и меняется раз в скрап.
+   */
+  const facets = await getWheelFacets();
 
   // Параметры, которые надо сохранять при переходе по фильтрам и страницам.
-  const keep = {
+  const keep: WheelQuery = {
     brand: query.brand,
     diameter: query.diameter,
     condition: query.condition,
@@ -126,11 +248,27 @@ export default async function WheelsPage({
 
   const activeCount = [query.brand, query.diameter, query.condition].filter(Boolean).length;
 
+  /*
+   * Ключ границы Suspense. Обязателен: без него React переиспользует границу, скелет
+   * не показывается вовсе, а смена адреса ждёт полного ответа сервера. То же правило,
+   * что в `catalog-view.tsx`, и по той же причине.
+   */
+  const resultsKey = JSON.stringify([query.brand, query.diameter, query.condition, sort, query.page]);
+
+  // `relative overflow-hidden` — под заливку `LinkPending`: без них она вылезет
+  // за скруглённый край пилюли.
   const pill = (active: boolean) =>
-    `block px-3 py-2 rounded text-[11px] font-bold uppercase tracking-widest transition-colors ${
+    `relative overflow-hidden block px-3 py-2 rounded text-[11px] font-bold uppercase tracking-widest transition-colors ${
       active
         ? 'bg-cta text-base-darker'
         : 'text-text-secondary hover:text-text hover:bg-base-darker'
+    }`;
+
+  const chip = (active: boolean) =>
+    `relative overflow-hidden px-3 py-2 rounded text-[11px] font-bold uppercase tracking-widest transition-colors ${
+      active
+        ? 'bg-cta text-base-darker'
+        : 'bg-base-darker border border-border-subtle text-text-secondary hover:text-text'
     }`;
 
   return (
@@ -146,8 +284,12 @@ export default async function WheelsPage({
                   {copy.brand}
                 </h2>
                 <div className="space-y-0.5">
-                  <Link href={catalogUrl({ base: WHEELS_BASE, ...keep, brand: undefined })} className={pill(!query.brand)}>
+                  <Link
+                    href={catalogUrl({ base: WHEELS_BASE, ...keep, brand: undefined })}
+                    className={pill(!query.brand)}
+                  >
                     {copy.all}
+                    <LinkPending />
                   </Link>
                   {facets.brands.map((brand) => (
                     <Link
@@ -156,6 +298,7 @@ export default async function WheelsPage({
                       className={pill(query.brand === brand.slug)}
                     >
                       {brand.name} <span className="opacity-50">{brand.count}</span>
+                      <LinkPending />
                     </Link>
                   ))}
                 </div>
@@ -168,26 +311,20 @@ export default async function WheelsPage({
                 <div className="flex flex-wrap gap-1.5">
                   <Link
                     href={catalogUrl({ base: WHEELS_BASE, ...keep, diameter: undefined })}
-                    className={`px-3 py-2 rounded text-[11px] font-bold uppercase tracking-widest transition-colors ${
-                      !query.diameter
-                        ? 'bg-cta text-base-darker'
-                        : 'bg-base-darker border border-border-subtle text-text-secondary hover:text-text'
-                    }`}
+                    className={chip(!query.diameter)}
                   >
                     {copy.all}
+                    <LinkPending />
                   </Link>
                   {facets.diameters.map((item) => (
                     <Link
                       key={item.value}
                       href={catalogUrl({ base: WHEELS_BASE, ...keep, diameter: String(item.value) })}
-                      className={`px-3 py-2 rounded text-[11px] font-bold uppercase tracking-widest transition-colors ${
-                        query.diameter === String(item.value)
-                          ? 'bg-cta text-base-darker'
-                          : 'bg-base-darker border border-border-subtle text-text-secondary hover:text-text'
-                      }`}
+                      className={chip(query.diameter === String(item.value))}
                     >
                       {locale === 'en' ? `${item.value}″` : `R${item.value}`}{' '}
                       <span className="opacity-50">{item.count}</span>
+                      <LinkPending />
                     </Link>
                   ))}
                 </div>
@@ -203,18 +340,21 @@ export default async function WheelsPage({
                     className={pill(!query.condition)}
                   >
                     {copy.all}
+                    <LinkPending />
                   </Link>
                   <Link
                     href={catalogUrl({ base: WHEELS_BASE, ...keep, condition: 'used' })}
                     className={pill(query.condition === 'used')}
                   >
                     {copy.used}
+                    <LinkPending />
                   </Link>
                   <Link
                     href={catalogUrl({ base: WHEELS_BASE, ...keep, condition: 'new' })}
                     className={pill(query.condition === 'new')}
                   >
                     {copy.new}
+                    <LinkPending />
                   </Link>
                 </div>
               </div>
@@ -222,64 +362,21 @@ export default async function WheelsPage({
           </FilterPanel>
         }
       >
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-6 border-b border-border-subtle">
-          <p className="text-xs font-bold text-text-muted uppercase tracking-widest">
-            {t.found}: <strong className="text-text">{result.total}</strong>
-          </p>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {(
-              [
-                ['', copy.big],
-                ['price-asc', copy.cheap],
-                ['price-desc', copy.expensive],
-              ] as const
-            ).map(([value, label]) => (
-              <Link
-                key={value || 'default'}
-                href={catalogUrl({ base: WHEELS_BASE, ...keep, sort: value || undefined })}
-                className={`px-3 py-2 rounded text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                  sort === value
-                    ? 'bg-base-darker text-text border border-border'
-                    : 'text-text-muted hover:text-text'
-                }`}
-              >
-                {label}
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {result.wheels.length === 0 ? (
-          <div className="bg-elevated border border-border-subtle rounded p-12 text-center space-y-4">
-            <span className="w-14 h-14 rounded bg-base-darker text-text-dim flex items-center justify-center mx-auto border border-border-subtle">
-              <PackageSearch className="w-6 h-6" />
-            </span>
-            <h2 className="text-sm font-black uppercase tracking-widest text-text">{t.nothingFound}</h2>
-            <Link
-              href={WHEELS_BASE}
-              className="inline-block px-6 py-3 rounded bg-base-darker hover:bg-surface text-text-secondary text-[10px] font-bold uppercase tracking-widest border border-border-subtle transition-colors"
-            >
-              {t.resetFilters}
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {result.wheels.map((wheel) => (
-                <WheelCard key={wheel.id} wheel={wheel} locale={locale} />
-              ))}
-            </div>
-
-            <Pagination
+        <Suspense
+          key={resultsKey}
+          fallback={
+            <ResultsSkeleton
               locale={locale}
-              page={result.page}
-              totalPages={result.pages}
-              base={WHEELS_BASE}
-              query={keep}
+              count={WHEELS_PER_PAGE}
+              /* У диска коробка характеристик в две строки — 58 против 42 у детали.
+                 Это единственное, чем карточки двух доноров различаются по высоте. */
+              infoBoxHeight={58}
+              sort={<WheelSortLinks keep={keep} sort={sort} locale={locale} />}
             />
-          </div>
-        )}
+          }
+        >
+          <WheelResults query={query} keep={keep} sort={sort} locale={locale} />
+        </Suspense>
 
         <p className="mt-10 text-[10px] font-bold uppercase tracking-widest text-text-muted">
           <Link href={SHOP_BASE} className="hover:text-text transition-colors">

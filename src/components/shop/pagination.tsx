@@ -3,6 +3,7 @@ import { Link } from '@/i18n/navigation';
 import type { ShopLocale } from '@/lib/shop/terms';
 import { ui } from '@/lib/shop/ui-text';
 import { catalogUrl } from '@/lib/shop/urls';
+import { LinkPending } from './link-pending';
 
 /** Пагинация ссылками: страницы каталога должны быть обходимы поисковиком. */
 export function Pagination({
@@ -32,12 +33,15 @@ export function Pagination({
   }
 
   const linkClass =
-    'w-10 h-10 flex items-center justify-center rounded text-[10px] font-black tracking-widest transition-colors bg-elevated border border-border-subtle hover:bg-surface text-text-secondary hover:text-text';
+    'relative overflow-hidden w-10 h-10 flex items-center justify-center rounded text-[10px] font-black tracking-widest transition-colors bg-elevated border border-border-subtle hover:bg-surface text-text-secondary hover:text-text';
 
   return (
     <nav aria-label={t.pages} className="flex justify-center items-center gap-3 pt-8 border-t border-border-subtle">
       {page > 1 && (
-        <Link href={catalogUrl({ base, ...query, page: page - 1 })} rel="prev" className={`${linkClass} px-4 w-auto`}>{t.prev}</Link>
+        <Link href={catalogUrl({ base, ...query, page: page - 1 })} rel="prev" className={`${linkClass} px-4 w-auto`}>
+          {t.prev}
+          <LinkPending />
+        </Link>
       )}
 
       {pages.map((entry, index) =>
@@ -52,17 +56,21 @@ export function Pagination({
             aria-current={entry === page ? 'page' : undefined}
             className={
               entry === page
-                ? 'w-10 h-10 flex items-center justify-center rounded text-[10px] font-black tracking-widest bg-cta text-base-darker'
+                ? 'relative overflow-hidden w-10 h-10 flex items-center justify-center rounded text-[10px] font-black tracking-widest bg-cta text-base-darker'
                 : linkClass
             }
           >
             {entry}
+            <LinkPending />
           </Link>
         ),
       )}
 
       {page < totalPages && (
-        <Link href={catalogUrl({ base, ...query, page: page + 1 })} rel="next" className={`${linkClass} px-4 w-auto`}>{t.next}</Link>
+        <Link href={catalogUrl({ base, ...query, page: page + 1 })} rel="next" className={`${linkClass} px-4 w-auto`}>
+          {t.next}
+          <LinkPending />
+        </Link>
       )}
     </nav>
   );

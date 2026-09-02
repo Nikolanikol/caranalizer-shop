@@ -145,3 +145,78 @@
   background-color: var(--color-elevated);
   color: var(--color-text);
 }
+
+/*
+ * Индикатор перехода по ссылке — рисуется компонентом `LinkPending` от `useLinkStatus`.
+ *
+ * Обе анимации стартуют с нулевой непрозрачности и с задержкой, но задержки РАЗНЫЕ,
+ * и это не вкусовщина — у двух частей разная работа. Замер на локальной машине: клик,
+ * через 20 мс встаёт `pending`, через 218 мс адрес сменился и на месте выдачи уже скелет,
+ * через 877 мс приехали товары.
+ *
+ * - Заливка опции (80 мс) отвечает на вопрос «нажалось ли, и по чему именно» — скелет
+ *   этого не говорит, он одинаков для любого фильтра. Ей надо успеть показаться.
+ * - Полоса вверху (250 мс) отвечает на другой вопрос: «сервер вообще ответил?». Она
+ *   живёт ровно до смены адреса, а адрес меняется, как только пришла оболочка. Значит
+ *   при живой сети её быть не должно вовсе — дальше говорит скелет.
+ */
+@keyframes navPendingIn {
+  to { opacity: 1; }
+}
+
+@keyframes navPendingSweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+@keyframes navPendingGrow {
+  from { transform: scaleX(0.03); }
+  to { transform: scaleX(0.92); }
+}
+
+/* Заливка нажатой опции. Родителю нужны `relative` и `overflow-hidden`. */
+.nav-pending-fill {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-cta) 18%, transparent) 50%,
+    transparent 100%
+  );
+  animation:
+    navPendingIn 150ms ease 80ms forwards,
+    navPendingSweep 1.1s ease-in-out 80ms infinite;
+}
+
+/* Полоса вверху окна. z-index выше 50: там уже сидят баннер cookie и кнопки мессенджеров. */
+.nav-pending-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 100;
+  pointer-events: none;
+  transform-origin: left center;
+  background: var(--color-cta);
+  opacity: 0;
+  animation:
+    navPendingIn 150ms ease 250ms forwards,
+    navPendingGrow 10s cubic-bezier(0, 0.7, 0.2, 1) 250ms forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-pending-fill {
+    animation: navPendingIn 150ms ease 80ms forwards;
+    background: color-mix(in srgb, var(--color-cta) 12%, transparent);
+  }
+
+  .nav-pending-bar {
+    animation: navPendingIn 150ms ease 250ms forwards;
+    transform: scaleX(1);
+  }
+}

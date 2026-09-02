@@ -9,6 +9,7 @@ import type { PartCategory } from '@/types/part';
 import type { Segment } from './catalog-view';
 import type { ShopLocale } from '@/lib/shop/terms';
 import { ui } from '@/lib/shop/ui-text';
+import { LinkPending } from './link-pending';
 
 /**
  * Фильтр — обычные ссылки, без JavaScript. Состояние живёт в адресе, поэтому
@@ -66,12 +67,15 @@ function Option({
   return (
     <Link
       href={href}
-      className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+      className={`relative overflow-hidden flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
         active ? 'bg-cta/10 text-cta font-bold' : 'text-text-secondary hover:bg-base-darker hover:text-text'
       }`}
     >
       <span className="truncate">{children}</span>
       {count !== undefined && <span className="text-xs tabular-nums text-text-dim shrink-0">{count}</span>}
+      {/* Клик по фильтру меняет только параметры запроса, а на такой переход `loading.tsx`
+          не срабатывает вовсе — отсюда и весь этот индикатор. Подробности в link-pending.tsx. */}
+      <LinkPending />
     </Link>
   );
 }
@@ -148,10 +152,11 @@ export function FilterSidebar({
         {hasFilters && (
           <Link
             href={base}
-            className="text-xs text-text-muted hover:text-text flex items-center gap-1 transition-colors"
+            className="relative overflow-hidden text-xs text-text-muted hover:text-text flex items-center gap-1 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             {t.reset}
+            <LinkPending />
           </Link>
         )}
       </div>

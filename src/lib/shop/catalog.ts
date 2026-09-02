@@ -11,7 +11,9 @@
  */
 
 import 'server-only';
+import { unstable_cache } from 'next/cache';
 import { createServerClient } from '@/lib/supabase';
+import { FACETS_TTL } from './cache';
 import { isWheelCartId, wheelCartId, wheelIdFromCart } from './urls';
 import type { AutoPart, Offer, PartCategory } from '@/types/part';
 
@@ -391,7 +393,12 @@ export async function getLandingPaths(): Promise<{ brands: Set<string>; models: 
 }
 
 /** Модели с наибольшим числом позиций — для навигационных блоков на главной и в каталоге. */
-export async function getTopModels(
+export const getTopModels = unstable_cache(_getTopModels, ['partsfit-top-models'], {
+  revalidate: FACETS_TTL,
+  tags: ['partsfit-facets'],
+});
+
+async function _getTopModels(
   limit = 12,
 ): Promise<(Facet & { category: PartCategory; brandSlug: string; brand: string })[]> {
   const db = createServerClient();
@@ -563,8 +570,21 @@ export async function findParts(query: CatalogQuery = {}): Promise<CatalogPage> 
   return { items, total, page: Math.min(page, totalPages), totalPages };
 }
 
-/** Марки с количеством товаров — для фильтра и для посадочных. */
-export async function getBrands(category?: PartCategory): Promise<Facet[]> {
+/**
+ * Марки с количеством товаров — для фильтра и для посадочных.
+ *
+ * Кэшируется затем, что рисует боковой фильтр, а фильтр стоит **снаружи** `<Suspense>`
+ * в `catalog-view.tsx`: прятать его под скелет на каждый клик хуже, чем подождать.
+ * Значит этот запрос задерживает оболочку страницы, и его цену надо свести к чтению
+ * с диска. От стороны, сортировки и номера страницы результат не зависит вовсе —
+ * кэш попадает почти всегда.
+ */
+export const getBrands = unstable_cache(_getBrands, ['partsfit-brands'], {
+  revalidate: FACETS_TTL,
+  tags: ['partsfit-facets'],
+});
+
+async function _getBrands(category?: PartCategory): Promise<Facet[]> {
   const db = createServerClient();
   const rows = await selectAll<{ brand_slug: string; brand_name: string; products: number }>((from, to) => {
     let request = db.from('partsfit_brand_counts').select('brand_slug, brand_name, products').order('brand_slug');
@@ -586,7 +606,12 @@ export async function getBrands(category?: PartCategory): Promise<Facet[]> {
  * Модели выбранной марки — второй уровень. Товары без модели сюда не попадают:
  * сегмент `prochee` не посадочная страница, вести на него из фильтра нечего.
  */
-export async function getModels(brand: string, category?: PartCategory): Promise<Facet[]> {
+export const getModels = unstable_cache(_getModels, ['partsfit-models'], {
+  revalidate: FACETS_TTL,
+  tags: ['partsfit-facets'],
+});
+
+async function _getModels(brand: string, category?: PartCategory): Promise<Facet[]> {
   const db = createServerClient();
   let request = db.from('partsfit_model_counts').select('model_slug, model_name, products').eq('brand_name', brand);
   if (category) request = request.eq('part_type', category);
