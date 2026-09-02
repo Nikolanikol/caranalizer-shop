@@ -262,6 +262,7 @@
   },
   "guides": {
     "title": "Guides to cars from Korea",
+    "metaDesc": "How to read Korean marketplaces, check a car's history by VIN and import from Korea without surprises: Encar, KBChachacha, Kcar, reports and customs.",
     "sub": "How to read Korean marketplaces, check history and import without surprises",
     "readMore": "Read",
     "related": "Also read",
@@ -282,6 +283,12 @@
     "calcTitle": "Calculate customs before you buy",
     "calcText": "Current rates for Kazakhstan, Russia and Uzbekistan.",
     "calcBtn": "Open calculator"
+  },
+  "partsBanner": {
+    "eyebrow": "Our stock · Korean salvage yards",
+    "title": "Used parts from Korean salvage yards",
+    "text": "Lighting, mirrors and control modules in stock. The photos show the exact item that will arrive. Search by OEM number, make and model.",
+    "btn": "Browse the catalog"
   },
   "kmTopBar": {
     "text": "Turnkey cars from Korea",
