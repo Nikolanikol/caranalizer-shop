@@ -8,7 +8,7 @@ import {
   SHOP_BASE,
   brandUrl,
   categoryUrl,
-  getIndexableParts,
+  getPrerenderParts,
   getPartByPath,
   getSimilarParts,
   isCategory,
@@ -37,10 +37,13 @@ import { ProductCard } from '@/components/shop/product-card';
  */
 
 /*
- * Пререндерим не весь каталог, а только карточки, которым положена страница в индексе
- * (два и более экземпляра) — 5 834 из 18 655. Остальные рендерятся по первому запросу
- * и кэшируются: собирать восемнадцать тысяч страниц ради товара, который живёт
- * до первой продажи, бессмысленно.
+ * Пререндерим не весь каталог и даже не всё, что идёт в индекс, а карточки от пяти
+ * экземпляров — 1 142 из 18 655. Остальные рендерятся по первому запросу и кэшируются.
+ *
+ * **Порогов два, и путать их нельзя.** `INDEXABLE_MIN_OFFERS` (два) решает, что уходит
+ * в карту сайта, — это SEO. `PRERENDER_MIN_OFFERS` (пять) решает, что кладём в образ, —
+ * это цена сборки. До 02.09.2026 цифра была одна, и поднять её ради сборки было нельзя:
+ * вместе с ней похудела бы карта сайта. Разбор и замеры — в `catalog.ts`.
  *
  * Плата за `dynamicParams: true` — несуществующий адрес теперь отвечает 200 с `noindex`,
  * а не 404: `notFound()` в потоковом ответе кода не меняет (см. AGENTS.md).
@@ -52,7 +55,7 @@ export async function generateStaticParams({ params }: { params: { lang: string 
   // не должны собираться по второму и третьему разу.
   if (params.lang !== SHOP_LOCALE) return [];
 
-  const parts = await getIndexableParts();
+  const parts = await getPrerenderParts();
   return parts.map((part) => ({
     category: part.category,
     brand: part.brandSlug,
