@@ -4,8 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Container } from "@/components/ui/container";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { KmotorsBanner } from "@/components/KmotorsBanner";
-import { CheckLeadForm } from "./CheckLeadForm";
-import { VinDecoder } from "./VinDecoder";
+import { VinCheckFlow } from "./VinCheckFlow";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { ReportExampleAccordion } from "./ReportExampleAccordion";
 import type { GuideLocale } from "@/lib/guides";
@@ -151,8 +150,14 @@ function VinCheckContent() {
           и он показывает, что мы про машину что-то знаем, раньше любой формы. */}
       <section id="decoder" className="py-14 sm:py-16 border-b border-border-subtle scroll-mt-16">
         <Container>
-          <div className="max-w-2xl mx-auto">
-            <VinDecoder />
+          <div className="space-y-8">
+            {/* Единственная трёхъязычная страница сайта, и переключатель обязан найтись
+                раньше, чем человек начнёт читать. Стоял внизу, перед формой заявки, —
+                то есть за пятью экранами прокрутки от места, где выбирают язык. */}
+            <LanguageSwitcher />
+            {/* Проверка и покупка — один поток: бесплатный разбор, а сразу под ним
+                оплата уже проверенного номера. Второй раз VIN вводить не нужно. */}
+            <VinCheckFlow />
           </div>
         </Container>
       </section>
@@ -321,23 +326,6 @@ function VinCheckContent() {
                 </div>
               </ScrollReveal>
             ))}
-          </div>
-        </Container>
-      </section>
-
-      {/* Форма заявки */}
-      <section id="order" className="py-16 sm:py-20 scroll-mt-16">
-        <Container>
-          <div className="max-w-2xl mx-auto space-y-8">
-            {/* Единственная многоязычная страница сайта — выбор языка стоит до формы */}
-            <LanguageSwitcher />
-            <div className="text-center mb-8">
-              <h2 className="text-2xl sm:text-3xl font-bold font-[family-name:var(--font-heading)] mb-3">
-                {t("formTitle")}
-              </h2>
-              <p className="text-text-secondary">{t("formSub")}</p>
-            </div>
-            <CheckLeadForm />
           </div>
         </Container>
       </section>

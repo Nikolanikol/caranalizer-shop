@@ -168,7 +168,7 @@ function car365Value(
   }
 }
 
-export function VinDecoder() {
+export function VinDecoder({ onChecked }: { onChecked?: (vin: string) => void } = {}) {
   const t = useTranslations("vinDecoder");
   const locale = useLocale();
   const { user, loading: authLoading } = useAuth();
@@ -271,6 +271,7 @@ export function VinDecoder() {
         if (payload.quota) setQuota(payload.quota);
         setResult(payload);
         rememberVin(target);
+        onChecked?.(target);
         trackVinDecode(payload.locked ? "locked" : "full");
       } catch (err) {
         if (seq !== requestSeq.current) return;
@@ -281,7 +282,7 @@ export function VinDecoder() {
         if (seq === requestSeq.current) setPending(false);
       }
     },
-    [t]
+    [t, onChecked]
   );
 
   const car365 = result?.car365;
@@ -518,9 +519,15 @@ export function VinDecoder() {
 
       {/* Корейский реестр снятых с учёта на экспорт. */}
       {car365 && (
-        <div className="mt-4 rounded-2xl border border-border bg-base/40 p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h3 className="font-semibold font-[family-name:var(--font-heading)]">
+        /*
+          Реестр — главный блок отчёта, и он обязан отличаться от прочих. До этого
+          базовый разбор, реестр и NHTSA были тремя одинаковыми серыми карточками
+          подряд: иерархии не читалось вовсе, хотя ценность у них разная.
+        */
+        <div className="mt-4 rounded-2xl border border-primary/25 bg-base/60 p-5 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+            <h3 className="flex items-center gap-2.5 text-lg font-bold text-text font-[family-name:var(--font-heading)]">
+              <span className="h-5 w-1 rounded-full bg-primary" aria-hidden />
               {t("registryTitle")}
             </h3>
             {/*
@@ -541,28 +548,48 @@ export function VinDecoder() {
             )}
           </div>
           {car365.status === "found" ? (
-            <dl className="grid sm:grid-cols-2 gap-x-6 gap-y-4">
+            <dl className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {CAR365_ROWS.map((row) => {
                 const value = car365Value(row.key, car365.facts, locale);
                 const lead = "lead" in row && row.lead && value;
                 return (
-                  <div key={row.key} className={lead ? "sm:col-span-2" : undefined}>
-                    <dt className="text-xs text-text-muted">{t(row.label)}</dt>
+                  <div
+                    key={row.key}
+                    /*
+                      Каждый факт — своя ячейка с рамкой. Прежде это была сетка из
+                      подписи и значения без границ: на тёмном фоне тринадцатью
+                      строками подряд она читалась сплошной серой массой, и глазу
+                      не за что было зацепиться. Ведущее поле (пробег) занимает
+                      всю ширину — ради него проверку и заказывают.
+                    */
+                    className={`rounded-xl border px-4 py-3 ${
+                      lead
+                        ? "sm:col-span-2 lg:col-span-3 border-primary/30 bg-primary/5"
+                        : "border-border-subtle bg-elevated/40"
+                    }`}
+                  >
+                    <dt className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+                      {t(row.label)}
+                    </dt>
                     <dd
                       className={
                         value
                           ? lead
-                            ? "text-xl font-semibold"
-                            : "text-sm font-medium"
-                          : "text-sm font-medium text-text-dim"
+                            ? "mt-1 text-3xl sm:text-4xl font-bold text-primary tabular-nums leading-none"
+                            : "mt-1 text-[15px] font-semibold text-text"
+                          : "mt-1 text-[15px] font-semibold text-text-dim"
                       }
                     >
                       {value ?? "—"}
-                      {lead && <span className="ms-1 text-sm text-text-secondary">{t("km")}</span>}
+                      {lead && (
+                        <span className="ms-2 text-[16px] font-medium text-text-secondary">
+                          {t("km")}
+                        </span>
+                      )}
                     </dd>
                     {/* Прочерк без объяснения выглядит как поломка, а не как факт. */}
                     {!value && "note" in row && row.note && (
-                      <p className="mt-1 text-xs text-text-muted">{t(row.note)}</p>
+                      <p className="mt-1 text-xs text-text-muted leading-snug">{t(row.note)}</p>
                     )}
                   </div>
                 );
@@ -583,16 +610,22 @@ export function VinDecoder() {
 
       {/* NHTSA. По корейским и европейским номерам она чаще всего пуста — не обещаем. */}
       {result && !result.locked && (
-        <div className="mt-4 rounded-2xl border border-border bg-base/40 p-5">
-          <h3 className="font-semibold font-[family-name:var(--font-heading)] mb-4">
+        <div className="mt-4 rounded-2xl border border-border-subtle bg-base/40 p-5 sm:p-6">
+          <h3 className="flex items-center gap-2.5 text-[16px] font-semibold text-text-secondary font-[family-name:var(--font-heading)] mb-5">
+            <span className="h-4 w-1 rounded-full bg-border" aria-hidden />
             {t("nhtsaTitle")}
           </h3>
           {nhtsaRows.length ? (
-            <dl className="grid sm:grid-cols-2 gap-x-6 gap-y-4">
+            <dl className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {nhtsaRows.map(([label, value]) => (
-                <div key={label}>
-                  <dt className="text-xs text-text-muted">{t(label)}</dt>
-                  <dd className="text-sm font-medium">{String(value)}</dd>
+                <div
+                  key={label}
+                  className="rounded-xl border border-border-subtle bg-elevated/40 px-4 py-3"
+                >
+                  <dt className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+                    {t(label)}
+                  </dt>
+                  <dd className="mt-1 text-[15px] font-semibold text-text">{String(value)}</dd>
                 </div>
               ))}
             </dl>

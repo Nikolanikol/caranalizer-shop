@@ -13,9 +13,16 @@ COPY . .
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 ARG NEXT_PUBLIC_SITE_URL=https://caranalizer.com
+# Клиентский идентификатор PayPal вшивается в бандл на сборке, как и все
+# `NEXT_PUBLIC_*`. Без него кнопка оплаты не отрисуется вовсе: компонент увидит
+# пустой clientId и покажет отказ. Секрет (`PAYPAL_CLIENT_SECRET`) сюда НЕ
+# добавлять — он читается в рантайме, а всё, что попало в ARG, остаётся
+# в слоях образа открытым текстом.
+ARG NEXT_PUBLIC_PAYPAL_CLIENT_ID
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_PAYPAL_CLIENT_ID=$NEXT_PUBLIC_PAYPAL_CLIENT_ID
 
 # Кэш Next между сборками. Без него Turbopack компилирует с нуля каждый деплой,
 # а Data Cache пуст — значит все обращения к Supabase идут по сети заново.

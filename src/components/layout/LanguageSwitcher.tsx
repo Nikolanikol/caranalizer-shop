@@ -60,11 +60,18 @@ export function LanguageSwitcher() {
               }}
               className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3.5 text-start transition-colors ${
                 active
-                  ? "border-primary bg-primary/10 text-text cursor-default"
-                  : "border-border bg-base/40 text-text-secondary hover:border-primary/50 hover:text-text cursor-pointer"
+                  ? "border-primary bg-primary/15 text-text cursor-default"
+                  : "border-border bg-elevated text-text-secondary hover:border-primary/50 hover:bg-surface/40 hover:text-text cursor-pointer"
               }`}
             >
-              <span className="text-base font-semibold">{native}</span>
+              {/*
+                Размер шрифта здесь НЕ через `text-base`: в проекте объявлен токен
+                `--color-base`, поэтому Tailwind считает этот класс ещё и цветом
+                (#0f172a — фон страницы). Класса цвета рядом не было, и подпись
+                языка красилась почти в чёрный по тёмному фону — нечитаемо.
+                Подробности ловушки — в AGENTS.md.
+              */}
+              <span className="text-[16px] font-semibold">{native}</span>
               <span
                 className={`text-[11px] font-bold tracking-wider tabular-nums ${
                   active ? "text-primary" : "text-text-dim"

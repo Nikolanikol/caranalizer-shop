@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { PhoneInput } from "@/components/ui/PhoneInput";
 import { MessengerSelector } from "@/components/ui/MessengerSelector";
 import { trackLead } from "@/lib/analytics";
 import { KmotorsBanner } from "@/components/KmotorsBanner";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, AlertTriangle } from "lucide-react";
 import type { Value } from "react-phone-number-input";
 
 const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/i;
@@ -17,63 +17,64 @@ const LISTING_RE = /^(https?:\/\/)?([a-z0-9-]+\.)*(encar\.com|kbchachacha\.com|k
 /**
  * Заявка на полный отчёт по VIN.
  *
- * Выбора «бесплатная проверка / полный отчёт» здесь больше нет — решение владельца
- * 30.08.2026. Бесплатную проверку человек теперь делает сам на странице проверки:
- * декодер разбирает номер и ходит в корейский реестр экспорта, и просить ради этого
- * заявку у менеджера значит отнимать время у обоих. Форма осталась там, где человека
- * нельзя обслужить автоматически, — под полный отчёт.
+ * С 03.09.2026 заказ платный: одна цена за один VIN, оплата PayPal перед отправкой
+ * заявки — решение владельца. Раньше кнопка сама отправляла заявку менеджеру,
+ * который называл стоимость и сроки в переписке; теперь эту роль берёт на себя
+ * PayPal-виджет, а заявка в Telegram уходит только после подтверждённого платежа —
+ * `/api/paypal/capture-order` перепроверяет сумму и статус у самого PayPal, тело
+ * запроса от клиента для этого не годится.
  *
- * Отсюда следствие для аналитики: `source` у всех заявок отсюда теперь `report`,
- * а бесплатный поток виден не в заявках, а в событии `vin_decode` (`lib/analytics`).
- * Значение `check` в `LeadSource` остаётся: по нему разложены прежние заявки в базе.
+ * Валидация полей идёт в `onClick` виджета: PayPal даёt перехватить клик и отменить
+ * его через `actions.reject()` — тем самым форма не открывает окно оплаты, пока
+ * имя, телефон и VIN/ссылка не заполнены.
  */
-export function CheckLeadForm() {
+export function CheckLeadForm({ vin }: { vin?: string | null } = {}) {
   const t = useTranslations("check");
+  const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
 
   const [link, setLink] = useState("");
-  const [name, setName] = useState("");
   const [phone, setPhone] = useState<Value>();
   const [messenger, setMessenger] = useState("whatsapp");
   const [tgUsername, setTgUsername] = useState("");
   const [comment, setComment] = useState("");
   const [linkError, setLinkError] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [phoneError, setPhoneError] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [payMessage, setPayMessage] = useState<{ tone: "error" | "info"; text: string } | null>(null);
   const [success, setSuccess] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = link.trim();
-    const valid = VIN_RE.test(trimmed) || LISTING_RE.test(trimmed);
-    setLinkError(!valid);
-    if (!valid || !name.trim() || !phone) return;
+  /**
+   * Готовность формы считается на каждый рендер и гасит кнопку оплаты.
+   *
+   * Это не украшение, а единственный способ не показать человеку окно оплаты,
+   * которое закрывается само. PayPal открывает окно СИНХРОННО по клику — иначе его
+   * съел бы блокировщик поп-апов, — и только потом спрашивает `onClick`. Ответ
+   * `actions.reject()` закрывает уже открытое окно, и со стороны это выглядит
+   * поломкой, а не отказом из-за пустого поля. Поэтому до заполнения формы кнопка
+   * не нажимается вовсе, а рядом написано, чего не хватает.
+   *
+   * Номер берётся из проверки выше, если она была: человек уже ввёл его один раз,
+   * и просить тот же VIN второй раз — лишний шаг ровно там, где он готов платить.
+   * Без проверки (например, на главной) поле остаётся и работает как раньше.
+   */
+  const orderedLink = vin || link.trim();
+  const linkOk = VIN_RE.test(orderedLink) || LISTING_RE.test(orderedLink);
+  const phoneOk = Boolean(phone);
+  const formValid = linkOk && phoneOk;
 
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/check-lead", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          phone,
-          link: trimmed,
-          messenger,
-          tgUsername,
-          comment,
-          source: "report",
-        }),
-      });
-      if (res.ok) {
-        trackLead("report");
-        setSuccess(true);
-      }
-    } catch {
-    } finally {
-      setSubmitting(false);
-    }
+  const missing = [!linkOk && t("hintLink"), !phoneOk && t("hintPhone")]
+    .filter(Boolean)
+    .join(", ");
+
+  /** Страховка на случай клика по включённой кнопке с негодными данными. */
+  function validate(): boolean {
+    setLinkError(!linkOk);
+    setPhoneError(!phoneOk);
+    return formValid;
   }
 
   if (success) {
-    // Самый горячий момент воронки: контакт оставлен, человек ждёт отчёт —
+    // Самый горячий момент воронки: оплата прошла, человек ждёт отчёт —
     // показываем витрину K-Axis
     return (
       <div className="space-y-5">
@@ -89,46 +90,48 @@ export function CheckLeadForm() {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-elevated border border-border-subtle rounded-2xl p-6 sm:p-8 space-y-4"
-    >
-      <div>
-        <label className="block text-sm text-text-muted mb-1.5">{t("fieldLink")}</label>
-        <Input
-          value={link}
-          onChange={(e) => {
-            setLink(e.target.value);
-            if (linkError) setLinkError(false);
-          }}
-          placeholder={t("fieldLinkPh")}
-          className={linkError ? "border-error focus:ring-error/20" : undefined}
-          required
-        />
-        {linkError && <p className="mt-1.5 text-xs text-error">{t("fieldLinkErr")}</p>}
-      </div>
-      <div className="grid sm:grid-cols-2 gap-4">
+    <div className="bg-elevated border border-border-subtle rounded-2xl p-6 sm:p-8 space-y-4">
+      {vin ? (
+        <div className="rounded-lg border border-border-subtle bg-base px-4 py-3">
+          <div className="text-xs text-text-muted mb-0.5">{t("orderedFor")}</div>
+          <div className="font-mono text-sm text-text tracking-wide">{vin}</div>
+        </div>
+      ) : (
         <div>
-          <label className="block text-sm text-text-muted mb-1.5">{t("fieldName")}</label>
+          <label className="block text-sm text-text-muted mb-1.5">{t("fieldLink")}</label>
           <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={t("fieldNamePh")}
+            value={link}
+            onChange={(e) => {
+              setLink(e.target.value);
+              if (linkError) setLinkError(false);
+            }}
+            placeholder={t("fieldLinkPh")}
+            className={linkError ? "border-error focus:ring-error/20" : undefined}
+            required
+          />
+          {linkError && <p className="mt-1.5 text-xs text-error">{t("fieldLinkErr")}</p>}
+        </div>
+      )}
+      <div className="grid lg:grid-cols-2 gap-4 lg:gap-6">
+        <div>
+          <label className="block text-sm text-text-muted mb-1.5">{t("fieldPhone")}</label>
+          <PhoneInput
+            value={phone}
+            onChange={(value) => {
+              setPhone(value);
+              if (phoneError) setPhoneError(false);
+            }}
             required
           />
         </div>
-        <div>
-          <label className="block text-sm text-text-muted mb-1.5">{t("fieldPhone")}</label>
-          <PhoneInput value={phone} onChange={setPhone} required />
-        </div>
+        <MessengerSelector
+          messenger={messenger}
+          onMessengerChange={setMessenger}
+          tgUsername={tgUsername}
+          onTgUsernameChange={setTgUsername}
+          label={t("messengerLabel")}
+        />
       </div>
-      <MessengerSelector
-        messenger={messenger}
-        onMessengerChange={setMessenger}
-        tgUsername={tgUsername}
-        onTgUsernameChange={setTgUsername}
-        label={t("messengerLabel")}
-      />
       <div>
         <label className="block text-sm text-text-muted mb-1.5">{t("fieldComment")}</label>
         <textarea
@@ -139,9 +142,97 @@ export function CheckLeadForm() {
           className="w-full rounded-lg border border-border bg-base px-4 py-3 text-sm text-text placeholder:text-text-dim focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors resize-none"
         />
       </div>
-      <Button type="submit" variant="cta" size="lg" className="w-full" disabled={submitting}>
-        {submitting ? t("sending") : t("submit")}
-      </Button>
-    </form>
+
+      {/* Платёжная часть уже полей: кнопка PayPal во всю ширину контейнера выглядит
+          баннером, а не кнопкой, и цена рядом с ней теряется. */}
+      <div className="lg:max-w-xl lg:mx-auto space-y-4 pt-2">
+      <div className="flex items-center justify-between rounded-lg bg-base border border-border-subtle px-4 py-3">
+        <span className="text-sm text-text-secondary">{t("priceLabel")}</span>
+        <span className="text-lg font-semibold text-text">{t("price")}</span>
+      </div>
+
+      {payMessage && (
+        <div
+          className={
+            payMessage.tone === "error"
+              ? "flex items-start gap-2 rounded-lg bg-error/10 border border-error/30 px-4 py-3 text-sm text-error"
+              : "flex items-start gap-2 rounded-lg bg-elevated border border-border-subtle px-4 py-3 text-sm text-text-secondary"
+          }
+        >
+          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+          <span>{payMessage.text}</span>
+        </div>
+      )}
+
+      {!formValid && (
+        <p className="text-xs text-text-muted">
+          {t("payHint")} {missing}
+        </p>
+      )}
+
+      {clientId ? (
+        <PayPalScriptProvider options={{ clientId, currency: "USD", intent: "capture" }}>
+          <PayPalButtons
+            style={{ layout: "vertical", label: "pay" }}
+            disabled={paying || !formValid}
+            onClick={(_data, actions) => {
+              setPayMessage(null);
+              if (!validate()) return actions.reject();
+              return actions.resolve();
+            }}
+            createOrder={async () => {
+              const res = await fetch("/api/paypal/create-order", { method: "POST" });
+              if (!res.ok) throw new Error("create-order failed");
+              const json = (await res.json()) as { id: string };
+              return json.id;
+            }}
+            onApprove={async (data) => {
+              setPaying(true);
+              try {
+                const res = await fetch("/api/paypal/capture-order", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    orderId: data.orderID,
+                    phone,
+                    link: orderedLink,
+                    messenger,
+                    tgUsername,
+                    comment,
+                  }),
+                });
+                const json = (await res.json()) as { success: boolean; error?: string };
+                if (!res.ok || !json.success) {
+                  setPayMessage({ tone: "error", text: json.error || t("payError") });
+                  return;
+                }
+                trackLead("report");
+                setSuccess(true);
+              } catch {
+                setPayMessage({ tone: "error", text: t("payError") });
+              } finally {
+                setPaying(false);
+              }
+            }}
+            onError={(err) => {
+              // Настоящую причину знает только PayPal, и без неё отказ неотличим
+              // от «окно закрылось само». В консоль — чтобы было что прочитать.
+              console.error("[PayPal]", err);
+              setPaying(false);
+              setPayMessage({ tone: "error", text: t("payError") });
+            }}
+            onCancel={() => {
+              // Закрытое окно оплаты обязано сказать о себе: молчание здесь
+              // читается как поломка сайта, а не как отменённый платёж.
+              setPaying(false);
+              setPayMessage({ tone: "info", text: t("payCancelled") });
+            }}
+          />
+        </PayPalScriptProvider>
+      ) : (
+        <p className="text-sm text-error">{t("payError")}</p>
+      )}
+      </div>
+    </div>
   );
 }

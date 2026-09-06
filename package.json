@@ -6,8 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "docker:build": "docker build --build-arg NEXT_PUBLIC_SUPABASE_URL=http://host.docker.internal:54321 --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=$(grep -m1 '^NEXT_PUBLIC_SUPABASE_ANON_KEY=' .env.local | cut -d= -f2-) --build-arg NEXT_PUBLIC_SITE_URL=http://localhost:3900 -t caranalizer-local .",
-    "docker:run": "docker run --rm -p 3900:3000 -e SUPABASE_SERVICE_ROLE_KEY=$(grep -m1 '^SUPABASE_SERVICE_ROLE_KEY=' .env.local | cut -d= -f2-) -e TELEGRAM_BOT_TOKEN=local -e TELEGRAM_CHAT_ID=0 -e TELEGRAM_WORK_CHAT_ID=0 caranalizer-local",
+    "docker:build": "docker build --build-arg NEXT_PUBLIC_SUPABASE_URL=http://host.docker.internal:54321 --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=$(grep -m1 '^NEXT_PUBLIC_SUPABASE_ANON_KEY=' .env.local | cut -d= -f2-) --build-arg NEXT_PUBLIC_SITE_URL=http://localhost:3900 --build-arg NEXT_PUBLIC_PAYPAL_CLIENT_ID=$(grep -m1 '^NEXT_PUBLIC_PAYPAL_CLIENT_ID=' .env.local | cut -d= -f2-) -t caranalizer-local .",
+    "docker:run": "docker run --rm -p 3900:3000 -e SUPABASE_SERVICE_ROLE_KEY=$(grep -m1 '^SUPABASE_SERVICE_ROLE_KEY=' .env.local | cut -d= -f2-) -e TELEGRAM_BOT_TOKEN=local -e TELEGRAM_CHAT_ID=0 -e TELEGRAM_WORK_CHAT_ID=0 -e PAYPAL_CLIENT_SECRET=$(grep -m1 '^PAYPAL_CLIENT_SECRET=' .env.local | cut -d= -f2-) -e PAYPAL_API_BASE=$(grep -m1 '^PAYPAL_API_BASE=' .env.local | cut -d= -f2-) caranalizer-local",
     "lint": "eslint",
     "partsfit:index": "node scripts/partsfit/scrape-index.mjs",
     "partsfit:coverage": "node scripts/partsfit/report-coverage.mjs",
@@ -29,6 +29,7 @@
     "start:prod": "next start -p 3900"
   },
   "dependencies": {
+    "@paypal/react-paypal-js": "^10.4.0",
     "@supabase/supabase-js": "^2.108.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
