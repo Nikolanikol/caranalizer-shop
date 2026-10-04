@@ -4,6 +4,7 @@ import { ShoppingCart } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { usePathname } from '@/i18n/navigation';
 import { SHOP_BASE } from '@/lib/shop/urls';
+import { trackViewCart } from '@/lib/analytics';
 import { useCart } from './cart-context';
 
 /**
@@ -33,7 +34,10 @@ export function CartButton() {
   return (
     <button
       type="button"
-      onClick={open}
+      onClick={() => {
+        trackViewCart(count);
+        open();
+      }}
       aria-label={
         count > 0
           ? en

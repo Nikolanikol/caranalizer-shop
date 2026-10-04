@@ -55,6 +55,104 @@ function hasIssue(body: unknown, issue: string): boolean {
   return Array.isArray(details) && details.some((d) => (d as { issue?: string })?.issue === issue);
 }
 
+function serverClientId(): string | undefined {
+  return (process.env.PAYPAL_CLIENT_ID || process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID)?.trim() || undefined;
+}
+
+/**
+ * Настройка PayPal так, как её видит сервер, — без секрета, только факты для разбора.
+ *
+ * Заведено после 04.10.2026: месяц оплата отчёта отвечала `401 invalid_client`, а в логе
+ * было лишь «PayPal API ответил 401». Причин у такого ответа три — сервер ходит
+ * в песочницу с боевым client id, секрет от другого приложения, или `PAYPAL_CLIENT_ID`
+ * перекрывает `NEXT_PUBLIC_PAYPAL_CLIENT_ID` другим значением, — и различить их можно
+ * только по этим полям. Client id публичен по замыслу PayPal, поэтому его начало
+ * показывать можно; секрета здесь нет, есть только «задан / не задан».
+ */
+export interface PayPalConfig {
+  mode: 'live' | 'sandbox';
+  base: string;
+  /** Какая переменная дала client id серверу. */
+  clientIdFrom: 'PAYPAL_CLIENT_ID' | 'NEXT_PUBLIC_PAYPAL_CLIENT_ID' | null;
+  clientIdHead: string | null;
+  /** Совпадает ли client id сервера с тем, что вшит в кнопку браузера. */
+  clientIdMatchesBrowser: boolean;
+  hasSecret: boolean;
+}
+
+export function paypalConfig(): PayPalConfig {
+  const base = apiBase();
+  const server = serverClientId();
+  const browser = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID?.trim();
+  return {
+    mode: base === LIVE_BASE ? 'live' : 'sandbox',
+    base,
+    clientIdFrom: process.env.PAYPAL_CLIENT_ID?.trim()
+      ? 'PAYPAL_CLIENT_ID'
+      : browser
+        ? 'NEXT_PUBLIC_PAYPAL_CLIENT_ID'
+        : null,
+    clientIdHead: server ? `${server.slice(0, 8)}…` : null,
+    clientIdMatchesBrowser: Boolean(server && browser && server === browser),
+    hasSecret: Boolean(process.env.PAYPAL_CLIENT_SECRET?.trim()),
+  };
+}
+
+/** Строки настройки для сообщения о сбое: по ним причина 401 видна без доступа к серверу. */
+export function paypalConfigLines(): string[] {
+  const c = paypalConfig();
+  return [
+    `Режим сервера: ${c.mode === 'live' ? 'боевой' : `ПЕСОЧНИЦА (${c.base})`}`,
+    `Client id: ${c.clientIdHead ?? 'не задан'}${c.clientIdFrom ? ` из ${c.clientIdFrom}` : ''}`,
+    `Совпадает с кнопкой на сайте: ${c.clientIdMatchesBrowser ? 'да' : 'НЕТ'}`,
+    `Секрет задан: ${c.hasSecret ? 'да' : 'НЕТ'}`,
+  ];
+}
+
+/**
+ * Проверить, что PayPal выдаёт серверу токен, — то есть что ключи и режим сходятся.
+ * Первое, что ломается при неверной настройке, и единственное, что можно проверить,
+ * не создавая заказа.
+ */
+export async function checkPayPalAuth(): Promise<{ ok: true } | { ok: false; reason: string }> {
+  try {
+    await getAccessToken();
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, reason: describePayPalError(error) };
+  }
+}
+
+/**
+ * Причина сбоя одной строкой — для Telegram и для health. Тело ответа PayPal бывает
+ * длинным, поэтому из него берётся код ошибки, а не всё подряд.
+ */
+export function describePayPalError(error: unknown): string {
+  if (error instanceof PayPalApiError) {
+    let body = error.body;
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch {
+        // не JSON — покажем как есть
+      }
+    }
+    const b = (body && typeof body === 'object' ? body : {}) as {
+      error?: string;
+      name?: string;
+      details?: { issue?: string }[];
+    };
+    const code = b.details?.[0]?.issue || b.error || b.name || (typeof body === 'string' ? body.slice(0, 200) : '');
+    const hint =
+      error.status === 401
+        ? ' — PayPal не принял ключи: проверьте PAYPAL_API_BASE и что PAYPAL_CLIENT_SECRET от того же приложения'
+        : '';
+    return `PayPal ${error.status}${code ? ` ${code}` : ''}${hint}`;
+  }
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
 /**
  * Токен кешируется в памяти процесса — тот же приём, что у клиентов Supabase
  * в `lib/supabase.ts`: сайт живёт как один долгоживущий Node-процесс
@@ -79,9 +177,7 @@ async function getAccessToken(): Promise<string> {
    * PayPal — он и так стоит в адресе их скрипта на каждой странице с оплатой.
    * Секрет остаётся серверным и в браузер не попадает никогда.
    */
-  const clientId = (
-    process.env.PAYPAL_CLIENT_ID || process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
-  )?.trim();
+  const clientId = serverClientId();
   const secret = process.env.PAYPAL_CLIENT_SECRET?.trim();
   if (!clientId || !secret) {
     throw new Error(

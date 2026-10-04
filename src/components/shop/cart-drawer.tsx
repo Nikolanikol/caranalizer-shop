@@ -11,7 +11,7 @@ import { partTitle } from '@/lib/shop/labels';
 import type { ShopLocale } from '@/lib/shop/terms';
 import { PhoneInput } from '@/components/ui/PhoneInput';
 import { MessengerSelector } from '@/components/ui/MessengerSelector';
-import { trackBeginCheckout, trackLead } from '@/lib/analytics';
+import { trackBeginCheckout, trackCheckoutError, trackLead } from '@/lib/analytics';
 import { useCart } from './cart-context';
 
 type Step = 'cart' | 'checkout' | 'success';
@@ -96,14 +96,19 @@ export function CartDrawer() {
         }),
       });
 
-      const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.error || t.submitFailed);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) {
+        trackCheckoutError('server');
+        throw new Error(data.error || t.submitFailed);
+      }
 
       trackLead('shop-checkout');
       setOrderNumber(data.orderNumber);
       setStep('success');
       clear();
     } catch (err) {
+      // fetch бросает TypeError только при обрыве сети; отказ сервера отмечен выше.
+      if (err instanceof TypeError) trackCheckoutError('network');
       setError(err instanceof Error ? err.message : t.submitFailed);
     } finally {
       setIsSubmitting(false);
