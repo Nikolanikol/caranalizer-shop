@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { CATEGORIES, getBrands, getTopModels, modelUrl } from '@/lib/shop/catalog';
-import { SHOP_BASE, isShopLocale, shopAlternates } from '@/lib/shop/urls';
+import { isShopLocale, listingPage, pagedPath, pagedTitle, SHOP_BASE, shopAlternates } from '@/lib/shop/urls';
 import { categoryPlural } from '@/lib/shop/labels';
 import type { ShopLocale } from '@/lib/shop/terms';
 import { SITE_URL } from '@/lib/site';
@@ -27,21 +27,25 @@ import { CatalogView, type CatalogSearchParams } from '@/components/shop/catalog
  * Фильтр теперь работает на месте, а не уводит в каталог: марка остаётся параметром
  * запроса, потому что категории на витрине нет и пути под марку не существует. Это
  * описанное исключение из lib/shop/urls.ts, и витрина канонизируется сама на себя,
- * поэтому страницы с фильтрами и номерами в индекс отдельно не уходят.
+ * поэтому страницы с фильтрами в индекс отдельно не уходят. Номер страницы — уходит
+ * (с 04.10.2026): через пагинацию Google доходит до карточек, см. `pagedPath`.
  */
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string }>;
+  searchParams: Promise<CatalogSearchParams>;
 }): Promise<Metadata> {
+  const page = listingPage({ ...(await searchParams) });
   const { lang } = await params;
   const locale: ShopLocale = isShopLocale(lang) ? lang : 'ru';
   const t = TEXT[locale];
 
   return {
-    title: t.metaTitle,
+    title: pagedTitle(t.metaTitle, page, locale),
     description: t.metaDescription,
-    alternates: shopAlternates('/zapchasti', SITE_URL, locale),
+    alternates: shopAlternates(pagedPath('/zapchasti', page), SITE_URL, locale),
   };
 }
 

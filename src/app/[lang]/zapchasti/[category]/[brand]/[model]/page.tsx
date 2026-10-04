@@ -9,7 +9,7 @@ import {
   isCategory,
   modelUrl,
 } from '@/lib/shop/catalog';
-import { SHOP_LOCALE, isShopLocale, shopAlternates } from '@/lib/shop/urls';
+import { isShopLocale, listingPage, pagedPath, pagedTitle, SHOP_LOCALE, shopAlternates } from '@/lib/shop/urls';
 import { categoryPlural, categoryTitle } from '@/lib/shop/labels';
 import { modelCopy } from '@/lib/shop/landing-text';
 import type { ShopLocale } from '@/lib/shop/terms';
@@ -35,9 +35,12 @@ export async function generateStaticParams({ params }: { params: { lang: string 
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string; category: string; brand: string; model: string }>;
+  searchParams: Promise<CatalogSearchParams>;
 }): Promise<Metadata> {
+  const page = listingPage({ ...(await searchParams) });
   const { lang, category, brand, model } = await params;
   if (!isCategory(category)) return {};
 
@@ -63,9 +66,9 @@ export async function generateMetadata({
   });
 
   return {
-    title: copy.title,
+    title: pagedTitle(copy.title, page, locale),
     description: copy.description,
-    alternates: shopAlternates(modelUrl(category, brand, model), SITE_URL, locale),
+    alternates: shopAlternates(pagedPath(modelUrl(category, brand, model), page), SITE_URL, locale),
   };
 }
 
