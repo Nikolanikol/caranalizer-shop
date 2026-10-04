@@ -2,7 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { CATEGORIES, categoryUrl, isCategory } from '@/lib/shop/catalog';
-import { SHOP_LOCALE, isShopLocale, shopAlternates } from '@/lib/shop/urls';
+import { isShopLocale, listingPage, pagedPath, pagedTitle, SHOP_LOCALE, shopAlternates } from '@/lib/shop/urls';
 import { categoryPlural } from '@/lib/shop/labels';
 import { categoryCopy } from '@/lib/shop/landing-text';
 import type { ShopLocale } from '@/lib/shop/terms';
@@ -23,9 +23,12 @@ export function generateStaticParams({ params }: { params: { lang: string } }) {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string; category: string }>;
+  searchParams: Promise<CatalogSearchParams>;
 }): Promise<Metadata> {
+  const page = listingPage({ ...(await searchParams) });
   const { lang, category } = await params;
   if (!isCategory(category)) return {};
 
@@ -34,9 +37,9 @@ export async function generateMetadata({
   const copy = categoryCopy(locale, categoryPlural(category, locale, info.plural), info.description);
 
   return {
-    title: copy.title,
+    title: pagedTitle(copy.title, page, locale),
     description: copy.description,
-    alternates: shopAlternates(categoryUrl(category), SITE_URL, locale),
+    alternates: shopAlternates(pagedPath(categoryUrl(category), page), SITE_URL, locale),
   };
 }
 

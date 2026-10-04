@@ -115,6 +115,38 @@ export function shopAlternates(
 }
 
 /**
+ * Страница листинга под номером из запроса — для canonical и заголовка.
+ *
+ * До 04.10.2026 вторая и дальше страницы листинга ставили canonical на первую —
+ * то есть говорили Google «я копия первой». Он и не шёл по ним вглубь, а карточки
+ * дальше пятнадцатой иначе как через карту сайта не находил: на проверке URL
+ * Search Console отвечал «ссылающаяся страница не найдена». Теперь страница N
+ * канонизирует саму себя — так рекомендует Google для пагинации.
+ *
+ * Канонизируется только чистый номер страницы. Адрес с фильтром (марка, сторона,
+ * сортировка) остаётся вариантом выдачи, и canonical у него — на путь без параметров.
+ */
+export function listingPage(query: Record<string, string | string[] | undefined>): number {
+  // Номер считается, только когда кроме него в адресе ничего нет: третья страница
+  // с фильтром по стороне — другие товары, чем третья страница без фильтра, и сослаться
+  // на неё canonical'ом значило бы назвать её копией чужой страницы.
+  const others = Object.entries(query).some(([key, value]) => key !== 'page' && value !== undefined && value !== '');
+  if (others) return 1;
+  const page = Number(query.page);
+  return Number.isInteger(page) && page > 1 ? page : 1;
+}
+
+export function pagedPath(path: string, page: number): string {
+  return page > 1 ? `${path}?page=${page}` : path;
+}
+
+/** Заголовок страницы N: одинаковые заголовки у сотни страниц Google считает дублями. */
+export function pagedTitle(title: string, page: number, locale: string): string {
+  if (page <= 1) return title;
+  return locale === 'en' ? `${title} — page ${page}` : `${title} — страница ${page}`;
+}
+
+/**
  * Раздел дисков — второй донор (skywheel.kr).
  *
  * Сегмент `diski` статический, поэтому Next разбирает его раньше динамического
