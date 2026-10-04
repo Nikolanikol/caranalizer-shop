@@ -53,9 +53,63 @@ export function trackAddToCart(params: { id: string; oem: string; category: stri
   track("add_to_cart", { item_id: params.id, item_oem: params.oem, item_category: params.category });
 }
 
+/**
+ * Корзина открыта. Стоит между `add_to_cart` и `begin_checkout`: без него не отличить
+ * «положил и не вернулся» от «открыл корзину, посмотрел на сумму и ушёл».
+ */
+export function trackViewCart(items: number) {
+  track("view_cart", { items });
+}
+
 /** Покупатель перешёл от корзины к форме заявки. */
 export function trackBeginCheckout(items: number) {
   track("begin_checkout", { items });
+}
+
+/**
+ * Заявка из корзины не ушла — сервер отказал или сеть оборвалась. До 04.10.2026 такие
+ * отказы видел только сам покупатель: в отчётах человек выглядел как бросивший форму.
+ */
+export function trackCheckoutError(reason: "server" | "network") {
+  track("shop_checkout_error", { reason });
+}
+
+/*
+ * Воронка платного отчёта по VIN (с 04.10.2026).
+ *
+ * Повод: оплата больше месяца отвечала ошибкой, а мы не видели ни попыток, ни отказов —
+ * из всей формы в аналитику уходил только успех (`generate_lead` с `report`).
+ * Шаги по порядку:
+ *
+ *   report_form_view   форма показалась на экране
+ *   report_form_start  начал заполнять (первый фокус в поле)
+ *   report_form_ready  телефон и VIN заполнены — кнопка оплаты стала активной
+ *   report_pay_click   нажал PayPal или «карта» (`funding_source`)
+ *   generate_lead      оплачено, заявка ушла (`lead_source: report`)
+ *
+ * И две ветки в сторону: `report_pay_cancel` — закрыл окно PayPal, `report_pay_error` —
+ * сбой, `pay_stage` говорит где: `create_order` (наш сервер не открыл заказ), `capture`
+ * (окно пройдено, платёж не подтвердился), `sdk` (ошибка внутри виджета), `sdk_load`
+ * (скрипт PayPal не загрузился — кнопки нет вовсе), `no_client_id` (сборка без ключа).
+ *
+ * Имена свои, а не стандартные `begin_checkout`/`add_payment_info`: стандартные уже
+ * заняты корзиной, и общий отчёт GA4 смешал бы запчасти с отчётами.
+ *
+ * `report_entry` различает, откуда пришли к форме: `decoder` — VIN подставлен из проверки
+ * выше, `direct` — форма сама по себе (главная, гайд).
+ */
+export type ReportStep = "form_view" | "form_start" | "form_ready" | "pay_click" | "pay_cancel" | "pay_error";
+export type ReportPayStage = "create_order" | "capture" | "sdk" | "sdk_load" | "no_client_id";
+
+export function trackReportStep(
+  step: ReportStep,
+  params: { entry: "decoder" | "direct"; fundingSource?: string; stage?: ReportPayStage }
+) {
+  track(`report_${step}`, {
+    report_entry: params.entry,
+    ...(params.fundingSource ? { funding_source: params.fundingSource } : {}),
+    ...(params.stage ? { pay_stage: params.stage } : {}),
+  });
 }
 
 /** Клик по внешней ссылке на K-Axis (kmotors.shop). */

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
+import { PayPalScriptProvider, PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/PhoneInput";
 import { MessengerSelector } from "@/components/ui/MessengerSelector";
-import { trackLead } from "@/lib/analytics";
+import { trackLead, trackReportStep, type ReportPayStage } from "@/lib/analytics";
 import { KmotorsBanner } from "@/components/KmotorsBanner";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import type { Value } from "react-phone-number-input";
@@ -43,6 +43,23 @@ export function CheckLeadForm({ vin }: { vin?: string | null } = {}) {
   const [payMessage, setPayMessage] = useState<{ tone: "error" | "info"; text: string } | null>(null);
   const [success, setSuccess] = useState(false);
 
+  /*
+   * Воронка в аналитику (см. `trackReportStep`). Каждый шаг отправляется один раз
+   * за жизнь формы: повторный фокус или второе заполнение — не новый посетитель.
+   * Рефы, а не состояние: отметка «уже отправлено» ничего не рисует.
+   */
+  const entry = vin ? "decoder" : "direct";
+  const rootRef = useRef<HTMLDivElement>(null);
+  const startedRef = useRef(false);
+  const readyRef = useRef(false);
+  /** Чем человек платит — приходит в `onClick` виджета, нужен в `createOrder`. */
+  const fundingRef = useRef<string | undefined>(undefined);
+  /**
+   * Где сломалось. `onError` виджета срабатывает и на брошенное из `createOrder`,
+   * и на собственные сбои SDK, — без отметки они были бы неразличимы.
+   */
+  const failStageRef = useRef<ReportPayStage | null>(null);
+
   /**
    * Готовность формы считается на каждый рендер и гасит кнопку оплаты.
    *
@@ -65,6 +82,37 @@ export function CheckLeadForm({ vin }: { vin?: string | null } = {}) {
   const missing = [!linkOk && t("hintLink"), !phoneOk && t("hintPhone")]
     .filter(Boolean)
     .join(", ");
+
+  useEffect(() => {
+    const node = rootRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        trackReportStep("form_view", { entry });
+        observer.disconnect();
+      }
+    }, { threshold: 0.3 });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [entry]);
+
+  useEffect(() => {
+    if (formValid && !readyRef.current) {
+      readyRef.current = true;
+      trackReportStep("form_ready", { entry });
+    }
+  }, [formValid, entry]);
+
+  useEffect(() => {
+    // Сборка без client id не рисует кнопку вовсе — это тоже сломанная оплата.
+    if (!clientId) trackReportStep("pay_error", { entry, stage: "no_client_id" });
+  }, [clientId, entry]);
+
+  function markStarted() {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    trackReportStep("form_start", { entry });
+  }
 
   /** Страховка на случай клика по включённой кнопке с негодными данными. */
   function validate(): boolean {
@@ -90,7 +138,11 @@ export function CheckLeadForm({ vin }: { vin?: string | null } = {}) {
   }
 
   return (
-    <div className="bg-elevated border border-border-subtle rounded-2xl p-6 sm:p-8 space-y-4">
+    <div
+      ref={rootRef}
+      onFocusCapture={markStarted}
+      className="bg-elevated border border-border-subtle rounded-2xl p-6 sm:p-8 space-y-4"
+    >
       {vin ? (
         <div className="rounded-lg border border-border-subtle bg-base px-4 py-3">
           <div className="text-xs text-text-muted mb-0.5">{t("orderedFor")}</div>
@@ -172,17 +224,38 @@ export function CheckLeadForm({ vin }: { vin?: string | null } = {}) {
 
       {clientId ? (
         <PayPalScriptProvider options={{ clientId, currency: "USD", intent: "capture" }}>
+          <ScriptLoadError entry={entry} text={t("payError")} />
           <PayPalButtons
             style={{ layout: "vertical", label: "pay" }}
             disabled={paying || !formValid}
-            onClick={(_data, actions) => {
+            onClick={(data, actions) => {
               setPayMessage(null);
+              failStageRef.current = null;
               if (!validate()) return actions.reject();
+              fundingRef.current =
+                typeof data.fundingSource === "string" ? data.fundingSource : undefined;
+              trackReportStep("pay_click", { entry, fundingSource: fundingRef.current });
               return actions.resolve();
             }}
             createOrder={async () => {
-              const res = await fetch("/api/paypal/create-order", { method: "POST" });
-              if (!res.ok) throw new Error("create-order failed");
+              // Контакты едут на сервер уже здесь — ради уведомления менеджеру
+              // «начал оплату»: если человек не дойдёт до конца, написать ему есть куда.
+              const res = await fetch("/api/paypal/create-order", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  phone,
+                  link: orderedLink,
+                  messenger,
+                  tgUsername,
+                  comment,
+                  fundingSource: fundingRef.current,
+                }),
+              });
+              if (!res.ok) {
+                failStageRef.current = "create_order";
+                throw new Error("create-order failed");
+              }
               const json = (await res.json()) as { id: string };
               return json.id;
             }}
@@ -203,12 +276,14 @@ export function CheckLeadForm({ vin }: { vin?: string | null } = {}) {
                 });
                 const json = (await res.json()) as { success: boolean; error?: string };
                 if (!res.ok || !json.success) {
+                  trackReportStep("pay_error", { entry, stage: "capture" });
                   setPayMessage({ tone: "error", text: json.error || t("payError") });
                   return;
                 }
                 trackLead("report");
                 setSuccess(true);
               } catch {
+                trackReportStep("pay_error", { entry, stage: "capture" });
                 setPayMessage({ tone: "error", text: t("payError") });
               } finally {
                 setPaying(false);
@@ -218,6 +293,8 @@ export function CheckLeadForm({ vin }: { vin?: string | null } = {}) {
               // Настоящую причину знает только PayPal, и без неё отказ неотличим
               // от «окно закрылось само». В консоль — чтобы было что прочитать.
               console.error("[PayPal]", err);
+              trackReportStep("pay_error", { entry, stage: failStageRef.current ?? "sdk" });
+              failStageRef.current = null;
               setPaying(false);
               setPayMessage({ tone: "error", text: t("payError") });
             }}
@@ -225,6 +302,7 @@ export function CheckLeadForm({ vin }: { vin?: string | null } = {}) {
               // Закрытое окно оплаты обязано сказать о себе: молчание здесь
               // читается как поломка сайта, а не как отменённый платёж.
               setPaying(false);
+              trackReportStep("pay_cancel", { entry, fundingSource: fundingRef.current });
               setPayMessage({ tone: "info", text: t("payCancelled") });
             }}
           />
@@ -235,4 +313,23 @@ export function CheckLeadForm({ vin }: { vin?: string | null } = {}) {
       </div>
     </div>
   );
+}
+
+/**
+ * Скрипт PayPal не загрузился (блокировщик, сеть, неверный client id) — виджет тогда
+ * не рисует ничего, и на месте кнопки пусто. Человеку надо сказать, что оплата
+ * недоступна, а нам — узнать об этом: такой отказ не доходит до сервера вовсе.
+ */
+function ScriptLoadError({ entry, text }: { entry: "decoder" | "direct"; text: string }) {
+  const [{ isRejected }] = usePayPalScriptReducer();
+  const trackedRef = useRef(false);
+
+  useEffect(() => {
+    if (isRejected && !trackedRef.current) {
+      trackedRef.current = true;
+      trackReportStep("pay_error", { entry, stage: "sdk_load" });
+    }
+  }, [isRejected, entry]);
+
+  return isRejected ? <p className="text-sm text-error">{text}</p> : null;
 }

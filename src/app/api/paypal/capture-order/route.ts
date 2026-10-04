@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { captureReportOrder } from "@/lib/paypal";
 import { parseReportLead, submitReportLead, type ReportLeadPayload } from "@/lib/report-lead";
+import { notifyPaymentFailed } from "@/lib/report-notify";
 
 /**
  * Второй шаг оплаты: подтвердить платёж у PayPal и, только после этого, отправить
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
     payment = await captureReportOrder(orderId);
   } catch (error) {
     console.error("[/api/paypal/capture-order] захват платежа не удался", orderId, error);
+    await notifyPaymentFailed("capture", error, parsed, orderId);
     return NextResponse.json({ success: false, error: "Оплата не подтвердилась" }, { status: 402 });
   }
 
