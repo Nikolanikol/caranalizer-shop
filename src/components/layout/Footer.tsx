@@ -4,10 +4,12 @@ import { Container } from "@/components/ui/container";
 import { SHOP_BASE, isShopLocale } from "@/lib/shop/urls";
 import { partsDestination } from "@/lib/parts-destination";
 import { kmotorsUrl } from "@/lib/kmotors";
+import { vinPath } from "@/lib/seo";
 import { Send, ExternalLink, Wrench } from "lucide-react";
 
 const NAV_LINKS = [
-  { key: "check", href: "/proverka-avto-po-vin" },
+  // Путь проверки у каждой локали свой — подставляется в компоненте (`vinPath`).
+  { key: "check", href: "" },
   { key: "guides", href: "/guides" },
   { key: "howItWorks", href: "/how-it-works" },
   { key: "faq", href: "/faq" },
@@ -23,7 +25,8 @@ export function Footer() {
   const tn = useTranslations("nav");
   const locale = useLocale();
   const year = new Date().getFullYear();
-  const navLinks = isShopLocale(locale) ? [...NAV_LINKS, PARTS_ITEM] : NAV_LINKS;
+  const links = NAV_LINKS.map((item) => (item.key === "check" ? { ...item, href: vinPath(locale) } : item));
+  const navLinks = isShopLocale(locale) ? [...links, PARTS_ITEM] : links;
 
   // По-русски ссылка ведёт в свой раздел б/у, на остальных языках — на kmotors.
   const parts = partsDestination(locale, "footer");

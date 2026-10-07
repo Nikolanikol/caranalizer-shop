@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { Container } from "@/components/ui/container";
 import { SHOP_BASE, isShopLocale } from "@/lib/shop/urls";
+import { vinPath } from "@/lib/seo";
 import { CartButton } from "@/components/shop/cart-button";
 import { AccountButton } from "@/components/auth/account-button";
 import { LocaleToggle } from "./LocaleToggle";
@@ -12,8 +13,9 @@ import { MobileNav } from "./MobileNav";
 // «Проверка авто» теперь обычный пункт меню, а не жёлтая CTA-кнопка справа: услуга
 // одна из двух, и выделять её кнопкой в шапке значит утверждать, что вторая
 // (свои б/у запчасти) второстепенна. «О нас» живёт в футере.
+// Путь проверки у каждой локали свой — подставляется в компоненте (`vinPath`).
 const NAV_KEYS = [
-  { key: "check", href: "/proverka-avto-po-vin" },
+  { key: "check", href: "" },
   { key: "guides", href: "/guides" },
   { key: "howItWorks", href: "/how-it-works" },
   { key: "faq", href: "/faq" },
@@ -28,7 +30,8 @@ export function Header() {
   const t = useTranslations("nav");
   const locale = useLocale();
   const pathname = usePathname();
-  const navItems = isShopLocale(locale) ? [PARTS_ITEM, ...NAV_KEYS] : NAV_KEYS;
+  const keys = NAV_KEYS.map((item) => (item.key === "check" ? { ...item, href: vinPath(locale) } : item));
+  const navItems = isShopLocale(locale) ? [PARTS_ITEM, ...keys] : keys;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border-subtle bg-base/80 backdrop-blur-xl">

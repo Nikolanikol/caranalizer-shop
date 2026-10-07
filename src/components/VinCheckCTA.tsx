@@ -1,11 +1,13 @@
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ShieldCheck } from "lucide-react";
+import { vinPath } from "@/lib/seo";
 
 export function VinCheckCTA() {
   const t = useTranslations("home");
+  const locale = useLocale();
 
   return (
     <section className="py-16 bg-elevated/50">
@@ -24,7 +26,7 @@ export function VinCheckCTA() {
             </p>
           </div>
 
-          <Link href="/proverka-avto-po-vin">
+          <Link href={vinPath(locale)}>
             <Button variant="cta" size="lg" className="gap-2 whitespace-nowrap">
               {t("ctaCheck")}
               <ArrowRight className="h-4 w-4" />

@@ -6,10 +6,12 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { X, Menu } from "lucide-react";
 import { SHOP_BASE, isShopLocale } from "@/lib/shop/urls";
+import { vinPath } from "@/lib/seo";
 
 const NAV_KEYS = [
   { key: "home", href: "/" },
-  { key: "check", href: "/proverka-avto-po-vin" },
+  // Путь проверки у каждой локали свой — подставляется в компоненте (`vinPath`).
+  { key: "check", href: "" },
   { key: "guides", href: "/guides" },
   { key: "howItWorks", href: "/how-it-works" },
   { key: "faq", href: "/faq" },
@@ -24,10 +26,11 @@ export function MobileNav() {
   const t = useTranslations("nav");
   const locale = useLocale();
   const pathname = usePathname();
+  const keys = NAV_KEYS.map((item) => (item.key === "check" ? { ...item, href: vinPath(locale) } : item));
   const navItems =
     isShopLocale(locale)
-      ? [...NAV_KEYS.slice(0, 3), PARTS_ITEM, ...NAV_KEYS.slice(3)]
-      : NAV_KEYS;
+      ? [...keys.slice(0, 3), PARTS_ITEM, ...keys.slice(3)]
+      : keys;
   const [open, setOpen] = useState(false);
 
   // Закрываем меню при переходе на другую страницу. Сравнением при рендере,

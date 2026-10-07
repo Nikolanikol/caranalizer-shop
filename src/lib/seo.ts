@@ -40,6 +40,16 @@ export const VIN_PATHS = {
 
 export type VinLocale = keyof typeof VIN_PATHS;
 
+/**
+ * Путь страницы проверки на языке страницы — для `Link` из `@/i18n/navigation`,
+ * который сам подставит префикс языка. Жёстко зашитый `/proverka-avto-po-vin`
+ * на английском сайте давал `/en/proverka-avto-po-vin` — рабочий, но неканонический
+ * адрес; так ссылались шапка, футер, меню и все гайды.
+ */
+export function vinPath(locale: string): string {
+  return VIN_PATHS[locale as VinLocale] ?? VIN_PATHS.ru;
+}
+
 /** Абсолютный адрес страницы на основном языке. `path` — с ведущим слэшем или пустой. */
 export function mainUrl(path = ""): string {
   return `${SITE_URL}/${MAIN_LOCALE}${path}`;

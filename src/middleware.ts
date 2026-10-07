@@ -128,6 +128,18 @@ export default function middleware(req: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
+  // Русский слаг страницы проверки под иноязычным префиксом — дубль: до 07.10.2026
+  // на него ссылались шапка, футер, меню и гайды английского сайта. Склеиваем
+  // с каноническим адресом языка; параметры сохраняем. Внутренний `rewrite` ниже
+  // middleware повторно не проходит, поэтому петли нет.
+  const dupVin = pathname.match(/^\/(en|ar)\/proverka-avto-po-vin\/?$/);
+  if (dupVin) {
+    const locale = dupVin[1] as "en" | "ar";
+    const url = req.nextUrl.clone();
+    url.pathname = `/${locale}${VIN_PATHS[locale]}`;
+    return NextResponse.redirect(url, 301);
+  }
+
   /*
    * Язык из `SHOP_LOCALES` (сейчас `ru` и `en`) существует целиком — редирект его
    * не трогает вовсе.

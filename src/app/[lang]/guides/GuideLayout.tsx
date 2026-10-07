@@ -8,7 +8,7 @@ import { GUIDES, type GuideLocale } from "@/lib/guides";
 import { KmotorsBanner, type KmotorsBannerVariant } from "@/components/KmotorsBanner";
 import { PartsBanner } from "@/components/PartsBanner";
 import { kmotorsUrl } from "@/lib/kmotors";
-import { mainAlternates, mainUrl } from "@/lib/seo";
+import { mainAlternates, mainUrl, vinPath } from "@/lib/seo";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { ArrowRight, BookOpen, ExternalLink, ShieldCheck } from "lucide-react";
 
@@ -159,7 +159,7 @@ export function GuideLayout({
               <p className="text-sm text-text-muted">{t("ctaCheckText")}</p>
             </div>
             <Link
-              href="/proverka-avto-po-vin"
+              href={vinPath(lang)}
               className="inline-flex items-center gap-2 px-6 py-3 bg-cta text-base-darker font-semibold rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap"
             >
               {t("ctaCheckBtn")}
@@ -184,7 +184,7 @@ export function GuideLayout({
                 <p className="text-sm text-text-muted max-w-md">{tc("reportDesc")}</p>
               </div>
               <Link
-                href="/proverka-avto-po-vin"
+                href={vinPath(lang)}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-hover transition-colors whitespace-nowrap"
               >
                 {tc("reportCta")}
@@ -267,8 +267,8 @@ export function GuideLayout({
 }
 
 /**
- * Единые metadata для страницы гайда. Гайды существуют только по-русски, поэтому
- * canonical всегда на русскую версию, а hreflang не объявляется вовсе.
+ * Единые metadata для страницы гайда: canonical на свою локаль и hreflang
+ * по `SITE_LOCALES` — гайды открыты на русском и английском (с 28.08.2026).
  */
 export function guideMetadata(slug: string, lang: string) {
   const meta = GUIDES.find((g) => g.slug === slug)!;
